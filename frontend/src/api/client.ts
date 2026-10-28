@@ -19,6 +19,7 @@ import {
   AuditLogEntry,
   ExtraTimeRequest,
   FeedbackLogEntry,
+  AuthUser,
 } from '../types';
 
 const API_BASE_URL =
@@ -54,6 +55,11 @@ async function request<T>(
     headers.set('Content-Type', 'application/json');
   }
   headers.set('Accept', 'application/json');
+
+  const token = localStorage.getItem('mhms_auth_token');
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Token ${token}`);
+  }
 
   const config: RequestInit = {
     ...options,
@@ -558,5 +564,50 @@ export const feedbackApi = {
 
   async delete(id: string): Promise<void> {
     await request(`feedback/${id}`, { method: 'DELETE' });
+  },
+};
+
+// -------------------------------------------------------------
+// Authentication API
+// -------------------------------------------------------------
+export const authApi = {
+  async hasAdmin(): Promise<{ hasAdmin: boolean }> {
+    return request<{ hasAdmin: boolean }>('auth/has-admin');
+  },
+
+  async registerAdmin(payload: {
+    username: string;
+    email?: string;
+    password: string;
+    fullName?: string;
+    businessName?: string;
+  }): Promise<{ token: string; user: AuthUser; message: string }> {
+    return request<{ token: string; user: AuthUser; message: string }>('auth/register-admin', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async login(payload: {
+    username: string;
+    password: string;
+  }): Promise<{ token: string; user: AuthUser; message: string }> {
+    return request<{ token: string; user: AuthUser; message: string }>('auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getMe(): Promise<AuthUser> {
+    return request<AuthUser>('auth/me');
+  },
+
+  async logout(): Promise<{ message: string }> {
+    try {
+      return await request<{ message: string }>('auth/logout', { method: 'POST' });
+    } finally {
+      localStorage.removeItem('mhms_auth_token');
+      localStorage.removeItem('mhms_user');
+    }
   },
 };

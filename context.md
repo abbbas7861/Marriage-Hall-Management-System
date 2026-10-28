@@ -549,4 +549,21 @@ The UI layout will feature a **dual-tiered navigation system**:
 - **Dormant by Default:** Operates 100% offline without FBR dependencies.
 - **Dynamic Activation:** Activates only when the Admin enters valid credentials (*NTN, STRN, POS ID, Client ID, Client Secret*) in Admin Settings and flips the *Enable FBR Integration* toggle.
 
+#### 8. Outsourced Labor & Outside Staff Vendor Tracking
+- Dedicated management module for external manpower contractors and daily wage labor providers:
+  - **Contractor / Agency Profile:** Business name, contact person, phone, and agreement terms.
+  - **Event Association:** Tagged directly to the relevant Booking Reference and Event Date.
+  - **Service Roles:** Waiters, Hostesses / Ushers, Dishwashers, Kitchen Helpers, Cleaning Crew, Security Guards, Valet Drivers.
+  - **Headcount Breakdown:**
+    - **Male Count**
+    - **Female Count**
+    - **Total Person Count**
+  - **Rate & Billing Breakdown:**
+    - Rate per person per shift (e.g., Rs. 1,500/male waiter, Rs. 2,000/female hostess)
+    - Overtime hourly surcharge per person
+    - Total contract charges:
+      $$\text{Total Cost} = (\text{Male Count} \times \text{Male Rate}) + (\text{Female Count} \times \text{Female Rate}) + \text{Overtime Charges}$$
+  - **Financial Flow:** Automatically posts to Accounts Payable (A/P) and the Event Expense breakdown ledger (tracking Advance Paid, Balance Due, and Settlement status).
+
+
 

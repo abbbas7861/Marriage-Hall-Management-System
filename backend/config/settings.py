@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     # Third-party packages
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
 
     # Internal MHMS apps
@@ -109,6 +110,10 @@ CORS_ALLOW_HEADERS = [
 
 # Django REST Framework configuration
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',

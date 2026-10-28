@@ -1,4 +1,25 @@
 from django.db import models
+from django.contrib.auth.models import User
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('admin', 'Admin / Owner'),
+        ('manager', 'Event Manager'),
+        ('kitchen', 'Kitchen Staff'),
+        ('waiter', 'Waiter / Floor Staff'),
+        ('accountant', 'Accountant'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='manager')
+    full_name = models.CharField(max_length=150, blank=True, default='')
+    phone = models.CharField(max_length=50, blank=True, default='')
+    salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"
+
 
 class SystemSetting(models.Model):
     business_name = models.CharField(max_length=200, default='MHMS Enterprise', blank=True)

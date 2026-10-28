@@ -1,3 +1,15 @@
+export type UserRole = 'admin' | 'manager' | 'kitchen' | 'waiter' | 'accountant';
+
+export type PortalType = 'admin' | 'manager' | 'kitchen' | 'waiter' | 'vendors' | 'finance';
+
+export interface AuthUser {
+  id: number | string;
+  username: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+}
+
 export type NavModuleId =
   | 'dashboard'
   | 'halls'
@@ -15,7 +27,43 @@ export type NavModuleId =
   | 'audit-logs'
   | 'settings'
   | 'card-studio'
-  | 'feedback';
+  | 'feedback'
+  // Admin Portal Tabs
+  | 'admin-overview'
+  | 'admin-halls'
+  | 'admin-bookings'
+  | 'admin-users'
+  | 'admin-closings'
+  | 'admin-fbr'
+  | 'admin-audit'
+  // Manager Portal Tabs
+  | 'manager-overview'
+  | 'manager-decor'
+  | 'manager-roster'
+  | 'manager-readiness'
+  | 'manager-assets'
+  // Kitchen Portal Tabs
+  | 'kitchen-kds'
+  | 'kitchen-menu'
+  | 'kitchen-stock'
+  | 'kitchen-calculator'
+  | 'kitchen-reorder'
+  // Waiter Portal Tabs
+  | 'waiter-kiosk'
+  | 'waiter-refills'
+  | 'waiter-tables'
+  // Vendors Portal Tabs
+  | 'vendors-directory'
+  | 'vendors-labor'
+  | 'vendors-payables'
+  | 'vendors-deliveries'
+  // Finance Portal Tabs
+  | 'finance-overview'
+  | 'finance-ledger'
+  | 'finance-receivables'
+  | 'finance-payables'
+  | 'finance-statements'
+  | 'finance-expenses';
 
 export interface FeedbackLogEntry {
   id: string;

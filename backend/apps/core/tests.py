@@ -1,9 +1,11 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from apps.bookings.models import Booking
 from apps.venues.models import Hall
 from apps.finance.models import InvoiceRecord
+from apps.core.models import UserProfile
 
 class CoreDashboardAndReportsTests(TestCase):
     def setUp(self):
@@ -66,4 +68,53 @@ class CoreDashboardAndReportsTests(TestCase):
         self.assertIn('hallBookingsData', res.data)
         self.assertEqual(res.data['totalBookings'], 1)
         self.assertEqual(res.data['grossRevenue'], 350000.0)
+
+
+class AuthTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_has_admin_and_register_flow(self):
+        # 1. No admin initially
+        res = self.client.get('/api/v1/auth/has-admin/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(res.data['hasAdmin'])
+
+        # 2. Register first admin
+        reg_data = {
+            'username': 'admin',
+            'email': 'admin@royalpalace.pk',
+            'password': 'adminpassword123',
+            'fullName': 'Owner Salman',
+            'businessName': 'Royal Palace Banquet Hall'
+        }
+        res = self.client.post('/api/v1/auth/register-admin/', reg_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertIn('token', res.data)
+        self.assertEqual(res.data['user']['role'], 'admin')
+
+        # 3. hasAdmin now returns True
+        res = self.client.get('/api/v1/auth/has-admin/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['hasAdmin'])
+
+        # 4. Login with registered admin
+        login_res = self.client.post('/api/v1/auth/login/', {
+            'username': 'admin',
+            'password': 'adminpassword123'
+        }, format='json')
+        self.assertEqual(login_res.status_code, status.HTTP_200_OK)
+        token = login_res.data['token']
+
+        # 5. Check me endpoint
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        me_res = self.client.get('/api/v1/auth/me/')
+        self.assertEqual(me_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(me_res.data['username'], 'admin')
+        self.assertEqual(me_res.data['role'], 'admin')
+
+        # 6. Logout
+        logout_res = self.client.post('/api/v1/auth/logout/')
+        self.assertEqual(logout_res.status_code, status.HTTP_200_OK)
+
 
