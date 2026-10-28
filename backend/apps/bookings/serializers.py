@@ -23,11 +23,13 @@ class BookingSerializer(serializers.ModelSerializer):
     specialInstructions = serializers.CharField(source='special_instructions', required=False, allow_blank=True, default='')
     extraHours = serializers.FloatField(source='extra_hours', required=False, default=0)
     ratePerHour = serializers.FloatField(source='rate_per_hour', required=False, default=0)
+    cnic = serializers.CharField(required=False, allow_blank=True, default='')
+    address = serializers.CharField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = Booking
         fields = [
-            'id', 'bookingRef', 'customerName', 'contactRef', 'eventType',
+            'id', 'bookingRef', 'customerName', 'contactRef', 'cnic', 'address', 'eventType',
             'hallName', 'date', 'time', 'slot', 'status', 'paymentStatus',
             'amount', 'advancePayment', 'guestCount', 'seatingArrangement',
             'menuPackage', 'specialInstructions', 'extraHours', 'ratePerHour'
@@ -55,6 +57,9 @@ class BookingSerializer(serializers.ModelSerializer):
         # Sync/Create Customer in CRM
         cust_name = booking.customer_name
         phone = booking.contact_ref or ''
+        cnic = validated_data.get('cnic', '')
+        addr = validated_data.get('address', '')
+
         customer = Customer.objects.filter(name__iexact=cust_name).first()
         if not customer and phone:
             customer = Customer.objects.filter(phone=phone).first()
@@ -62,6 +67,10 @@ class BookingSerializer(serializers.ModelSerializer):
         if customer:
             customer.total_bookings += 1
             customer.lifetime_value = float(customer.lifetime_value) + amount
+            if cnic and not customer.cnic:
+                customer.cnic = cnic
+            if addr and not customer.address:
+                customer.address = addr
             customer.save()
         else:
             cust_count = Customer.objects.count() + 1001
@@ -69,6 +78,8 @@ class BookingSerializer(serializers.ModelSerializer):
                 customer_id=f"CUST-{cust_count}",
                 name=cust_name,
                 phone=phone or 'N/A',
+                cnic=cnic,
+                address=addr,
                 total_bookings=1,
                 lifetime_value=amount,
                 status='Active'
@@ -110,6 +121,55 @@ class BookingSerializer(serializers.ModelSerializer):
             action="Created",
             module="Bookings",
             details=f"Created booking {booking.booking_ref} for {booking.customer_name} ({booking.hall_name}) on {booking.date}",
+            ip_address="127.0.0.1"
+        )
+
+        return booking
+
+    def update(self, instance, validated_data):
+        prev_amount = float(instance.amount)
+        booking = super().update(instance, validated_data)
+
+        amount = float(booking.amount)
+        advance = float(booking.advance_payment)
+
+        # Recalculate payment status if not explicitly given
+        if 'payment_status' not in validated_data and amount > 0:
+            if advance >= amount:
+                booking.payment_status = 'Paid'
+            elif advance > 0:
+                booking.payment_status = 'Partial'
+            else:
+                booking.payment_status = 'Unpaid'
+            booking.save(update_fields=['payment_status'])
+
+        # Update matching invoice
+        rem_balance = max(0.0, amount - advance)
+        inv = InvoiceRecord.objects.filter(booking_id=booking.booking_ref).first()
+        if inv:
+            inv.total_amount = amount
+            inv.paid_amount = advance
+            inv.remaining_balance = rem_balance
+            inv.customer_name = booking.customer_name
+            inv.date = booking.date
+            inv.payment_status = booking.payment_status if booking.payment_status in ['Paid', 'Partial', 'Unpaid'] else 'Unpaid'
+            inv.save()
+
+        # Adjust customer lifetime value if amount changed
+        if prev_amount != amount:
+            customer = Customer.objects.filter(name__iexact=booking.customer_name).first()
+            if customer:
+                customer.lifetime_value = max(0.0, float(customer.lifetime_value) - prev_amount + amount)
+                customer.save(update_fields=['lifetime_value'])
+
+        # Record audit log
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name="Admin",
+            user_role="Admin",
+            action="Updated",
+            module="Bookings",
+            details=f"Updated booking {booking.booking_ref} ({booking.customer_name}, status: {booking.status}, amount: ${amount})",
             ip_address="127.0.0.1"
         )
 

@@ -18,6 +18,7 @@ import {
   VendorPartner,
   AuditLogEntry,
   ExtraTimeRequest,
+  FeedbackLogEntry,
 } from '../types';
 
 const API_BASE_URL =
@@ -530,5 +531,32 @@ export const reportsApi = {
     if (params?.hall && params.hall !== 'All Halls') query.set('hall', params.hall);
     const qs = query.toString();
     return request<any>(`reports/summary${qs ? `?${qs}` : ''}`);
+  },
+};
+
+// -------------------------------------------------------------
+// Feedback & Reviews API
+// -------------------------------------------------------------
+export const feedbackApi = {
+  async list(params?: { rating?: number; eventType?: string; search?: string }): Promise<FeedbackLogEntry[]> {
+    const query = new URLSearchParams();
+    if (params?.rating) query.set('rating', String(params.rating));
+    if (params?.eventType && params.eventType !== 'All') query.set('event_type', params.eventType);
+    if (params?.search) query.set('search', params.search);
+    const qs = query.toString();
+    const data = await request<FeedbackLogEntry[]>(`feedback${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<FeedbackLogEntry>): Promise<FeedbackLogEntry> {
+    const data = await request<FeedbackLogEntry>('feedback', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`feedback/${id}`, { method: 'DELETE' });
   },
 };

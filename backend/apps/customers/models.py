@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class Customer(models.Model):
     STATUS_CHOICES = [
@@ -31,3 +32,22 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.customer_id})"
+
+
+class FeedbackReview(models.Model):
+    feedback_id = models.CharField(max_length=50, unique=True, db_index=True)
+    customer_name = models.CharField(max_length=200)
+    customer_phone = models.CharField(max_length=50, blank=True, default='')
+    event_type = models.CharField(max_length=100, default='General')
+    rating = models.PositiveSmallIntegerField(default=5)
+    raw_notes = models.TextField(blank=True, default='')
+    generated_review = models.TextField(blank=True, default='')
+    date = models.DateField(default=timezone.localdate)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return f"[{self.feedback_id}] {self.customer_name} ({self.rating} stars)"
+

@@ -15,15 +15,39 @@ class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'payment_status', 'hall_name', 'date']
-    search_fields = ['booking_ref', 'customer_name', 'event_type', 'hall_name', 'contact_ref']
+    search_fields = ['booking_ref', 'customer_name', 'event_type', 'hall_name', 'contact_ref', 'cnic']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        hall = self.request.query_params.get('hall') or self.request.query_params.get('hall_name')
+        if hall and hall != 'All Halls':
+            qs = qs.filter(hall_name__iexact=hall)
+
+        start_date = self.request.query_params.get('startDate') or self.request.query_params.get('start_date')
+        if start_date:
+            qs = qs.filter(date__gte=start_date)
+
+        end_date = self.request.query_params.get('endDate') or self.request.query_params.get('end_date')
+        if end_date:
+            qs = qs.filter(date__lte=end_date)
+
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param not in ['All Statuses', 'All']:
+            qs = qs.filter(status__iexact=status_param)
+
+        pay_status = self.request.query_params.get('paymentStatus') or self.request.query_params.get('payment_status')
+        if pay_status and pay_status not in ['All Statuses', 'All']:
+            qs = qs.filter(payment_status__iexact=pay_status)
+
+        return qs
 
     @action(detail=False, methods=['get', 'post'], url_path='check_availability')
     def check_availability(self, request):
         params = request.query_params if request.method == 'GET' else request.data
         hall_name = params.get('hall') or params.get('hall_name') or params.get('hallName')
-        date_str = params.get('date')
+        date_str = params.get('date') or params.get('startDate')
         slot = params.get('slot')
 
         if not hall_name or not date_str:
@@ -41,10 +65,12 @@ class BookingViewSet(viewsets.ModelViewSet):
         existing_booking = bookings_qs.first()
 
         if existing_booking:
+            msg = f"Hall is already booked by {existing_booking.customer_name} ({existing_booking.booking_ref})"
             return Response({
                 'available': False,
+                'conflict': msg,
                 'conflictType': 'Booking',
-                'details': f"Hall is already booked by {existing_booking.customer_name} ({existing_booking.booking_ref})"
+                'details': msg
             })
 
         # Check maintenance blocks
@@ -54,10 +80,12 @@ class BookingViewSet(viewsets.ModelViewSet):
         ).filter(models.Q(hall_name='All Halls') | models.Q(hall_name__iexact=hall_name)).first()
 
         if blocked:
+            msg = f"Hall is blocked for maintenance: {blocked.reason}"
             return Response({
                 'available': False,
+                'conflict': msg,
                 'conflictType': 'Maintenance',
-                'details': f"Hall is blocked for maintenance: {blocked.reason}"
+                'details': msg
             })
 
         return Response({'available': True, 'details': 'Hall is available for reservation.'})
@@ -113,7 +141,9 @@ class ExtraTimeRequestViewSet(viewsets.ModelViewSet):
             ip_address="127.0.0.1"
         )
 
-        return Response({'message': 'Extra time request approved and charges added to billing ledger.', 'status': 'Approved'})
+        data = ExtraTimeRequestSerializer(req).data
+        data['message'] = 'Extra time request approved and charges added to billing ledger.'
+        return Response(data)
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -131,4 +161,6 @@ class ExtraTimeRequestViewSet(viewsets.ModelViewSet):
             ip_address="127.0.0.1"
         )
 
-        return Response({'message': 'Extra time request rejected.', 'status': 'Rejected'})
+        data = ExtraTimeRequestSerializer(req).data
+        data['message'] = 'Extra time request rejected.'
+        return Response(data)

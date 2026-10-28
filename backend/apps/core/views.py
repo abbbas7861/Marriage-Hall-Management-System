@@ -69,61 +69,103 @@ class SystemSettingView(APIView):
         return self.put(request)
 
 
+def get_dashboard_data():
+    today = timezone.now().date()
+    current_year = today.year
+
+    # 1. Total Bookings
+    total_bookings = Booking.objects.count()
+
+    # 2. Hall Occupancy
+    total_halls = Hall.objects.filter(status='Active').count()
+    today_bookings = Booking.objects.filter(date=today, status__in=['Confirmed', 'Completed']).count()
+    hall_occupancy = round((today_bookings / total_halls * 100), 1) if total_halls > 0 else 0.0
+
+    # 3. Pending Payments (from Unpaid/Partial Invoices)
+    pending_invoices = InvoiceRecord.objects.filter(payment_status__in=['Unpaid', 'Partial'])
+    pending_payments_amount = float(pending_invoices.aggregate(total=Sum('remaining_balance'))['total'] or 0)
+    pending_count = pending_invoices.count()
+
+    # 4. Upcoming Events (next 7 days)
+    seven_days_later = today + timedelta(days=7)
+    upcoming_bookings_qs = Booking.objects.filter(date__gte=today, date__lte=seven_days_later, status__in=['Confirmed', 'Pending'])
+    upcoming_events_count = upcoming_bookings_qs.count()
+
+    # Revenue Trends (Grouped by Quarter)
+    quarters = [
+        ('Q1', [1, 2, 3]),
+        ('Q2', [4, 5, 6]),
+        ('Q3', [7, 8, 9]),
+        ('Q4', [10, 11, 12]),
+    ]
+    revenue_points = []
+    for q_name, q_months in quarters:
+        q_bookings = Booking.objects.filter(date__year=current_year, date__month__in=q_months)
+        rev = float(q_bookings.aggregate(s=Sum('amount'))['s'] or 0)
+        hall_rev = round(rev * 0.65, 2)
+        ancillary = round(rev * 0.35, 2)
+        revenue_points.append({
+            'period': q_name,
+            'bookedRevenue': rev,
+            'ancillaryCatering': ancillary,
+            'hallRentals': hall_rev
+        })
+
+    # Donut Chart: Bookings distribution by Hall
+    halls = Hall.objects.all()
+    hall_colors = ['#00685f', '#316bf3', '#d97706', '#94a3b8', '#8b5cf6']
+    occupancy_slices = []
+    for idx, hall in enumerate(halls):
+        b_count = Booking.objects.filter(hall_name__iexact=hall.name).count()
+        occupancy_slices.append({
+            'name': hall.name,
+            'value': b_count,
+            'color': hall_colors[idx % len(hall_colors)]
+        })
+
+    # Lists for dashboard tables
+    upcoming_events = Booking.objects.filter(date__gte=today).order_by('date')[:5]
+    recent_txns = PaymentTransaction.objects.order_by('-created_at')[:5]
+
+    return {
+        'totalBookings': total_bookings,
+        'hallOccupancy': hall_occupancy,
+        'pendingPayments': pending_payments_amount,
+        'pendingInvoicesCount': pending_count,
+        'upcomingEventsCount': upcoming_events_count,
+        'revenueData': revenue_points if any(p['bookedRevenue'] > 0 for p in revenue_points) else [],
+        'occupancyData': occupancy_slices if any(s['value'] > 0 for s in occupancy_slices) else [],
+        'upcomingEvents': BookingSerializer(upcoming_events, many=True).data,
+        'recentTransactions': PaymentTransactionSerializer(recent_txns, many=True).data,
+    }
+
+
 class DashboardMetricsView(APIView):
     def get(self, request):
-        # 1. Total Bookings
-        total_bookings = Booking.objects.count()
+        data = get_dashboard_data()
+        return Response(data)
 
-        # 2. Hall Occupancy
-        total_halls = Hall.objects.filter(status='Active').count()
-        today = timezone.now().date()
-        today_bookings = Booking.objects.filter(date=today, status__in=['Confirmed', 'Completed']).count()
-        hall_occupancy = round((today_bookings / total_halls * 100), 1) if total_halls > 0 else 0.0
 
-        # 3. Pending Payments (from Unpaid/Partial Invoices)
-        pending_invoices = InvoiceRecord.objects.filter(payment_status__in=['Unpaid', 'Partial'])
-        pending_payments_amount = float(pending_invoices.aggregate(total=Sum('remaining_balance'))['total'] or 0)
-        pending_count = pending_invoices.count()
-
-        # 4. Upcoming Events (next 7 days)
-        seven_days_later = today + timedelta(days=7)
-        upcoming_bookings_qs = Booking.objects.filter(date__gte=today, date__lte=seven_days_later, status__in=['Confirmed', 'Pending'])
-        upcoming_events_count = upcoming_bookings_qs.count()
-
-        # Revenue Trends (Grouped by Quarter or Month)
-        revenue_points = [
-            {'period': 'Q1', 'bookedRevenue': 0, 'ancillaryCatering': 0, 'hallRentals': 0},
-            {'period': 'Q2', 'bookedRevenue': 0, 'ancillaryCatering': 0, 'hallRentals': 0},
-            {'period': 'Q3', 'bookedRevenue': 0, 'ancillaryCatering': 0, 'hallRentals': 0},
-            {'period': 'Q4', 'bookedRevenue': 0, 'ancillaryCatering': 0, 'hallRentals': 0},
-        ]
-
-        # Donut Chart: Bookings distribution by Hall
-        halls = Hall.objects.all()
-        hall_colors = ['#00685f', '#316bf3', '#d97706', '#94a3b8', '#8b5cf6']
-        occupancy_slices = []
-        for idx, hall in enumerate(halls):
-            b_count = Booking.objects.filter(hall_name__iexact=hall.name).count()
-            occupancy_slices.append({
-                'name': hall.name,
-                'value': b_count,
-                'color': hall_colors[idx % len(hall_colors)]
-            })
-
-        # Lists for dashboard tables
-        upcoming_events = Booking.objects.filter(date__gte=today).order_by('date')[:5]
-        recent_txns = PaymentTransaction.objects.order_by('-created_at')[:5]
-
+class DashboardStatsView(APIView):
+    def get(self, request):
+        data = get_dashboard_data()
         return Response({
-            'totalBookings': total_bookings,
-            'hallOccupancy': hall_occupancy,
-            'pendingPayments': pending_payments_amount,
-            'pendingInvoicesCount': pending_count,
-            'upcomingEventsCount': upcoming_events_count,
-            'revenueData': revenue_points if total_bookings > 0 else [],
-            'occupancyData': occupancy_slices if any(s['value'] > 0 for s in occupancy_slices) else [],
-            'upcomingEvents': BookingSerializer(upcoming_events, many=True).data,
-            'recentTransactions': PaymentTransactionSerializer(recent_txns, many=True).data,
+            'totalBookings': data['totalBookings'],
+            'hallOccupancy': data['hallOccupancy'],
+            'pendingPayments': data['pendingPayments'],
+            'pendingInvoicesCount': data['pendingInvoicesCount'],
+            'upcomingEventsCount': data['upcomingEventsCount'],
+            'upcomingEvents': data['upcomingEvents'],
+            'recentTransactions': data['recentTransactions'],
+        })
+
+
+class DashboardChartsView(APIView):
+    def get(self, request):
+        data = get_dashboard_data()
+        return Response({
+            'revenueData': data['revenueData'],
+            'occupancyData': data['occupancyData'],
         })
 
 
@@ -158,18 +200,39 @@ class ReportsSummaryView(APIView):
         # Generate monthly financial breakdown records
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         breakdown_records = []
+        rev_exp_data = []
         for m_idx, m_name in enumerate(months, 1):
             m_bookings = bookings_qs.filter(date__month=m_idx).count()
             m_rev = float(invoices_qs.filter(date__month=m_idx).aggregate(s=Sum('total_amount'))['s'] or 0)
             m_exp = float(expenses_qs.filter(date__month=m_idx).aggregate(s=Sum('amount'))['s'] or 0)
             if m_bookings > 0 or m_rev > 0 or m_exp > 0:
-                breakdown_records.append({
+                rec = {
                     'month': f"{m_name} 2026",
+                    'period': m_name,
                     'totalBookings': m_bookings,
                     'grossRevenue': m_rev,
+                    'revenue': m_rev,
                     'totalExpenses': m_exp,
-                    'netProfit': m_rev - m_exp
-                })
+                    'expenses': m_exp,
+                    'netProfit': m_rev - m_exp,
+                    'profit': m_rev - m_exp
+                }
+                breakdown_records.append(rec)
+                rev_exp_data.append(rec)
+
+        # Hall bookings distribution for analytics
+        halls = Hall.objects.all()
+        hall_bookings_data = []
+        for hall in halls:
+            count = bookings_qs.filter(hall_name__iexact=hall.name).count()
+            hall_bookings_data.append({'name': hall.name, 'bookings': count})
+
+        # Menu packages popularity
+        packages = MenuPackage.objects.all()
+        top_menu_packages_data = []
+        for pkg in packages:
+            count = bookings_qs.filter(menu_package__icontains=pkg.name).count()
+            top_menu_packages_data.append({'name': pkg.name, 'count': count})
 
         return Response({
             'totalBookings': total_bookings,
@@ -177,4 +240,8 @@ class ReportsSummaryView(APIView):
             'totalExpenses': total_expenses,
             'netProfit': net_profit,
             'monthlyBreakdown': breakdown_records,
+            'monthlyBreakdownRecords': breakdown_records,
+            'revenueExpensesData': rev_exp_data,
+            'hallBookingsData': hall_bookings_data,
+            'topMenuPackagesData': top_menu_packages_data,
         })

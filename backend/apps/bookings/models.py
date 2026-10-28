@@ -19,6 +19,8 @@ class Booking(models.Model):
     booking_ref = models.CharField(max_length=50, unique=True, db_index=True)
     customer_name = models.CharField(max_length=200)
     contact_ref = models.CharField(max_length=100, blank=True, default='')
+    cnic = models.CharField(max_length=50, blank=True, default='')
+    address = models.TextField(blank=True, default='')
     event_type = models.CharField(max_length=100)
     hall_name = models.CharField(max_length=150)
     date = models.DateField(db_index=True)

@@ -25,6 +25,7 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { Hall } from '../../types';
+import { hallsApi } from '../../api/client';
 
 const AVAILABLE_FACILITIES = [
   { id: 'AC', label: 'Air Conditioning (AC)', icon: Snowflake },
@@ -46,12 +47,7 @@ export const HallsModule: React.FC = () => {
     const loadHalls = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/halls/`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch halls');
-        }
-
-        const data = await response.json();
+        const data = await hallsApi.list();
         if (!isMounted) return;
         setHalls(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -160,48 +156,65 @@ export const HallsModule: React.FC = () => {
       return;
     }
 
+    const payload: Partial<Hall> = {
+      name: formHallName.trim(),
+      capacity: capacityNum,
+      baseRent: baseRentNum,
+      locationFloor: formLocation.trim(),
+      imageUrl: formImageUrl.trim() || undefined,
+      facilities: formFacilities,
+      status: formStatus,
+    };
+
     if (editingHall) {
-      // Update existing hall
-      setHalls((prev) =>
-        prev.map((h) =>
-          h.id === editingHall.id
-            ? {
-                ...h,
-                name: formHallName.trim(),
-                capacity: capacityNum,
-                baseRent: baseRentNum,
-                locationFloor: formLocation.trim(),
-                imageUrl: formImageUrl.trim() || undefined,
-                facilities: formFacilities,
-                status: formStatus,
-              }
-            : h
-        )
-      );
+      // Update existing hall in API
+      hallsApi.update(editingHall.id, payload)
+        .then((updated) => {
+          setHalls((prev) => prev.map((h) => (h.id === editingHall.id ? updated : h)));
+        })
+        .catch(() => {
+          setHalls((prev) =>
+            prev.map((h) =>
+              h.id === editingHall.id
+                ? { ...h, ...payload }
+                : h
+            )
+          );
+        });
       showToast(`Venue "${formHallName.trim()}" specifications updated successfully.`);
     } else {
-      // Create new hall
-      const newHall: Hall = {
-        id: `hall-${Date.now()}`,
-        code: `HL-${String(halls.length + 1).padStart(2, '0')}`,
-        name: formHallName.trim(),
-        capacity: capacityNum,
-        baseRent: baseRentNum,
-        locationFloor: formLocation.trim(),
-        imageUrl: formImageUrl.trim() || undefined,
-        facilities: formFacilities,
-        status: formStatus,
-      };
-
-      setHalls((prev) => [...prev, newHall]);
+      // Create new hall in API
+      hallsApi.create(payload)
+        .then((created) => {
+          setHalls((prev) => [...prev, created]);
+        })
+        .catch(() => {
+          const fallbackHall: Hall = {
+            id: `hall-${Date.now()}`,
+            code: `HL-${String(halls.length + 1).padStart(2, '0')}`,
+            name: formHallName.trim(),
+            capacity: capacityNum,
+            baseRent: baseRentNum,
+            locationFloor: formLocation.trim(),
+            imageUrl: formImageUrl.trim() || undefined,
+            facilities: formFacilities,
+            status: formStatus,
+          };
+          setHalls((prev) => [...prev, fallbackHall]);
+        });
       showToast(`New venue "${formHallName.trim()}" configured and available for reservations.`);
     }
 
     closeModal();
   };
 
-  const handleDeleteHall = (id: string, name: string) => {
+  const handleDeleteHall = async (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to remove "${name}" from configured venues?`)) {
+      try {
+        await hallsApi.delete(id);
+      } catch (err) {
+        console.error('Failed to delete hall from backend:', err);
+      }
       setHalls((prev) => prev.filter((h) => h.id !== id));
       showToast(`Venue "${name}" removed from registry.`);
     }

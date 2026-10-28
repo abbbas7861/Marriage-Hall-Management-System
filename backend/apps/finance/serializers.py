@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord
+from apps.bookings.models import Booking
+from apps.core.models import AuditLogEntry
+from django.utils import timezone
 import random
 
 class InvoiceRecordSerializer(serializers.ModelSerializer):
@@ -47,7 +50,41 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if not validated_data.get('txn_ref'):
             validated_data['txn_ref'] = f"TXN-{random.randint(10000, 99999)}"
-        return super().create(validated_data)
+        if not validated_data.get('timestamp'):
+            validated_data['timestamp'] = timezone.now().strftime('%Y-%m-%d %H:%M')
+
+        txn = super().create(validated_data)
+
+        # Synchronize payment with invoice and booking
+        booking_ref = txn.booking_ref
+        amount = float(txn.amount)
+
+        if booking_ref and txn.billing_status == 'Settled':
+            inv = InvoiceRecord.objects.filter(booking_id=booking_ref).first()
+            if inv:
+                inv.paid_amount = float(inv.paid_amount) + amount
+                inv.remaining_balance = max(0.0, float(inv.total_amount) - float(inv.paid_amount))
+                inv.payment_status = 'Paid' if inv.remaining_balance <= 0 else 'Partial'
+                inv.save()
+
+            booking = Booking.objects.filter(booking_ref=booking_ref).first()
+            if booking:
+                booking.advance_payment = float(booking.advance_payment) + amount
+                if float(booking.amount) > 0:
+                    booking.payment_status = 'Paid' if float(booking.advance_payment) >= float(booking.amount) else 'Partial'
+                booking.save(update_fields=['advance_payment', 'payment_status'])
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name="Finance Officer",
+            user_role="Finance",
+            action="Created",
+            module="Finance",
+            details=f"Processed payment {txn.txn_ref} of ${txn.amount} ({txn.channel}) for booking {booking_ref or 'Direct'}",
+            ip_address="127.0.0.1"
+        )
+
+        return txn
 
 
 class ExpenseRecordSerializer(serializers.ModelSerializer):

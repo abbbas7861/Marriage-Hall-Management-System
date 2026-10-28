@@ -20,7 +20,7 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
     def issue(self, request, pk=None):
         item = self.get_object()
         quantity_to_issue = int(request.data.get('quantity', 1))
-        event_name = request.data.get('event_name', 'Active Hall Event')
+        event_name = request.data.get('bookingRef') or request.data.get('booking_ref') or request.data.get('event_name', 'Active Hall Event')
 
         if quantity_to_issue <= 0:
             return Response({'error': 'Quantity must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
@@ -45,7 +45,35 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
             ip_address="127.0.0.1"
         )
 
-        return Response({
-            'message': f"Issued {quantity_to_issue} units of {item.item_name} successfully.",
-            'item': InventoryItemSerializer(item).data
-        })
+        data = InventoryItemSerializer(item).data
+        data['message'] = f"Issued {quantity_to_issue} units of {item.item_name} successfully."
+        return Response(data)
+
+    @action(detail=True, methods=['post'], url_path='return')
+    def return_item(self, request, pk=None):
+        item = self.get_object()
+        quantity = int(request.data.get('quantity', 1))
+
+        if quantity <= 0:
+            return Response({'error': 'Quantity must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if quantity > item.in_use_quantity:
+            quantity = item.in_use_quantity
+
+        item.in_use_quantity = max(0, item.in_use_quantity - quantity)
+        item.available_quantity = max(0, item.total_quantity - item.in_use_quantity)
+        item.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name="Floor Staff",
+            user_role="Floor Staff",
+            action="Updated",
+            module="Inventory",
+            details=f"Returned {quantity} units of {item.item_name} ({item.item_code}) to available storage",
+            ip_address="127.0.0.1"
+        )
+
+        data = InventoryItemSerializer(item).data
+        data['message'] = f"Returned {quantity} units of {item.item_name} successfully."
+        return Response(data)

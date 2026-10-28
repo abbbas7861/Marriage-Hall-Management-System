@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Star,
@@ -16,6 +16,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { FeedbackLogEntry } from '../../types';
+import { feedbackApi } from '../../api/client';
 
 export const FeedbackReviewsModule: React.FC = () => {
   // STRICT DATA RULE: DO NOT hardcode any dummy data.
@@ -30,9 +31,29 @@ export const FeedbackReviewsModule: React.FC = () => {
   // Toast Notification State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Recent Feedback Log (STRICT DATA RULE: starts strictly as empty array [])
+  // Recent Feedback Log (starts as empty array, then fetches from API)
   const [feedbackList, setFeedbackList] = useState<FeedbackLogEntry[]>([]);
   const [selectedFeedbackModal, setSelectedFeedbackModal] = useState<FeedbackLogEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    feedbackApi.list()
+      .then((data) => {
+        if (isMounted) setFeedbackList(data);
+      })
+      .catch(() => {
+        if (isMounted) setFeedbackList([]);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -49,31 +70,48 @@ export const FeedbackReviewsModule: React.FC = () => {
     setRawNotes('');
   };
 
-  // Save Feedback: Appends new record to Recent Feedback Log
-  const handleSaveFeedback = (e: React.FormEvent) => {
+  // Save Feedback: Appends new record to Recent Feedback Log and persists to API
+  const handleSaveFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newEntry: FeedbackLogEntry = {
-      id: `FDB-${Date.now().toString().slice(-4)}`,
-      date: new Date().toLocaleDateString('en-PK', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }),
-      customerName: customerName.trim() || '[Customer Name]',
-      customerPhone: customerPhone.trim() || '[--]',
+    const payload: Partial<FeedbackLogEntry> = {
+      customerName: customerName.trim() || 'Valued Guest',
+      customerPhone: customerPhone.trim() || '',
       eventType: eventType.trim() || 'General',
       rating: rating || 5,
-      rawNotes: rawNotes.trim() || '[No notes provided]',
+      rawNotes: rawNotes.trim() || '',
+      date: new Date().toISOString().split('T')[0],
     };
 
-    setFeedbackList([newEntry, ...feedbackList]);
-    handleResetForm();
-    showToast('Feedback saved successfully!');
+    try {
+      const saved = await feedbackApi.create(payload);
+      setFeedbackList([saved, ...feedbackList]);
+      handleResetForm();
+      showToast('Feedback saved successfully!');
+    } catch {
+      // Local fallback in case of temporary network issue
+      const fallbackEntry: FeedbackLogEntry = {
+        id: `FDB-${Date.now().toString().slice(-4)}`,
+        date: new Date().toISOString().split('T')[0],
+        customerName: payload.customerName || 'Valued Guest',
+        customerPhone: payload.customerPhone || '',
+        eventType: payload.eventType || 'General',
+        rating: payload.rating || 5,
+        rawNotes: payload.rawNotes || '',
+      };
+      setFeedbackList([fallbackEntry, ...feedbackList]);
+      handleResetForm();
+      showToast('Feedback saved locally.');
+    }
   };
 
   // Delete from log
-  const handleDeleteEntry = (id: string) => {
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await feedbackApi.delete(id);
+    } catch {
+      // ignore
+    }
     setFeedbackList(feedbackList.filter((item) => item.id !== id));
     showToast('Feedback record deleted.');
   };

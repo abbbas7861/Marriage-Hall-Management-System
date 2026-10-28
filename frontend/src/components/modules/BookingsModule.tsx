@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { CreateBookingForm } from '../bookings/CreateBookingForm';
+import { bookingsApi } from '../../api/client';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
@@ -35,12 +36,7 @@ export const BookingsModule: React.FC = () => {
     const loadBookings = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/bookings/`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch bookings');
-        }
-
-        const data = await response.json();
+        const data = await bookingsApi.list();
         if (!isMounted) return;
         setBookings(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -75,7 +71,12 @@ export const BookingsModule: React.FC = () => {
     setViewMode('create');
   };
 
-  const handleDeleteBooking = (id: string) => {
+  const handleDeleteBooking = async (id: string) => {
+    try {
+      await bookingsApi.delete(id);
+    } catch (err) {
+      console.error('Failed to delete booking from backend:', err);
+    }
     setBookings((prev) => prev.filter((b) => b.id !== id));
     if (viewBooking?.id === id) setViewBooking(null);
   };
@@ -183,13 +184,26 @@ export const BookingsModule: React.FC = () => {
           setEditingBooking(null);
           setViewMode('table');
         }}
-        onSave={(newBooking) => {
-          if (editingBooking) {
-            setBookings((prev) =>
-              prev.map((b) => (b.id === editingBooking.id ? newBooking : b))
-            );
-          } else {
-            setBookings((prev) => [newBooking, ...prev]);
+        onSave={async (newBooking) => {
+          try {
+            if (editingBooking) {
+              const updated = await bookingsApi.update(editingBooking.id, newBooking);
+              setBookings((prev) =>
+                prev.map((b) => (b.id === editingBooking.id ? updated : b))
+              );
+            } else {
+              const created = await bookingsApi.create(newBooking);
+              setBookings((prev) => [created, ...prev]);
+            }
+          } catch (err) {
+            console.error('Error saving booking to API:', err);
+            if (editingBooking) {
+              setBookings((prev) =>
+                prev.map((b) => (b.id === editingBooking.id ? newBooking : b))
+              );
+            } else {
+              setBookings((prev) => [newBooking, ...prev]);
+            }
           }
           setEditingBooking(null);
           setViewMode('table');
@@ -261,15 +275,15 @@ export const BookingsModule: React.FC = () => {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 title="Start Date"
-                className="w-1/2 bg-transparent text-xs text-slate-700 focus:outline-none"
+                className="w-18 bg-transparent text-xs text-slate-700 focus:outline-none"
               />
-              <span className="text-slate-300 text-xs">—</span>
+              <span className="text-slate-300 text-xs">-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 title="End Date"
-                className="w-1/2 bg-transparent text-xs text-slate-700 focus:outline-none"
+                className="w-18 bg-transparent text-xs text-slate-700 focus:outline-none"
               />
             </div>
 
