@@ -192,7 +192,7 @@ export const EventsModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Add Event Type</span>
+            <span>Add Event Type</span>
           </button>
         </div>
       </div>
@@ -290,7 +290,7 @@ export const EventsModule: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add Event Type</span>
+              <span>Add Event Type</span>
             </button>
           </div>
 

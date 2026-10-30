@@ -72,26 +72,38 @@ class SystemSettingView(APIView):
 def get_dashboard_data():
     today = timezone.now().date()
     current_year = today.year
+    first_day_of_month = today.replace(day=1)
 
     # 1. Total Bookings
     total_bookings = Booking.objects.count()
 
-    # 2. Hall Occupancy
+    # 2. Total Active Halls & Today's Hall Occupancy
     total_halls = Hall.objects.filter(status='Active').count()
     today_bookings = Booking.objects.filter(date=today, status__in=['Confirmed', 'Completed']).count()
     hall_occupancy = round((today_bookings / total_halls * 100), 1) if total_halls > 0 else 0.0
 
-    # 3. Pending Payments (from Unpaid/Partial Invoices)
+    # 3. Month-to-date Revenue (MTD)
+    mtd_invoices = InvoiceRecord.objects.filter(date__gte=first_day_of_month, date__lte=today)
+    mtd_revenue = float(mtd_invoices.aggregate(s=Sum('paid_amount'))['s'] or 0)
+    if mtd_revenue == 0:
+        mtd_bookings = Booking.objects.filter(date__gte=first_day_of_month, date__lte=today, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
+        mtd_revenue = float(mtd_bookings.aggregate(s=Sum('advance_payment'))['s'] or 0)
+
+    # Total Year Revenue
+    year_bookings = Booking.objects.filter(date__year=current_year, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
+    total_year_revenue = float(year_bookings.aggregate(s=Sum('amount'))['s'] or 0)
+
+    # 4. Pending Payments (Accounts Receivable from Unpaid/Partial Invoices)
     pending_invoices = InvoiceRecord.objects.filter(payment_status__in=['Unpaid', 'Partial'])
     pending_payments_amount = float(pending_invoices.aggregate(total=Sum('remaining_balance'))['total'] or 0)
     pending_count = pending_invoices.count()
 
-    # 4. Upcoming Events (next 7 days)
+    # 5. Upcoming Events (next 7 days)
     seven_days_later = today + timedelta(days=7)
     upcoming_bookings_qs = Booking.objects.filter(date__gte=today, date__lte=seven_days_later, status__in=['Confirmed', 'Pending'])
     upcoming_events_count = upcoming_bookings_qs.count()
 
-    # Revenue Trends (Grouped by Quarter)
+    # 6. Monthly / Quarterly Revenue Trends
     quarters = [
         ('Q1', [1, 2, 3]),
         ('Q2', [4, 5, 6]),
@@ -113,7 +125,7 @@ def get_dashboard_data():
 
     # Donut Chart: Bookings distribution by Hall
     halls = Hall.objects.all()
-    hall_colors = ['#00685f', '#316bf3', '#d97706', '#94a3b8', '#8b5cf6']
+    hall_colors = ['#00685f', '#316bf3', '#d97706', '#94a3b8', '#8b5cf6', '#ec4899']
     occupancy_slices = []
     for idx, hall in enumerate(halls):
         b_count = Booking.objects.filter(hall_name__iexact=hall.name).count()
@@ -128,8 +140,11 @@ def get_dashboard_data():
     recent_txns = PaymentTransaction.objects.order_by('-created_at')[:5]
 
     return {
+        'totalHalls': total_halls,
         'totalBookings': total_bookings,
         'hallOccupancy': hall_occupancy,
+        'mtdRevenue': mtd_revenue,
+        'totalYearRevenue': total_year_revenue,
         'pendingPayments': pending_payments_amount,
         'pendingInvoicesCount': pending_count,
         'upcomingEventsCount': upcoming_events_count,
@@ -150,8 +165,11 @@ class DashboardStatsView(APIView):
     def get(self, request):
         data = get_dashboard_data()
         return Response({
+            'totalHalls': data['totalHalls'],
             'totalBookings': data['totalBookings'],
             'hallOccupancy': data['hallOccupancy'],
+            'mtdRevenue': data['mtdRevenue'],
+            'totalYearRevenue': data['totalYearRevenue'],
             'pendingPayments': data['pendingPayments'],
             'pendingInvoicesCount': data['pendingInvoicesCount'],
             'upcomingEventsCount': data['upcomingEventsCount'],

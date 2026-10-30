@@ -35,6 +35,33 @@ class BookingSerializer(serializers.ModelSerializer):
             'menuPackage', 'specialInstructions', 'extraHours', 'ratePerHour'
         ]
 
+    def validate(self, attrs):
+        hall_name = attrs.get('hall_name') or (self.instance.hall_name if self.instance else None)
+        date_val = attrs.get('date') or (self.instance.date if self.instance else None)
+        time_val = attrs.get('time') or (self.instance.time if self.instance else None)
+        slot_val = attrs.get('slot') or (self.instance.slot if self.instance else None)
+
+        date_str = str(date_val) if date_val else None
+        status_val = attrs.get('status') or (self.instance.status if self.instance else 'Confirmed')
+
+        if status_val not in ['Cancelled', 'Rejected'] and hall_name and date_str:
+            from .availability import check_hall_availability
+            is_avail, error_msg, details = check_hall_availability(
+                hall_name=hall_name,
+                date_str=date_str,
+                time_str=time_val,
+                slot_str=slot_val,
+                exclude_booking_id=self.instance.id if self.instance else None
+            )
+            if not is_avail:
+                raise serializers.ValidationError({
+                    'non_field_errors': [error_msg],
+                    'conflict': True,
+                    'details': error_msg
+                })
+
+        return super().validate(attrs)
+
     def create(self, validated_data):
         if not validated_data.get('booking_ref'):
             ref_num = random.randint(10000, 99999)

@@ -600,7 +600,7 @@ export const SettingsModule: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-2xs cursor-pointer w-fit"
                 >
                   <Plus className="w-3.5 h-3.5 text-teal-700" />
-                  <span>+ Add Custom Role</span>
+                  <span>Add Custom Role</span>
                 </button>
               </div>
 

@@ -9,9 +9,9 @@
 ## 📌 Status Summary
 - **Total Phases:** 7
 - **Total Subtasks:** 32
-- **Completed:** 4 (Phase 1: 100% Complete)
+- **Completed:** 11 (Phase 1: 100%, Phase 2: 100%)
 - **In Progress:** 0
-- **Pending:** 28
+- **Pending:** 21
 
 ---
 
@@ -41,42 +41,42 @@
 
 ---
 
-## Phase 2: 👑 Admin (Owner) Master Suite
+## Phase 2: 👑 Admin (Owner) Master Suite (Completed)
 
-- [ ] **Task 2.1: Admin Executive Overview Tab**
-  - [ ] Live KPI Cards: Total Active Halls, Bookings Count, Today's Occupancy %, Month-to-date Revenue, Outstanding Receivables.
-  - [ ] Visual trajectory charts for sales velocity and multi-hall occupancy distribution.
-  - [ ] Quick links to Hall Creation, User Management, and Financial Statements.
+- [x] **Task 2.1: Admin Executive Overview Tab**
+  - [x] Live KPI Cards: Total Active Halls, Bookings Count, Today's Occupancy %, Month-to-date Revenue, Outstanding Receivables.
+  - [x] Visual trajectory charts for sales velocity and multi-hall occupancy distribution.
+  - [x] Quick links to Hall Creation, User Management, and Financial Statements.
 
-- [ ] **Task 2.2: Halls Registry & Morning/Evening Slot Calendar Tab**
-  - [ ] Wire full CRUD for halls with capacity tiers, base rent, and facility tags to SQLite backend.
-  - [ ] Implement dual-slot calendar engine: Morning/Afternoon (*12:00 PM – 04:00 PM*) vs. Evening/Dinner (*07:00 PM – 11:30 PM*).
-  - [ ] Real-time slot collision detection preventing double-bookings.
+- [x] **Task 2.2: Halls Registry & Morning/Evening Slot Calendar Tab**
+  - [x] Wire full CRUD for halls with capacity tiers, base rent, and facility tags to SQLite backend.
+  - [x] Implement dual-slot calendar engine: Morning/Afternoon (*12:00 PM – 04:00 PM*) vs. Evening/Dinner (*07:00 PM – 11:30 PM*).
+  - [x] Real-time slot collision detection preventing double-bookings.
 
-- [ ] **Task 2.3: Bookings Master Ledger & Branded Contract PDF Tab**
-  - [ ] Unified booking contract intake with customer details, CNIC, and event selections.
-  - [ ] Real-time availability verification before booking confirmation.
-  - [ ] Branded PDF/Printable Booking Contract generation featuring hall terms, sound curfews, payment schedules, and signature blocks.
+- [x] **Task 2.3: Bookings Master Ledger & Branded Contract PDF Tab**
+  - [x] Unified booking contract intake with customer details, CNIC, and event selections.
+  - [x] Real-time availability verification before booking confirmation.
+  - [x] Branded PDF/Printable Booking Contract generation featuring hall terms, sound curfews, payment schedules, and signature blocks.
 
-- [ ] **Task 2.4: User & Staff Directory Tab (Salaries & RBAC Rights)**
-  - [ ] Staff and worker personnel directory (Managers, Waiters, Chefs, Cleaners, Helpers).
-  - [ ] Monthly salary configuration and disbursement status tracking.
-  - [ ] Role-Based Access Control (RBAC) editor: assign permissions per user role (e.g., allow specific managers to access vendors).
+- [x] **Task 2.4: User & Staff Directory Tab (Salaries & RBAC Rights)**
+  - [x] Staff and worker personnel directory (Managers, Waiters, Chefs, Cleaners, Helpers).
+  - [x] Monthly salary configuration and disbursement status tracking.
+  - [x] Role-Based Access Control (RBAC) editor: assign permissions per user role (e.g., allow specific managers to access vendors).
 
-- [ ] **Task 2.5: Operational Expenses & Claim Approvals Tab**
-  - [ ] Working modal to file operational venue expenses (utilities, floral decor, stage repairs, fuel).
-  - [ ] Manager submission vs. Admin approval workflow with status (`Pending`, `Approved`, `Settled`).
-  - [ ] Auto-integration with General Ledger and cash disbursement records.
+- [x] **Task 2.5: Operational Expenses & Claim Approvals Tab**
+  - [x] Working modal to file operational venue expenses (utilities, floral decor, stage repairs, fuel).
+  - [x] Manager submission vs. Admin approval workflow with status (`Pending`, `Approved`, `Settled`).
+  - [x] Auto-integration with General Ledger and cash disbursement records.
 
-- [ ] **Task 2.6: Periodic Closings Tab (Day, Week, Month, Fiscal Year)**
-  - [ ] Daily register closing summary: cash in hand, digital receipts, payments disbursed, net balance.
-  - [ ] Weekly and monthly audit roll-ups.
-  - [ ] Fiscal year-end closing ledger with lock-out archive.
+- [x] **Task 2.6: Periodic Closings Tab (Day, Week, Month, Fiscal Year)**
+  - [x] Daily register closing summary: cash in hand, digital receipts, payments disbursed, net balance.
+  - [x] Weekly and monthly audit roll-ups.
+  - [x] Fiscal year-end closing ledger with lock-out archive.
 
-- [ ] **Task 2.7: Dynamic FBR Digital Invoicing & System Settings Tab**
-  - [ ] Venue business profile editor (Logo, business name, address, tax NTN/STRN).
-  - [ ] Dynamic FBR integration panel (POS ID, Client ID, Client Secret, PRAL endpoint toggle).
-  - [ ] Keep FBR **dormant by default** until credentials are provided and validated.
+- [x] **Task 2.7: Dynamic FBR Digital Invoicing & System Settings Tab**
+  - [x] Venue business profile editor (Logo, business name, address, tax NTN/STRN).
+  - [x] Dynamic FBR integration panel (POS ID, Client ID, Client Secret, PRAL endpoint toggle).
+  - [x] Keep FBR **dormant by default** until credentials are provided and validated.
 
 ---
 

@@ -136,10 +136,10 @@ export const ReportsModule: React.FC = () => {
                 className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
               >
                 <option value="All Halls">All Halls / Venues</option>
-                <option value="Hall 1 (Royal Crystal)">Hall 1 (Royal Crystal)</option>
-                <option value="Hall 2 (Grand Imperial)">Hall 2 (Grand Imperial)</option>
-                <option value="Hall 3 (Emerald Pavilion)">Hall 3 (Emerald Pavilion)</option>
-                <option value="Hall 4 (Sapphire Banquet)">Hall 4 (Sapphire Banquet)</option>
+                <option value="Grand Crystal Ballroom">Grand Crystal Ballroom (HL-01)</option>
+                <option value="Royal Emerald Hall">Royal Emerald Hall (HL-02)</option>
+                <option value="Sapphire Banquet">Sapphire Banquet (HL-03)</option>
+                <option value="Imperial Courtyard Lawn">Imperial Courtyard Lawn (HL-04)</option>
               </select>
             </div>
           </div>
@@ -358,19 +358,19 @@ export const ReportsModule: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
-                <span>Hall 1 (Royal Crystal): [--]</span>
+                <span>Grand Crystal Ballroom: [--]</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-                <span>Hall 2 (Grand Imperial): [--]</span>
+                <span>Royal Emerald Hall: [--]</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-slate-800" />
-                <span>Hall 3 (Emerald Pavilion): [--]</span>
+                <span>Sapphire Banquet: [--]</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                <span>Hall 4 (Sapphire Banquet): [--]</span>
+                <span>Imperial Courtyard Lawn: [--]</span>
               </div>
             </div>
           </div>

@@ -626,7 +626,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-700"></span>
-                <span className="text-slate-800 font-medium">[Grand Ballroom]</span>
+                <span className="text-slate-800 font-medium">Grand Crystal Ballroom</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
@@ -634,7 +634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <span className="text-slate-800 font-medium">[Crystal Pavilion]</span>
+                <span className="text-slate-800 font-medium">Royal Emerald Hall</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
@@ -642,15 +642,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
-                <span className="text-slate-800 font-medium">[Royal Banquet]</span>
+                <span className="text-slate-800 font-medium">Sapphire Banquet</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
 
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                <span className="text-slate-800 font-medium">[Garden Lawn]</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                <span className="text-slate-800 font-medium">Imperial Courtyard Lawn</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>

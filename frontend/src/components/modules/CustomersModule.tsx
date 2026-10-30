@@ -233,7 +233,7 @@ export const CustomersModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <UserPlus className="w-4 h-4 stroke-[2.2]" />
-            <span>+ Add New Customer</span>
+            <span>Add New Customer</span>
           </button>
         </div>
       </div>
@@ -323,7 +323,7 @@ export const CustomersModule: React.FC = () => {
                           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
                         >
                           <UserPlus className="w-4 h-4 stroke-[2.2]" />
-                          <span>+ Add New Customer</span>
+                          <span>Add New Customer</span>
                         </button>
                       </div>
 

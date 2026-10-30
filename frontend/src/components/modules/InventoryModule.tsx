@@ -249,7 +249,7 @@ export const InventoryModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add Inventory Item</span>
+            <span>Add Inventory Item</span>
           </button>
         </div>
       </div>
@@ -416,7 +416,7 @@ export const InventoryModule: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add Inventory Item</span>
+              <span>Add Inventory Item</span>
             </button>
 
             {/* Structural Table Skeleton Placeholder for No-Mock-Data Rule */}
@@ -723,7 +723,7 @@ export const InventoryModule: React.FC = () => {
                     type="text"
                     value={formStorageLocation}
                     onChange={(e) => setFormStorageLocation(e.target.value)}
-                    placeholder="[e.g., Hall 1 Storage Room]"
+                    placeholder="[e.g., Grand Crystal Ballroom Storage Room]"
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                   />
                 </div>
@@ -803,7 +803,7 @@ export const InventoryModule: React.FC = () => {
                   type="text"
                   value={issueEventName}
                   onChange={(e) => setIssueEventName(e.target.value)}
-                  placeholder="[e.g., Barat - Hall 1 (Royal Crystal)]"
+                  placeholder="[e.g., Barat - Grand Crystal Ballroom]"
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>

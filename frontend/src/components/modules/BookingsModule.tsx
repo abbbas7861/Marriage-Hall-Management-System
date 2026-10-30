@@ -20,15 +20,51 @@ import {
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { CreateBookingForm } from '../bookings/CreateBookingForm';
-import { bookingsApi } from '../../api/client';
+import { BookingContractModal } from '../bookings/BookingContractModal';
+import { bookingsApi, hallsApi } from '../../api/client';
+import { CANONICAL_HALLS } from '../../constants/halls';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 
-export const BookingsModule: React.FC = () => {
+interface BookingsModuleProps {
+  initialCreateData?: {
+    hallName?: string;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+  } | null;
+  initialMode?: 'table' | 'create';
+}
+
+export const BookingsModule: React.FC<BookingsModuleProps> = ({
+  initialCreateData,
+  initialMode = 'table',
+}) => {
   // STRICT DATA RULE: DO NOT hardcode any dummy data. All data must start as an empty array.
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'table' | 'create'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'create'>(initialMode);
+  const [hallsList, setHallsList] = useState<Array<{ id?: string; name: string }>>(CANONICAL_HALLS);
+
+  useEffect(() => {
+    setViewMode(initialMode);
+  }, [initialMode, initialCreateData]);
+
+  useEffect(() => {
+    let isMounted = true;
+    hallsApi.list().then((data) => {
+      if (!isMounted) return;
+      if (Array.isArray(data) && data.length > 0) {
+        setHallsList(data);
+      }
+    }).catch(() => {
+      // Keep CANONICAL_HALLS fallback
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,6 +101,7 @@ export const BookingsModule: React.FC = () => {
   // Details Modal & Edit State
   const [viewBooking, setViewBooking] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [contractBooking, setContractBooking] = useState<Booking | null>(null);
 
   const handleOpenEdit = (booking: Booking) => {
     setEditingBooking(booking);
@@ -180,6 +217,10 @@ export const BookingsModule: React.FC = () => {
     return (
       <CreateBookingForm
         initialBooking={editingBooking}
+        initialHall={initialCreateData?.hallName}
+        initialDate={initialCreateData?.date}
+        initialStartTime={initialCreateData?.startTime}
+        initialEndTime={initialCreateData?.endTime}
         onCancel={() => {
           setEditingBooking(null);
           setViewMode('table');
@@ -195,18 +236,13 @@ export const BookingsModule: React.FC = () => {
               const created = await bookingsApi.create(newBooking);
               setBookings((prev) => [created, ...prev]);
             }
-          } catch (err) {
+            setEditingBooking(null);
+            setViewMode('table');
+          } catch (err: any) {
             console.error('Error saving booking to API:', err);
-            if (editingBooking) {
-              setBookings((prev) =>
-                prev.map((b) => (b.id === editingBooking.id ? newBooking : b))
-              );
-            } else {
-              setBookings((prev) => [newBooking, ...prev]);
-            }
+            const errMsg = err?.message || 'A scheduling collision or turnover buffer conflict prevents saving this booking.';
+            alert(`Booking Submission Blocked: ${errMsg}`);
           }
-          setEditingBooking(null);
-          setViewMode('table');
         }}
       />
     );
@@ -239,7 +275,7 @@ export const BookingsModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#005049] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Create New Booking</span>
+            <span>Create New Booking</span>
           </button>
         </div>
       </div>
@@ -294,13 +330,14 @@ export const BookingsModule: React.FC = () => {
                 <select
                   value={selectedHall}
                   onChange={(e) => setSelectedHall(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer font-medium"
                 >
                   <option value="All Halls">Select Hall: All Halls</option>
-                  <option value="Grand Ballroom">Grand Ballroom</option>
-                  <option value="Crystal Pavilion">Crystal Pavilion</option>
-                  <option value="Royal Banquet Hall">Royal Banquet Hall</option>
-                  <option value="Garden Lawn Complex">Garden Lawn Complex</option>
+                  {hallsList.map((h) => (
+                    <option key={h.id || h.name} value={h.name}>
+                      {h.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -379,7 +416,7 @@ export const BookingsModule: React.FC = () => {
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#005049] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                         >
                           <Plus className="w-4 h-4 stroke-[2.5]" />
-                          <span>+ Create New Booking</span>
+                          <span>Create New Booking</span>
                         </button>
                       </div>
 
@@ -430,18 +467,18 @@ export const BookingsModule: React.FC = () => {
                     <td className="py-3.5 px-4 font-medium text-slate-800">
                       <div className="flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5 text-teal-700" />
-                        <span>[{booking.hallName}]</span>
+                        <span>{booking.hallName}</span>
                       </div>
                     </td>
 
-                    {/* Event Date & Time */}
+                    {/* Event Date & Time (12-Hour AM/PM Format) */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
-                        <span className="font-mono text-slate-800 font-semibold">
-                          [{booking.date}]
+                        <span className="font-mono text-slate-800 font-semibold text-xs">
+                          {booking.date}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          [{booking.time || booking.slot}]
+                        <span className="text-[11px] text-teal-800 font-mono font-medium mt-0.5">
+                          {formatTo12Hour(booking.time || booking.slot)}
                         </span>
                       </div>
                     </td>
@@ -456,9 +493,18 @@ export const BookingsModule: React.FC = () => {
                       {getPaymentBadge(booking.paymentStatus)}
                     </td>
 
-                    {/* Actions (View, Edit, Delete) */}
+                    {/* Actions (Contract, View, Edit, Delete) */}
                     <td className="py-3.5 px-4 text-right">
                       <div className="inline-flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setContractBooking(booking)}
+                          title="Generate Branded Contract PDF"
+                          className="px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <FileQuestion className="w-3 h-3 text-amber-600" />
+                          <span>PDF</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => setViewBooking(booking)}
@@ -560,7 +606,7 @@ export const BookingsModule: React.FC = () => {
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Date &amp; Time:</span>
-                <span className="font-mono text-slate-800">{viewBooking.date} • {viewBooking.time || viewBooking.slot}</span>
+                <span className="font-mono text-slate-800">{viewBooking.date} • {formatTo12Hour(viewBooking.time || viewBooking.slot)}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Status:</span>
@@ -578,7 +624,18 @@ export const BookingsModule: React.FC = () => {
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const b = viewBooking;
+                  setViewBooking(null);
+                  setContractBooking(b);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold"
+              >
+                Print Contract PDF
+              </button>
               <button
                 type="button"
                 onClick={() => setViewBooking(null)}
@@ -589,6 +646,14 @@ export const BookingsModule: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Branded Contract PDF Modal */}
+      {contractBooking && (
+        <BookingContractModal
+          booking={contractBooking}
+          onClose={() => setContractBooking(null)}
+        />
       )}
 
     </div>

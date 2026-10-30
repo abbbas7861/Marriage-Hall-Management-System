@@ -327,7 +327,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>+ Add Staff</span>
+                <span>Add Staff</span>
               </button>
             ) : (
               <button
@@ -336,7 +336,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <Store className="w-4 h-4" />
-                <span>+ Add Vendor</span>
+                <span>Add Vendor</span>
               </button>
             )}
           </div>
@@ -467,7 +467,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>+ Add Staff</span>
+                <span>Add Staff</span>
               </button>
 
               {/* Structural Placeholder Schema Preview */}
@@ -669,7 +669,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <Store className="w-4 h-4" />
-                <span>+ Add Vendor</span>
+                <span>Add Vendor</span>
               </button>
 
               {/* Structural Placeholder Schema Preview */}

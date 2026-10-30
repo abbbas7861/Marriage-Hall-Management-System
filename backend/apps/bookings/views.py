@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime, timedelta
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -49,46 +50,36 @@ class BookingViewSet(viewsets.ModelViewSet):
         hall_name = params.get('hall') or params.get('hall_name') or params.get('hallName')
         date_str = params.get('date') or params.get('startDate')
         slot = params.get('slot')
+        start_time_str = params.get('startTime') or params.get('start_time')
+        end_time_str = params.get('endTime') or params.get('end_time')
+        exclude_id = params.get('excludeId') or params.get('exclude_id')
 
         if not hall_name or not date_str:
             return Response({'error': 'hall and date are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check existing bookings
-        bookings_qs = Booking.objects.filter(
-            hall_name__iexact=hall_name,
-            date=date_str,
-            status__in=['Confirmed', 'Pending']
+        from .availability import check_hall_availability
+        is_avail, error_msg, details = check_hall_availability(
+            hall_name=hall_name,
+            date_str=date_str,
+            start_time_str=start_time_str,
+            end_time_str=end_time_str,
+            slot_str=slot,
+            exclude_booking_id=exclude_id
         )
-        if slot:
-            bookings_qs = bookings_qs.filter(models.Q(slot__iexact=slot) | models.Q(slot=''))
 
-        existing_booking = bookings_qs.first()
-
-        if existing_booking:
-            msg = f"Hall is already booked by {existing_booking.customer_name} ({existing_booking.booking_ref})"
+        if not is_avail:
             return Response({
                 'available': False,
-                'conflict': msg,
-                'conflictType': 'Booking',
-                'details': msg
+                'conflict': error_msg,
+                'conflictType': details.get('conflictType', 'Conflict'),
+                'details': error_msg,
+                'existingBooking': details.get('existingBooking'),
             })
 
-        # Check maintenance blocks
-        blocked = BlockedDate.objects.filter(
-            start_date__lte=date_str,
-            end_date__gte=date_str
-        ).filter(models.Q(hall_name='All Halls') | models.Q(hall_name__iexact=hall_name)).first()
-
-        if blocked:
-            msg = f"Hall is blocked for maintenance: {blocked.reason}"
-            return Response({
-                'available': False,
-                'conflict': msg,
-                'conflictType': 'Maintenance',
-                'details': msg
-            })
-
-        return Response({'available': True, 'details': 'Hall is available for reservation.'})
+        return Response({
+            'available': True,
+            'details': f"Hall '{hall_name}' is available on {date_str} with 1-hour cleaning turnaround.",
+        })
 
     @action(detail=False, methods=['get', 'post'], url_path='check-availability')
     def check_availability_dash(self, request):

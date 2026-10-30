@@ -117,6 +117,57 @@ class MHMSEnterpriseAPITests(TestCase):
         self.assertEqual(res2.status_code, status.HTTP_200_OK)
         self.assertFalse(res2.data["available"])
 
+    def test_duplicate_booking_and_buffer_rejected_by_api(self):
+        event_date = str(date.today() + timedelta(days=25))
+        # 1. Create first booking: 01:00 PM to 05:00 PM
+        res1 = self.client.post('/api/v1/bookings/', {
+            'customerName': 'First Client',
+            'eventType': 'Barat',
+            'hallName': self.hall.name,
+            'date': event_date,
+            'time': '01:00 PM – 05:00 PM',
+            'slot': '01:00 PM – 05:00 PM',
+            'amount': 300000,
+        }, format='json')
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+
+        # 2. Attempt duplicate booking at exact same time: MUST FAIL with 400
+        res2 = self.client.post('/api/v1/bookings/', {
+            'customerName': 'Duplicate Client',
+            'eventType': 'Barat',
+            'hallName': self.hall.name,
+            'date': event_date,
+            'time': '01:00 PM – 05:00 PM',
+            'slot': '01:00 PM – 05:00 PM',
+            'amount': 300000,
+        }, format='json')
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('conflict' in str(res2.data).lower() or 'already booked' in str(res2.data).lower())
+
+        # 3. Attempt booking within 1-hour cleaning buffer (e.g. 05:30 PM to 09:30 PM, buffer is until 06:00 PM): MUST FAIL with 400
+        res3 = self.client.post('/api/v1/bookings/', {
+            'customerName': 'Buffer Violating Client',
+            'eventType': 'Walima',
+            'hallName': self.hall.name,
+            'date': event_date,
+            'time': '05:30 PM – 09:30 PM',
+            'slot': '05:30 PM – 09:30 PM',
+            'amount': 300000,
+        }, format='json')
+        self.assertEqual(res3.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # 4. Attempt booking cleanly outside buffer (06:00 PM to 10:00 PM): MUST SUCCEED with 201
+        res4 = self.client.post('/api/v1/bookings/', {
+            'customerName': 'Valid Evening Client',
+            'eventType': 'Walima',
+            'hallName': self.hall.name,
+            'date': event_date,
+            'time': '06:00 PM – 10:00 PM',
+            'slot': '06:00 PM – 10:00 PM',
+            'amount': 300000,
+        }, format='json')
+        self.assertEqual(res4.status_code, status.HTTP_201_CREATED)
+
     def test_inventory_issue(self):
         res = self.client.post(f'/api/v1/inventory/{self.item.id}/issue/', {'quantity': 30, 'bookingRef': 'BK-100'}, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)

@@ -14,18 +14,21 @@ from .auth_views import (
     LoginView,
     CurrentUserView,
     LogoutView,
+    UserDirectoryViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'audit-logs', AuditLogEntryViewSet, basename='audit-log')
 
 urlpatterns = [
-    # Auth endpoints
+    # Auth & User Directory endpoints
     path('auth/has-admin/', HasAdminView.as_view(), name='auth-has-admin'),
     path('auth/register-admin/', AdminRegisterView.as_view(), name='auth-register-admin'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/me/', CurrentUserView.as_view(), name='auth-me'),
     path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
+    path('auth/users/', UserDirectoryViewSet.as_view(), name='auth-users'),
+    path('auth/users/<int:pk>/', UserDirectoryViewSet.as_view(), name='auth-user-detail'),
 
     # Existing endpoints
     path('settings/', SystemSettingView.as_view(), name='system-settings'),

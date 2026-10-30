@@ -149,9 +149,46 @@ export const bookingsApi = {
     await request(`bookings/${id}`, { method: 'DELETE' });
   },
 
-  async checkAvailability(hall: string, date: string, slot?: string): Promise<{ available: boolean; conflict?: any }> {
-    const query = new URLSearchParams({ hall, date });
-    if (slot) query.set('slot', slot);
+  async checkAvailability(
+    paramsOrHall: string | { hall: string; date: string; slot?: string; startTime?: string; endTime?: string; excludeId?: string },
+    date?: string,
+    slot?: string,
+    startTime?: string,
+    endTime?: string
+  ): Promise<{
+    available: boolean;
+    conflict?: string;
+    details?: string;
+    conflictType?: string;
+    existingBooking?: any;
+  }> {
+    let hallVal = '';
+    let dateVal = '';
+    let slotVal = slot;
+    let startVal = startTime;
+    let endVal = endTime;
+    let excludeIdVal: string | undefined;
+
+    if (typeof paramsOrHall === 'object') {
+      hallVal = paramsOrHall.hall;
+      dateVal = paramsOrHall.date;
+      slotVal = paramsOrHall.slot;
+      startVal = paramsOrHall.startTime;
+      endVal = paramsOrHall.endTime;
+      excludeIdVal = paramsOrHall.excludeId;
+    } else {
+      hallVal = paramsOrHall;
+      dateVal = date || '';
+    }
+
+    const query = new URLSearchParams();
+    if (hallVal) query.set('hall', hallVal);
+    if (dateVal) query.set('date', dateVal);
+    if (slotVal) query.set('slot', slotVal);
+    if (startVal) query.set('startTime', startVal);
+    if (endVal) query.set('endTime', endVal);
+    if (excludeIdVal) query.set('excludeId', excludeIdVal);
+
     return request(`bookings/check_availability?${query.toString()}`);
   },
 };
@@ -386,6 +423,12 @@ export const financeApi = {
   },
 };
 
+export const expensesApi = {
+  list: financeApi.listExpenses,
+  create: financeApi.createExpense,
+  delete: financeApi.deleteExpense,
+};
+
 // -------------------------------------------------------------
 // Workforce API (Staff & Vendors)
 // -------------------------------------------------------------
@@ -609,5 +652,37 @@ export const authApi = {
       localStorage.removeItem('mhms_auth_token');
       localStorage.removeItem('mhms_user');
     }
+  },
+
+  async listUsers(): Promise<any[]> {
+    return request<any[]>('auth/users');
+  },
+
+  async createUser(payload: {
+    username: string;
+    password: string;
+    role: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    salary?: number;
+  }): Promise<any> {
+    return request<any>('auth/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateUser(id: number | string, payload: any): Promise<any> {
+    return request<any>(`auth/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async deleteUser(id: number | string): Promise<any> {
+    return request<any>(`auth/users/${id}`, {
+      method: 'DELETE',
+    });
   },
 };

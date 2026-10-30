@@ -295,7 +295,7 @@ export const HallsModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Add New Hall</span>
+            <span>Add New Hall</span>
           </button>
         </div>
       </div>
@@ -417,7 +417,7 @@ export const HallsModule: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add New Hall</span>
+              <span>Add New Hall</span>
             </button>
           </div>
 
@@ -638,7 +638,7 @@ export const HallsModule: React.FC = () => {
                   type="text"
                   value={formHallName}
                   onChange={(e) => setFormHallName(e.target.value)}
-                  placeholder="[Enter Hall Name e.g., Grand Ballroom]"
+                  placeholder="[Enter Hall Name e.g., Grand Crystal Ballroom]"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                   required
                 />

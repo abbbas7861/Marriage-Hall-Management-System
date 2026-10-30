@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Calendar,
@@ -11,33 +11,44 @@ import {
   X,
   Plus,
   AlertCircle,
+  AlertTriangle,
   Calculator,
   ShieldCheck,
   Check,
 } from 'lucide-react';
 import { Booking } from '../../types';
+import { formatTo12Hour } from '../../utils/timeFormat';
+import { hallsApi, bookingsApi } from '../../api/client';
+import { CANONICAL_HALLS } from '../../constants/halls';
 
 interface CreateBookingFormProps {
   onCancel: () => void;
   onSave: (booking: Booking) => void;
   initialBooking?: Booking | null;
+  initialHall?: string;
+  initialDate?: string;
+  initialStartTime?: string;
+  initialEndTime?: string;
 }
 
 export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
   onCancel,
   onSave,
   initialBooking,
+  initialHall,
+  initialDate,
+  initialStartTime,
+  initialEndTime,
 }) => {
-  // STRICT DATA RULE: ALL inputs must be completely empty by default.
-  // No prefilled dummy numbers, names, or dates.
+  // STRICT DATA RULE: ALL inputs must be completely empty by default unless passed explicitly from Calendar/Context.
   const [fullName, setFullName] = useState(initialBooking?.customerName || '');
   const [phone, setPhone] = useState(initialBooking?.contactRef || '');
   const [cnic, setCnic] = useState('');
   const [address, setAddress] = useState('');
 
   const [eventType, setEventType] = useState(initialBooking?.eventType || '');
-  const [hallVenue, setHallVenue] = useState(initialBooking?.hallName || '');
-  const [eventDate, setEventDate] = useState(initialBooking?.date || '');
+  const [hallVenue, setHallVenue] = useState(initialBooking?.hallName || initialHall || '');
+  const [eventDate, setEventDate] = useState(initialBooking?.date || initialDate || '');
   const [expectedGuests, setExpectedGuests] = useState(
     initialBooking?.guestCount ? String(initialBooking.guestCount) : ''
   );
@@ -46,8 +57,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
   const [menuPackage, setMenuPackage] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
 
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [startTime, setStartTime] = useState(initialStartTime || '');
+  const [endTime, setEndTime] = useState(initialEndTime || '');
   const [extraHours, setExtraHours] = useState('');
   const [ratePerHour, setRatePerHour] = useState('');
 
@@ -57,6 +68,108 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
   const [advancePayment, setAdvancePayment] = useState('');
 
   const [validationError, setValidationError] = useState('');
+  const [conflictError, setConflictError] = useState<string | null>(null);
+  const [conflictDetails, setConflictDetails] = useState<any | null>(null);
+  const [isCheckingConflict, setIsCheckingConflict] = useState(false);
+  const [toastNotification, setToastNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+
+  const showToast = (message: string, type: 'error' | 'success' = 'error') => {
+    setToastNotification({ message, type });
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 7000);
+  };
+
+  const [hallsList, setHallsList] = useState<Array<{ id?: string; code?: string; name: string; capacity?: number }>>(CANONICAL_HALLS);
+
+  // Load backend halls dynamically with canonical fallback
+  useEffect(() => {
+    let isMounted = true;
+    hallsApi.list().then((data) => {
+      if (!isMounted) return;
+      if (Array.isArray(data) && data.length > 0) {
+        setHallsList(data);
+      }
+    }).catch(() => {
+      // Keep CANONICAL_HALLS fallback
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Synchronize incoming preload props
+  useEffect(() => {
+    if (initialHall) {
+      setHallVenue(initialHall);
+    }
+  }, [initialHall]);
+
+  useEffect(() => {
+    if (initialDate) {
+      setEventDate(initialDate);
+    }
+  }, [initialDate]);
+
+  useEffect(() => {
+    if (initialStartTime) {
+      setStartTime(initialStartTime);
+    }
+  }, [initialStartTime]);
+
+  useEffect(() => {
+    if (initialEndTime) {
+      setEndTime(initialEndTime);
+    }
+  }, [initialEndTime]);
+
+  // LIVE REAL-TIME CONFLICT & 1-HOUR TURNOVER MARGIN DETECTION
+  useEffect(() => {
+    let isCancelled = false;
+
+    const runAvailabilityCheck = async () => {
+      if (!hallVenue || !eventDate) {
+        setConflictError(null);
+        setConflictDetails(null);
+        return;
+      }
+
+      setIsCheckingConflict(true);
+      try {
+        const res = await bookingsApi.checkAvailability({
+          hall: hallVenue,
+          date: eventDate,
+          startTime: startTime || undefined,
+          endTime: endTime || undefined,
+          excludeId: initialBooking?.id,
+        });
+
+        if (isCancelled) return;
+
+        if (!res.available) {
+          const errMsg = res.conflict || res.details || `Conflict: Hall '${hallVenue}' is unavailable on ${eventDate}.`;
+          setConflictError(errMsg);
+          setConflictDetails(res);
+          showToast(errMsg, 'error');
+        } else {
+          setConflictError(null);
+          setConflictDetails(null);
+        }
+      } catch (err) {
+        console.error('Real-time conflict check failed:', err);
+      } finally {
+        if (!isCancelled) {
+          setIsCheckingConflict(false);
+        }
+      }
+    };
+
+    const debounceTimer = setTimeout(runAvailabilityCheck, 300);
+    return () => {
+      isCancelled = true;
+      clearTimeout(debounceTimer);
+    };
+  }, [hallVenue, eventDate, startTime, endTime, initialBooking?.id]);
 
   // Calculations
   const calculatedExtraCharges = React.useMemo(() => {
@@ -78,24 +191,63 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
     return null;
   }, [totalBookingAmount, advancePayment]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Required field validation visual cues
     if (!fullName.trim()) {
       setValidationError('Please enter Customer Full Name.');
+      showToast('Please enter Customer Full Name.', 'error');
       return;
     }
     if (!eventDate) {
       setValidationError('Please select an Event Date.');
+      showToast('Please select an Event Date.', 'error');
       return;
     }
     if (!hallVenue) {
       setValidationError('Please select a Venue Hall.');
+      showToast('Please select a Venue Hall.', 'error');
       return;
     }
 
+    // 1. Immediately block if real-time conflict error is present
+    if (conflictError) {
+      setValidationError(conflictError);
+      showToast(`Cannot submit booking: ${conflictError}`, 'error');
+      return;
+    }
+
+    // 2. Strict final pre-submit check against backend API
+    setIsCheckingConflict(true);
+    try {
+      const liveCheck = await bookingsApi.checkAvailability({
+        hall: hallVenue,
+        date: eventDate,
+        startTime: startTime || undefined,
+        endTime: endTime || undefined,
+        excludeId: initialBooking?.id,
+      });
+
+      if (!liveCheck.available) {
+        const conflictMsg = liveCheck.conflict || liveCheck.details || `Collision Detected: Hall '${hallVenue}' is unavailable on ${eventDate}.`;
+        setConflictError(conflictMsg);
+        setConflictDetails(liveCheck);
+        setValidationError(conflictMsg);
+        showToast(`Submission Blocked: ${conflictMsg}`, 'error');
+        setIsCheckingConflict(false);
+        return;
+      }
+    } catch (err: any) {
+      console.error('Pre-submit verification error:', err);
+    } finally {
+      setIsCheckingConflict(false);
+    }
+
     setValidationError('');
+    setConflictError(null);
+
+    const formatted12Slot = startTime && endTime ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}` : (initialBooking?.slot || 'Scheduled Time');
 
     const newBooking: Booking = {
       id: initialBooking?.id || `bk-${Date.now()}`,
@@ -105,8 +257,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
       eventType: eventType || 'Other Event',
       hallName: hallVenue,
       date: eventDate,
-      time: startTime && endTime ? `${startTime} - ${endTime}` : initialBooking?.time,
-      slot: startTime && endTime ? `${startTime} - ${endTime}` : (initialBooking?.slot || 'Scheduled Time'),
+      time: formatted12Slot,
+      slot: formatted12Slot,
       status: initialBooking?.status || 'Confirmed',
       paymentStatus:
         calculatedRemainingBalance !== null && calculatedRemainingBalance <= 0
@@ -294,13 +446,18 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 required
                 value={hallVenue}
                 onChange={(e) => setHallVenue(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer font-medium"
               >
                 <option value="">[Select Venue Hall]</option>
-                <option value="Hall 1">Hall 1 (Executive Ballroom)</option>
-                <option value="Hall 2">Hall 2 (Crystal Pavilion)</option>
-                <option value="Hall 3">Hall 3 (Royal Banquet Hall)</option>
-                <option value="Garden Lawn">Garden Lawn Complex</option>
+                {/* Fallback option if hallVenue is set but not yet in hallsList */}
+                {hallVenue && !hallsList.some((h) => h.name.toLowerCase() === hallVenue.toLowerCase()) && (
+                  <option value={hallVenue}>{hallVenue}</option>
+                )}
+                {hallsList.map((h) => (
+                  <option key={h.id || h.name} value={h.name}>
+                    {h.name} {h.code ? `(${h.code})` : ''} {h.capacity ? `• Cap: ${h.capacity}` : ''}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -314,9 +471,40 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 required
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+                className={`w-full px-3.5 py-2 rounded-lg text-xs transition-all cursor-pointer ${
+                  conflictError
+                    ? 'bg-rose-50 border-2 border-rose-400 text-rose-950 focus:border-rose-600 focus:outline-none ring-2 ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f]'
+                }`}
               />
             </div>
+
+            {/* Real-time Conflict Red Alert Banner in Section 2 */}
+            {conflictError && (
+              <div className="md:col-span-2 p-4 rounded-xl bg-rose-50 border-2 border-rose-500 text-rose-900 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <AlertTriangle className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-rose-900 text-xs uppercase tracking-wider">
+                        🚨 Scheduling Collision &amp; 1-Hour Turnover Violation
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold text-[10px]">
+                        BOOKING BLOCKED
+                      </span>
+                    </div>
+                    <p className="font-semibold text-rose-900 leading-snug">
+                      {conflictError}
+                    </p>
+                    <p className="text-[11px] text-rose-700 mt-1.5 font-medium">
+                      ⚠️ <strong>Turnover Protocol:</strong> 1 hour before and 1 hour after each booking is strictly reserved for hall cleaning, sanitation, and staging. No new booking can overlap or fit within this buffer.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Expected Guests */}
             <div>
@@ -428,29 +616,69 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Start Time */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Start Time
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Start Time
+                </label>
+                {startTime && (
+                  <span className="text-[11px] font-mono font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
+                    {formatTo12Hour(startTime)}
+                  </span>
+                )}
+              </div>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
+                className={`w-full px-3.5 py-2 rounded-lg text-xs transition-all ${
+                  conflictError
+                    ? 'bg-rose-50 border-2 border-rose-400 text-rose-950 focus:border-rose-600 focus:outline-none ring-2 ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f]'
+                }`}
               />
             </div>
 
             {/* End Time */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                End Time
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  End Time
+                </label>
+                {endTime && (
+                  <span className="text-[11px] font-mono font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
+                    {formatTo12Hour(endTime)}
+                  </span>
+                )}
+              </div>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
+                className={`w-full px-3.5 py-2 rounded-lg text-xs transition-all ${
+                  conflictError
+                    ? 'bg-rose-50 border-2 border-rose-400 text-rose-950 focus:border-rose-600 focus:outline-none ring-2 ring-rose-200'
+                    : 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f]'
+                }`}
               />
             </div>
+
+            {/* Cleaning Turnover Notice / Red Conflict Box in Section 4 */}
+            {conflictError ? (
+              <div className="md:col-span-2 p-3.5 rounded-xl bg-rose-100/90 border-2 border-rose-500 text-rose-900 text-xs flex items-start gap-2.5 animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5 animate-pulse" />
+                <div>
+                  <strong className="text-rose-900 font-bold block mb-0.5">Time Collision / Turnover Conflict:</strong>
+                  {conflictError}
+                </div>
+              </div>
+            ) : (
+              <div className="md:col-span-2 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Turnover Guarantee:</strong> 1 hour before and 1 hour after this event is automatically reserved for sanitation, carpet cleaning, and hall maintenance. Other bookings on this day must respect this buffer.
+                </div>
+              </div>
+            )}
 
             {/* Extra Time Add-on Box */}
             <div className="md:col-span-2 p-4 rounded-xl bg-slate-50/80 border border-slate-200 mt-1">
@@ -603,6 +831,26 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           </div>
         </div>
 
+        {/* Floating Toast Notification */}
+        {toastNotification && (
+          <div className="fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl shadow-2xl border-2 border-rose-500 bg-rose-900 text-white animate-in slide-in-from-top-4 duration-200">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
+              <div className="flex-1 text-xs">
+                <p className="font-bold text-white text-sm mb-0.5">Booking Alert</p>
+                <p className="text-rose-100 leading-relaxed font-medium">{toastNotification.message}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setToastNotification(null)}
+                className="text-rose-300 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div className="flex items-center justify-between gap-4 pt-2">
           <button
@@ -615,10 +863,19 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
 
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#00685f] hover:bg-[#005049] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            disabled={Boolean(conflictError) || isCheckingConflict}
+            className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-semibold shadow-xs transition-all ${
+              conflictError
+                ? 'bg-rose-600 text-white cursor-not-allowed opacity-90 shadow-rose-900/20'
+                : isCheckingConflict
+                ? 'bg-teal-500 text-white cursor-wait opacity-80'
+                : 'bg-[#00685f] hover:bg-[#005049] text-white cursor-pointer'
+            }`}
           >
             <Save className="w-4 h-4" />
-            <span>Save Booking</span>
+            <span>
+              {conflictError ? 'Save Blocked (Conflict)' : isCheckingConflict ? 'Checking Conflict...' : 'Save Booking'}
+            </span>
           </button>
         </div>
       </form>

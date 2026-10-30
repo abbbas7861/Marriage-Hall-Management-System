@@ -18,6 +18,9 @@ import { StaffVendorsModule } from '../modules/StaffVendorsModule';
 import { AuditLogsModule } from '../modules/AuditLogsModule';
 import { CardStudioModule } from '../modules/CardStudioModule';
 import { FeedbackReviewsModule } from '../modules/FeedbackReviewsModule';
+import { AdminExecutiveOverview } from '../dashboard/AdminExecutiveOverview';
+import { AdminUserManagement } from '../admin/AdminUserManagement';
+import { AdminPeriodicClosings } from '../admin/AdminPeriodicClosings';
 import { PortalModulePlaceholder } from '../common/PortalModulePlaceholder';
 import { NavModuleId, AuthUser, PortalType } from '../../types';
 import { PORTAL_CONFIGS } from '../../config/portals';
@@ -73,6 +76,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
     return PORTAL_CONFIGS[p]?.defaultModule || 'dashboard';
   });
 
+  const [bookingPreload, setBookingPreload] = useState<{
+    hallName?: string;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+  } | null>(null);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
@@ -90,6 +100,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
       // Shared & Admin Modules
       // -------------------------------------------------------------
       case 'admin-overview':
+        return (
+          <AdminExecutiveOverview
+            onNavigateToModule={(mod) => setActiveModule(mod as NavModuleId)}
+            onOpenCreateBooking={() => setActiveModule('bookings')}
+          />
+        );
+
       case 'dashboard':
         return (
           <Dashboard
@@ -104,10 +121,23 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
 
       case 'admin-bookings':
       case 'bookings':
-        return <BookingsModule />;
+        return (
+          <BookingsModule
+            key={bookingPreload ? `preload-${bookingPreload.hallName || ''}-${bookingPreload.date || ''}-${bookingPreload.startTime || ''}` : 'bookings-table'}
+            initialCreateData={bookingPreload}
+            initialMode={bookingPreload ? 'create' : 'table'}
+          />
+        );
 
       case 'calendar':
-        return <CalendarModule onOpenCreate={() => setActiveModule('bookings')} />;
+        return (
+          <CalendarModule
+            onOpenCreate={(preload) => {
+              setBookingPreload(preload || null);
+              setActiveModule('bookings');
+            }}
+          />
+        );
 
       case 'customers':
         return <CustomersModule />;
@@ -119,6 +149,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         return <FeedbackReviewsModule />;
 
       case 'settings':
+      case 'admin-fbr':
         return <SettingsModule />;
 
       case 'admin-audit':
@@ -126,52 +157,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         return <AuditLogsModule />;
 
       case 'admin-users':
-        return (
-          <PortalModulePlaceholder
-            title="User Accounts & Rights Management"
-            subtitle="Admin exclusive control panel to add venue staff, assign roles (Managers, Kitchen, Waiters, Accountants), set wage salaries, and adjust permissions."
-            phaseTag="Phase 2"
-            taskRef="Task 2.4"
-            features={[
-              'Add new user profiles with secure initial passwords',
-              'Role & permission enforcement with instant revocation',
-              'Wage / salary assignment linked directly to monthly payroll',
-              'Full audit logging for account creation and credential updates',
-            ]}
-          />
-        );
+        return <AdminUserManagement />;
 
       case 'admin-closings':
-        return (
-          <PortalModulePlaceholder
-            title="Periodic Financial Closings (Daily / Weekly / Monthly / Annual)"
-            subtitle="Automated ledger freeze and accounting period reconciliation ensuring audited financial statements cannot be tampered with."
-            phaseTag="Phase 2"
-            taskRef="Task 2.5"
-            features={[
-              'Daily register settlement against total hall cash collections',
-              'Monthly revenue and expense lock with variance analysis',
-              'Yearly tax-year closing and balance sheet rollover',
-              'PDF Closing Certification with Owner e-signature block',
-            ]}
-          />
-        );
-
-      case 'admin-fbr':
-        return (
-          <PortalModulePlaceholder
-            title="FBR Digital Invoicing Integration (Dormant by Default)"
-            subtitle="Federal Board of Revenue (FBR) real-time fiscalized tax invoice transmission. Stays 100% dormant until Admin enters official POS credentials."
-            phaseTag="Phase 2"
-            taskRef="Task 2.6"
-            features={[
-              'Completely disabled by default until Admin inputs API credentials',
-              'Real-time QR code generation for fiscal invoices',
-              'Automatic calculation of Provincial Sales Tax (PST) / PRA / SRB',
-              'FBR invoice verification lookup tool',
-            ]}
-          />
-        );
+        return <AdminPeriodicClosings />;
 
       // -------------------------------------------------------------
       // Manager Portal Modules
