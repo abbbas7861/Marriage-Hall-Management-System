@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord
+from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord, SecurityDepositSettlement
 from apps.bookings.models import Booking
 from apps.core.models import AuditLogEntry
 from django.utils import timezone
@@ -100,3 +100,65 @@ class ExpenseRecordSerializer(serializers.ModelSerializer):
         if not validated_data.get('expense_ref'):
             validated_data['expense_ref'] = f"EXP-{random.randint(1000, 9999)}"
         return super().create(validated_data)
+
+
+class SecurityDepositSettlementSerializer(serializers.ModelSerializer):
+    settlementRef = serializers.CharField(source='settlement_ref', required=False)
+    bookingRef = serializers.CharField(source='booking_ref')
+    customerName = serializers.CharField(source='customer_name')
+    hallName = serializers.CharField(source='hall_name')
+    eventDate = serializers.DateField(source='event_date')
+    depositHeld = serializers.FloatField(source='deposit_held', required=False, default=50000.0)
+    damageDeductions = serializers.FloatField(source='damage_deductions', required=False, default=0.0)
+    damageNotes = serializers.CharField(source='damage_notes', required=False, allow_blank=True, default='')
+    overtimeHours = serializers.FloatField(source='overtime_hours', required=False, default=0.0)
+    overtimeRatePerHour = serializers.FloatField(source='overtime_rate_per_hour', required=False, default=25000.0)
+    overtimeCharges = serializers.FloatField(source='overtime_charges', required=False, default=0.0)
+    otherDeductions = serializers.FloatField(source='other_deductions', required=False, default=0.0)
+    otherNotes = serializers.CharField(source='other_notes', required=False, allow_blank=True, default='')
+    netRefundAmount = serializers.FloatField(source='net_refund_amount', required=False)
+    refundChannel = serializers.CharField(source='refund_channel', required=False, default='Cash')
+    refundReference = serializers.CharField(source='refund_reference', required=False, allow_blank=True, default='')
+    status = serializers.CharField(required=False, default='Held')
+    settledAt = serializers.DateTimeField(source='settled_at', required=False, allow_null=True)
+    settledBy = serializers.CharField(source='settled_by', required=False, default='Manager')
+    clientSignatureAcknowledged = serializers.BooleanField(source='client_signature_acknowledged', required=False, default=False)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = SecurityDepositSettlement
+        fields = [
+            'id', 'settlementRef', 'bookingRef', 'customerName', 'hallName', 'eventDate',
+            'depositHeld', 'damageDeductions', 'damageNotes', 'overtimeHours', 'overtimeRatePerHour',
+            'overtimeCharges', 'otherDeductions', 'otherNotes', 'netRefundAmount',
+            'refundChannel', 'refundReference', 'status', 'settledAt', 'settledBy',
+            'clientSignatureAcknowledged', 'createdAt'
+        ]
+
+    def create(self, validated_data):
+        if not validated_data.get('settlement_ref'):
+            validated_data['settlement_ref'] = f"DEP-{random.randint(1000, 9999)}"
+
+        deposit = float(validated_data.get('deposit_held', 50000.0))
+        damage = float(validated_data.get('damage_deductions', 0.0))
+        ot_hours = float(validated_data.get('overtime_hours', 0.0))
+        ot_rate = float(validated_data.get('overtime_rate_per_hour', 25000.0))
+        ot_charges = ot_hours * ot_rate
+        validated_data['overtime_charges'] = ot_charges
+        other = float(validated_data.get('other_deductions', 0.0))
+
+        validated_data['net_refund_amount'] = max(0.0, deposit - damage - ot_charges - other)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        deposit = float(validated_data.get('deposit_held', instance.deposit_held))
+        damage = float(validated_data.get('damage_deductions', instance.damage_deductions))
+        ot_hours = float(validated_data.get('overtime_hours', instance.overtime_hours))
+        ot_rate = float(validated_data.get('overtime_rate_per_hour', instance.overtime_rate_per_hour))
+        ot_charges = ot_hours * ot_rate
+        validated_data['overtime_charges'] = ot_charges
+        other = float(validated_data.get('other_deductions', instance.other_deductions))
+
+        validated_data['net_refund_amount'] = max(0.0, deposit - damage - ot_charges - other)
+        return super().update(instance, validated_data)
+

@@ -625,7 +625,7 @@ export const CustomersModule: React.FC = () => {
       {/* "View Profile" Modal */}
       {isViewModalOpen && selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto flex flex-col">
             <div className="p-6 bg-gradient-to-r from-slate-900 to-teal-950 text-white flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-teal-300">

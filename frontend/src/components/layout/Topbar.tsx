@@ -73,7 +73,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         </button>
 
         {/* 6 Portal Tabs (Glassmorphic Luxury Pill Switcher) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-1 no-scrollbar shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-1 no-scrollbar min-w-0 max-w-[calc(100vw-135px)] sm:max-w-none shrink">
           {portalKeys.map((pKey) => {
             const config = PORTAL_CONFIGS[pKey];
             const Icon = config.icon;

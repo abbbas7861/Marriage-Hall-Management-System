@@ -20,6 +20,21 @@ class AdminRegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        has_admin = User.objects.filter(is_superuser=True).exists() or UserProfile.objects.filter(role='admin').exists()
+        if has_admin:
+            is_auth_admin = (
+                request.user.is_authenticated and (
+                    request.user.is_superuser or (
+                        getattr(request.user, 'profile', None) and request.user.profile.role == 'admin'
+                    )
+                )
+            )
+            if not is_auth_admin:
+                return Response(
+                    {'error': 'An admin account is already registered. Additional users must be created by an Admin from the User Management console.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         username = request.data.get('username', '').strip()
         email = request.data.get('email', '').strip()
         password = request.data.get('password', '')

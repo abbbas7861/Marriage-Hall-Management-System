@@ -23,6 +23,9 @@ class BookingSerializer(serializers.ModelSerializer):
     specialInstructions = serializers.CharField(source='special_instructions', required=False, allow_blank=True, default='')
     extraHours = serializers.FloatField(source='extra_hours', required=False, default=0)
     ratePerHour = serializers.FloatField(source='rate_per_hour', required=False, default=0)
+    operationalStatus = serializers.CharField(source='operational_status', required=False, default='Setup in Progress')
+    assignedManager = serializers.CharField(source='assigned_manager', required=False, allow_blank=True, default='Manager')
+    securityDeposit = serializers.FloatField(source='security_deposit', required=False, default=50000)
     cnic = serializers.CharField(required=False, allow_blank=True, default='')
     address = serializers.CharField(required=False, allow_blank=True, default='')
 
@@ -32,7 +35,8 @@ class BookingSerializer(serializers.ModelSerializer):
             'id', 'bookingRef', 'customerName', 'contactRef', 'cnic', 'address', 'eventType',
             'hallName', 'date', 'time', 'slot', 'status', 'paymentStatus',
             'amount', 'advancePayment', 'guestCount', 'seatingArrangement',
-            'menuPackage', 'specialInstructions', 'extraHours', 'ratePerHour'
+            'menuPackage', 'specialInstructions', 'extraHours', 'ratePerHour',
+            'operationalStatus', 'assignedManager', 'securityDeposit'
         ]
 
     def validate(self, attrs):
@@ -218,9 +222,9 @@ class ExtraTimeRequestSerializer(serializers.ModelSerializer):
         req_hours = validated_data.get('requested_hours', 1)
         booking_ref = validated_data.get('booking_ref', '')
         
-        # If estimated_charges not provided, compute from booking's rate_per_hour or default standard rate (e.g. $150/hr)
+        # If estimated_charges not provided, compute from booking's rate_per_hour or default standard rate (e.g. Rs. 25,000/hr)
         booking = Booking.objects.filter(booking_ref=booking_ref).first()
-        rate = float(booking.rate_per_hour) if booking and booking.rate_per_hour > 0 else 150.0
+        rate = float(booking.rate_per_hour) if booking and booking.rate_per_hour > 0 else 25000.0
         if not validated_data.get('estimated_charges'):
             validated_data['estimated_charges'] = float(req_hours) * rate
 

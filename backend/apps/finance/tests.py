@@ -50,3 +50,52 @@ class FinanceSynchronizationTests(TestCase):
         self.assertEqual(float(self.booking.advance_payment), 200000.0)
         self.assertEqual(self.booking.payment_status, 'Paid')
 
+    def test_security_deposit_settlement_workflow(self):
+        # 1. Create settlement record
+        res = self.client.post('/api/v1/deposit-settlements/', {
+            'bookingRef': 'BK-22222',
+            'customerName': 'Usman',
+            'hallName': 'Crystal Hall',
+            'eventDate': '2026-11-15',
+            'depositHeld': 50000.0,
+            'damageDeductions': 5000.0,
+            'damageNotes': 'Broken chinaware plates',
+            'overtimeHours': 1.0,
+            'overtimeRatePerHour': 25000.0,
+            'otherDeductions': 0.0,
+            'refundChannel': 'Cash',
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        settlement_id = res.data['id']
+        self.assertEqual(res.data['netRefundAmount'], 20000.0) # 50000 - 5000 - 25000
+
+        # 2. Finalize settlement
+        finalize_res = self.client.post(f'/api/v1/deposit-settlements/{settlement_id}/finalize_settlement/', {
+            'settledBy': 'Tariq Manager',
+            'refundChannel': 'Cash',
+            'refundReference': 'CASH-9912',
+            'clientSignatureAcknowledged': True,
+        }, format='json')
+        self.assertEqual(finalize_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(finalize_res.data['status'], 'Settled')
+
+        # 3. Verify refund payment transaction was created
+        refund_tx = PaymentTransaction.objects.filter(booking_ref='BK-22222', category='Security Deposit Refund').first()
+        self.assertIsNotNone(refund_tx)
+        self.assertEqual(float(refund_tx.amount), 20000.0)
+        self.assertEqual(refund_tx.channel, 'Cash')
+
+    def test_invoice_record_collection(self):
+        res = self.client.post(f'/api/v1/invoices/{self.invoice.id}/record-collection/', {
+            'amount': 100000,
+            'channel': 'Cheque',
+            'transactionRef': 'CHQ-88992',
+            'notes': 'Partial settlement via cheque'
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.paid_amount, 150000)
+        self.assertEqual(self.invoice.remaining_balance, 50000)
+        self.assertEqual(self.invoice.payment_status, 'Partial')
+
+

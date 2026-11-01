@@ -16,10 +16,13 @@ import {
   BlockedDate,
   StaffMember,
   VendorPartner,
+  ContractorLaborShift,
   AuditLogEntry,
   ExtraTimeRequest,
   FeedbackLogEntry,
   AuthUser,
+  Recipe,
+  RecipeIngredient,
 } from '../types';
 
 const API_BASE_URL =
@@ -145,6 +148,14 @@ export const bookingsApi = {
     return normalizeId(data);
   },
 
+  async updateOperationalStatus(id: string, operationalStatus: string): Promise<Booking> {
+    const data = await request<Booking>(`bookings/${id}/update-operational-status/`, {
+      method: 'POST',
+      body: JSON.stringify({ operationalStatus }),
+    });
+    return normalizeId(data);
+  },
+
   async delete(id: string): Promise<void> {
     await request(`bookings/${id}`, { method: 'DELETE' });
   },
@@ -243,6 +254,59 @@ export const blockedDatesApi = {
 };
 
 // -------------------------------------------------------------
+// Hall & Table Floor Monitoring API (Waiter Kiosk Task 5.1)
+// -------------------------------------------------------------
+export interface HallTableStatusItem {
+  id: string;
+  eventRef: string;
+  hallName: string;
+  tableNumber: string;
+  sector: 'VIP Stage' | 'Family Sector A' | 'General Sector B' | 'Bridal Lounge';
+  capacity: number;
+  status: 'Ready' | 'Seated' | 'Served' | 'Needs Clearing' | 'Cleaned';
+  assignedWaiter?: string;
+  notes?: string;
+  updatedAt?: string;
+}
+
+export const tablesApi = {
+  async list(params?: { eventRef?: string; hallName?: string; status?: string }): Promise<HallTableStatusItem[]> {
+    const query = new URLSearchParams();
+    if (params?.eventRef && params.eventRef !== 'All') query.set('event_ref', params.eventRef);
+    if (params?.hallName && params.hallName !== 'All') query.set('hall_name', params.hallName);
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    const qs = query.toString();
+    const data = await request<HallTableStatusItem[]>(`tables${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async toggleStatus(id: string, payload?: { status?: string; assignedWaiter?: string }): Promise<HallTableStatusItem> {
+    const data = await request<HallTableStatusItem>(`tables/${id}/toggle-status`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return normalizeId(data);
+  },
+
+  async initTables(eventRef: string, hallName: string): Promise<HallTableStatusItem[]> {
+    const data = await request<HallTableStatusItem[]>('tables/init-tables', {
+      method: 'POST',
+      body: JSON.stringify({ eventRef, hallName }),
+    });
+    return normalizeList(data);
+  },
+
+  async update(id: string, payload: Partial<HallTableStatusItem>): Promise<HallTableStatusItem> {
+    const data = await request<HallTableStatusItem>(`tables/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+};
+
+
+// -------------------------------------------------------------
 // Customers API
 // -------------------------------------------------------------
 export const customersApi = {
@@ -334,6 +398,283 @@ export const menuPackagesApi = {
 };
 
 // -------------------------------------------------------------
+// Kitchen Recipes & Dish Costing API (Task 4.3)
+// -------------------------------------------------------------
+export const recipesApi = {
+  async list(params?: { category?: string; search?: string }): Promise<Recipe[]> {
+    const query = new URLSearchParams();
+    if (params?.category && params.category !== 'All') query.set('category', params.category);
+    if (params?.search) query.set('search', params.search);
+    const qs = query.toString();
+    const data = await request<Recipe[]>(`recipes${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<Recipe>): Promise<Recipe> {
+    const data = await request<Recipe>('recipes', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async update(id: string, payload: Partial<Recipe>): Promise<Recipe> {
+    const data = await request<Recipe>(`recipes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`recipes/${id}`, { method: 'DELETE' });
+  },
+};
+
+
+// -------------------------------------------------------------
+// Event Live Checklist API (Manager Portal Task 3.4)
+// -------------------------------------------------------------
+export interface EventChecklistItem {
+  id: string;
+  eventRef: string;
+  phase: 'Pre-Event Setup' | 'During Event' | 'Post-Event / Wrap-up';
+  taskName: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  completedBy?: string;
+  notes?: string;
+}
+
+export const checklistsApi = {
+  async list(eventRef?: string): Promise<EventChecklistItem[]> {
+    const query = eventRef ? `?eventRef=${encodeURIComponent(eventRef)}` : '';
+    const data = await request<EventChecklistItem[]>(`checklists${query}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<EventChecklistItem>): Promise<EventChecklistItem> {
+    const data = await request<EventChecklistItem>('checklists/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async toggle(id: string, completedBy?: string): Promise<EventChecklistItem> {
+    const data = await request<EventChecklistItem>(`checklists/${id}/toggle/`, {
+      method: 'POST',
+      body: JSON.stringify({ completedBy }),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`checklists/${id}/`, { method: 'DELETE' });
+  },
+};
+
+// -------------------------------------------------------------
+// Kitchen Display Screen (KDS) API (Task 4.1)
+// -------------------------------------------------------------
+export interface KitchenOrderTicketItem {
+  id: string;
+  ticketNumber: string;
+  eventRef: string;
+  hallName: string;
+  dishName: string;
+  quantity: number;
+  portionSize: string;
+  priority: 'Normal' | 'Urgent' | 'Critical';
+  status: 'Refill Requested' | 'In Preparation' | 'Ready for Pickup' | 'Dispatched to Hall' | 'Completed' | 'Cancelled';
+  station: string;
+  requestedBy: string;
+  chefAssigned?: string;
+  notes?: string;
+  createdAt?: string;
+  inPrepAt?: string | null;
+  readyAt?: string | null;
+  dispatchedAt?: string | null;
+}
+
+export const kdsApi = {
+  async list(params?: { eventRef?: string; status?: string; hallName?: string }): Promise<KitchenOrderTicketItem[]> {
+    const query = new URLSearchParams();
+    if (params?.eventRef && params.eventRef !== 'All') query.set('event_ref', params.eventRef);
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    if (params?.hallName && params.hallName !== 'All') query.set('hall_name', params.hallName);
+    const qs = query.toString();
+    const data = await request<KitchenOrderTicketItem[]>(`kds-tickets${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<KitchenOrderTicketItem>): Promise<KitchenOrderTicketItem> {
+    const data = await request<KitchenOrderTicketItem>('kds-tickets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async update(id: string, payload: Partial<KitchenOrderTicketItem>): Promise<KitchenOrderTicketItem> {
+    const data = await request<KitchenOrderTicketItem>(`kds-tickets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async advanceStatus(id: string, payload?: { status?: string; chefAssigned?: string }): Promise<KitchenOrderTicketItem> {
+    const data = await request<KitchenOrderTicketItem>(`kds-tickets/${id}/advance`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`kds-tickets/${id}`, { method: 'DELETE' });
+  },
+};
+
+// -------------------------------------------------------------
+// Kitchen Pantry & Raw Material Inventory API (Task 4.2)
+// -------------------------------------------------------------
+export interface PantryStockItem {
+  id: string;
+  itemCode: string;
+  name: string;
+  category: string;
+  unit: string;
+  currentStock: number;
+  minThreshold: number;
+  reorderQuantity: number;
+  unitPrice: number;
+  preferredSupplier: string;
+  supplierContact?: string;
+  storageLocation: string;
+  notes?: string;
+  isLowStock: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PantryPurchaseOrder {
+  id: string;
+  orderRef: string;
+  itemId: number;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalCost: number;
+  supplierName: string;
+  supplierContact?: string;
+  urgency: 'Normal' | 'Urgent' | 'Critical Emergency';
+  status: 'Draft' | 'Ordered' | 'Received & Stocked' | 'Cancelled';
+  orderedBy: string;
+  orderedAt?: string;
+  receivedAt?: string | null;
+  notes?: string;
+}
+
+export const pantryApi = {
+  async listItems(params?: { category?: string; search?: string }): Promise<PantryStockItem[]> {
+    const query = new URLSearchParams();
+    if (params?.category && params.category !== 'All') query.set('category', params.category);
+    if (params?.search) query.set('search', params.search);
+    const qs = query.toString();
+    const data = await request<PantryStockItem[]>(`pantry-items${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async createItem(payload: Partial<PantryStockItem>): Promise<PantryStockItem> {
+    const data = await request<PantryStockItem>('pantry-items', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async updateItem(id: string, payload: Partial<PantryStockItem>): Promise<PantryStockItem> {
+    const data = await request<PantryStockItem>(`pantry-items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async adjustStock(id: string, adjustment: number, reason: string, staffName?: string): Promise<PantryStockItem> {
+    const data = await request<PantryStockItem>(`pantry-items/${id}/adjust_stock`, {
+      method: 'POST',
+      body: JSON.stringify({ adjustment, reason, staffName }),
+    });
+    return normalizeId(data);
+  },
+
+  async quickOrder(id: string, payload: {
+    quantity?: number;
+    supplierName?: string;
+    supplierContact?: string;
+    urgency?: string;
+    orderedBy?: string;
+    notes?: string;
+  }): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-items/${id}/quick_order`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async listOrders(params?: { status?: string }): Promise<PantryPurchaseOrder[]> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    const qs = query.toString();
+    const data = await request<PantryPurchaseOrder[]>(`pantry-orders${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async markOrderReceived(orderId: string, receivedBy?: string): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-orders/${orderId}/mark_received`, {
+      method: 'POST',
+      body: JSON.stringify({ receivedBy }),
+    });
+    return normalizeId(data);
+  },
+
+  async cancelOrder(orderId: string, reason?: string): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-orders/${orderId}/cancel_order`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+    return normalizeId(data);
+  },
+
+  async bulkRequisition(payload: {
+    items: {
+      itemId: number | string;
+      quantity: number;
+      supplierName?: string;
+      unitPrice?: number;
+      notes?: string;
+    }[];
+    eventRef?: string;
+    orderedBy?: string;
+    urgency?: string;
+  }): Promise<PantryPurchaseOrder[]> {
+    const data = await request<PantryPurchaseOrder[]>('pantry-orders/bulk-requisition', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeList(data);
+  },
+};
+
+
+
+
+// -------------------------------------------------------------
 // Inventory API
 // -------------------------------------------------------------
 export const inventoryApi = {
@@ -376,6 +717,59 @@ export const inventoryApi = {
 };
 
 // -------------------------------------------------------------
+// Asset & Inventory Requisitions API (Manager Portal Task 3.3)
+// -------------------------------------------------------------
+export interface AssetRequisitionItem {
+  id: string;
+  requisitionRef: string;
+  eventRef: string;
+  hallName: string;
+  itemId?: number | null;
+  itemCode: string;
+  itemName: string;
+  requestedQuantity: number;
+  issuedQuantity: number;
+  returnedQuantity: number;
+  status: 'Requested' | 'Approved' | 'Issued' | 'Returned' | 'Shortage';
+  notes?: string;
+}
+
+export const requisitionsApi = {
+  async list(eventRef?: string): Promise<AssetRequisitionItem[]> {
+    const query = eventRef ? `?eventRef=${encodeURIComponent(eventRef)}` : '';
+    const data = await request<AssetRequisitionItem[]>(`requisitions${query}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<AssetRequisitionItem>): Promise<AssetRequisitionItem> {
+    const data = await request<AssetRequisitionItem>('requisitions/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async approveIssue(id: string): Promise<AssetRequisitionItem> {
+    const data = await request<AssetRequisitionItem>(`requisitions/${id}/approve-issue/`, {
+      method: 'POST',
+    });
+    return normalizeId(data);
+  },
+
+  async markReturned(id: string, returnedQuantity?: number, notes?: string): Promise<AssetRequisitionItem> {
+    const data = await request<AssetRequisitionItem>(`requisitions/${id}/mark-returned/`, {
+      method: 'POST',
+      body: JSON.stringify({ returnedQuantity, notes }),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`requisitions/${id}/`, { method: 'DELETE' });
+  },
+};
+
+// -------------------------------------------------------------
 // Finance API (Invoices, Payments, Expenses)
 // -------------------------------------------------------------
 export const financeApi = {
@@ -390,6 +784,16 @@ export const financeApi = {
       body: JSON.stringify(payload),
     });
     return normalizeId(data);
+  },
+
+  async recordCollection(
+    id: string,
+    payload: { amount: number; channel?: string; transactionRef?: string; notes?: string }
+  ): Promise<{ message: string; invoice: InvoiceRecord; transactionRef: string }> {
+    return request(`invoices/${id}/record-collection`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   async listTransactions(): Promise<PaymentTransaction[]> {
@@ -428,6 +832,75 @@ export const expensesApi = {
   create: financeApi.createExpense,
   delete: financeApi.deleteExpense,
 };
+
+// -------------------------------------------------------------
+// Security Deposit Settlement API (Manager Portal Task 3.5)
+// -------------------------------------------------------------
+export interface SecurityDepositSettlement {
+  id: string;
+  settlementRef: string;
+  bookingRef: string;
+  customerName: string;
+  hallName: string;
+  eventDate: string;
+  depositHeld: number;
+  damageDeductions: number;
+  damageNotes?: string;
+  overtimeHours: number;
+  overtimeRatePerHour: number;
+  overtimeCharges: number;
+  otherDeductions: number;
+  otherNotes?: string;
+  netRefundAmount: number;
+  refundChannel: 'Cash' | 'Bank Transfer' | 'Cheque' | 'Adjustment';
+  refundReference?: string;
+  status: 'Held' | 'Settled' | 'Forfeited';
+  settledAt?: string | null;
+  settledBy?: string;
+  clientSignatureAcknowledged: boolean;
+  createdAt?: string;
+}
+
+export const depositSettlementsApi = {
+  async list(params?: { status?: string; bookingRef?: string }): Promise<SecurityDepositSettlement[]> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    if (params?.bookingRef) query.set('booking_ref', params.bookingRef);
+    const qs = query.toString();
+    const data = await request<SecurityDepositSettlement[]>(`deposit-settlements${qs ? `?${qs}` : ''}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<SecurityDepositSettlement>): Promise<SecurityDepositSettlement> {
+    const data = await request<SecurityDepositSettlement>('deposit-settlements', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async update(id: string, payload: Partial<SecurityDepositSettlement>): Promise<SecurityDepositSettlement> {
+    const data = await request<SecurityDepositSettlement>(`deposit-settlements/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async finalize(id: string, payload: {
+    settledBy?: string;
+    refundChannel?: string;
+    refundReference?: string;
+    clientSignatureAcknowledged?: boolean;
+  }): Promise<SecurityDepositSettlement> {
+    const data = await request<SecurityDepositSettlement>(`deposit-settlements/${id}/finalize_settlement`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+};
+
 
 // -------------------------------------------------------------
 // Workforce API (Staff & Vendors)
@@ -481,6 +954,102 @@ export const workforceApi = {
 
   async deleteVendor(id: string): Promise<void> {
     await request(`vendors/${id}`, { method: 'DELETE' });
+  },
+
+  async recordVendorPayment(
+    id: string,
+    payload: { amount: number; channel?: string; transactionRef?: string; notes?: string }
+  ): Promise<{ message: string; vendor: VendorPartner; expenseRef: string; txnRef: string }> {
+    return request(`vendors/${id}/record-payment`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async addVendorBill(
+    id: string,
+    payload: { amount: number; invoiceRef?: string; notes?: string }
+  ): Promise<{ message: string; vendor: VendorPartner }> {
+    return request(`vendors/${id}/add-bill`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
+export const contractorLaborApi = {
+  async list(params?: { bookingRef?: string }): Promise<ContractorLaborShift[]> {
+    const qs = params?.bookingRef ? `?bookingRef=${encodeURIComponent(params.bookingRef)}` : '';
+    const data = await request<ContractorLaborShift[]>(`contractor-labor-shifts${qs}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<ContractorLaborShift>): Promise<ContractorLaborShift> {
+    const data = await request<ContractorLaborShift>('contractor-labor-shifts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async update(id: string, payload: Partial<ContractorLaborShift>): Promise<ContractorLaborShift> {
+    const data = await request<ContractorLaborShift>(`contractor-labor-shifts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`contractor-labor-shifts/${id}`, { method: 'DELETE' });
+  },
+
+  async postToExpenses(id: string): Promise<{ message: string; expenseRef: string; shift: ContractorLaborShift }> {
+    return request(`contractor-labor-shifts/${id}/post-to-expenses`, {
+      method: 'POST',
+    });
+  },
+};
+
+// -------------------------------------------------------------
+// Duty Rosters API (Manager Team Coordination)
+// -------------------------------------------------------------
+export interface DutyRosterItem {
+  id: string;
+  eventRef: string;
+  staffId?: number | null;
+  staffName: string;
+  teamRole: string;
+  shiftStatus: 'Present' | 'Absent' | 'Replaced';
+  replacementName?: string;
+  notes?: string;
+}
+
+export const rostersApi = {
+  async list(eventRef?: string): Promise<DutyRosterItem[]> {
+    const query = eventRef ? `?eventRef=${encodeURIComponent(eventRef)}` : '';
+    const data = await request<DutyRosterItem[]>(`duty-rosters${query}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<DutyRosterItem>): Promise<DutyRosterItem> {
+    const data = await request<DutyRosterItem>('duty-rosters/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async update(id: string, payload: Partial<DutyRosterItem>): Promise<DutyRosterItem> {
+    const data = await request<DutyRosterItem>(`duty-rosters/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`duty-rosters/${id}/`, { method: 'DELETE' });
   },
 };
 

@@ -39,3 +39,38 @@ class BlockedDate(models.Model):
 
     def __str__(self):
         return f"[{self.hall_name}] {self.start_date} to {self.end_date}"
+
+
+class HallTableStatus(models.Model):
+    STATUS_CHOICES = [
+        ('Ready', 'Ready'),
+        ('Seated', 'Seated'),
+        ('Served', 'Served'),
+        ('Needs Clearing', 'Needs Clearing'),
+        ('Cleaned', 'Cleaned'),
+    ]
+
+    SECTOR_CHOICES = [
+        ('VIP Stage', 'VIP Stage'),
+        ('Family Sector A', 'Family Sector A'),
+        ('General Sector B', 'General Sector B'),
+        ('Bridal Lounge', 'Bridal Lounge'),
+    ]
+
+    event_ref = models.CharField(max_length=50, db_index=True)
+    hall_name = models.CharField(max_length=150)
+    table_number = models.CharField(max_length=20)
+    sector = models.CharField(max_length=50, choices=SECTOR_CHOICES, default='Family Sector A')
+    capacity = models.PositiveIntegerField(default=10)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Ready')
+    assigned_waiter = models.CharField(max_length=100, blank=True, default='')
+    notes = models.TextField(blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['table_number']
+        unique_together = ('event_ref', 'table_number')
+
+    def __str__(self):
+        return f"[{self.event_ref}] Table {self.table_number} ({self.sector}) - {self.status}"
+

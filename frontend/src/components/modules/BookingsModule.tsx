@@ -574,7 +574,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
       {/* View Details Dialog */}
       {viewBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 text-teal-700" />

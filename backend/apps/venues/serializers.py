@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Hall, BlockedDate
+from .models import Hall, BlockedDate, HallTableStatus
 
 class HallSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True)
@@ -33,3 +33,19 @@ class BlockedDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlockedDate
         fields = ['id', 'hallName', 'startDate', 'endDate', 'reason']
+
+
+class HallTableStatusSerializer(serializers.ModelSerializer):
+    eventRef = serializers.CharField(source='event_ref')
+    hallName = serializers.CharField(source='hall_name')
+    tableNumber = serializers.CharField(source='table_number')
+    assignedWaiter = serializers.CharField(source='assigned_waiter', required=False, allow_blank=True, default='')
+    updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
+
+    class Meta:
+        model = HallTableStatus
+        fields = [
+            'id', 'eventRef', 'hallName', 'tableNumber', 'sector', 'capacity',
+            'status', 'assignedWaiter', 'notes', 'updatedAt'
+        ]
+

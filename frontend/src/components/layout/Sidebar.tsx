@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Sparkles, LucideIcon } from 'lucide-react';
+import { Lock, Sparkles, X } from 'lucide-react';
 import { NavModuleId, PortalType } from '../../types';
 import { PORTAL_CONFIGS, PortalNavItem } from '../../config/portals';
 
@@ -9,6 +9,8 @@ interface SidebarProps {
   onSelectModule: (id: NavModuleId) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
+  onSelectPortal?: (portal: PortalType) => void;
+  allowedPortals?: PortalType[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,9 +19,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectModule,
   isOpenMobile,
   onCloseMobile,
+  onSelectPortal,
+  allowedPortals,
 }) => {
   const currentPortalConfig = PORTAL_CONFIGS[activePortal] || PORTAL_CONFIGS.admin;
   const PortalIcon = currentPortalConfig.icon;
+  const portalKeys: PortalType[] = ['admin', 'manager', 'kitchen', 'waiter', 'vendors', 'finance'];
 
   const renderNavGroup = (items: PortalNavItem[], groupTitle?: string) => (
     <div className="flex flex-col gap-1 mb-4">
@@ -89,22 +94,75 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Brand & Portal Header */}
-          <div className="h-16 px-4 flex items-center gap-3 border-b border-slate-800/80 shrink-0 bg-slate-900/40 backdrop-blur-md">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white shrink-0 shadow-lg shadow-teal-950/50 ring-1 ring-white/20">
-              <PortalIcon className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm text-white tracking-tight truncate font-['Plus_Jakarta_Sans']">
-                  {currentPortalConfig.shortName}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0 bg-slate-900/40 backdrop-blur-md">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white shrink-0 shadow-lg shadow-teal-950/50 ring-1 ring-white/20">
+                <PortalIcon className="w-5 h-5 text-white" />
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest truncate">
-                {currentPortalConfig.name}
-              </span>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-sm text-white tracking-tight truncate font-['Plus_Jakarta_Sans']">
+                    {currentPortalConfig.shortName}
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                </div>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest truncate">
+                  {currentPortalConfig.name}
+                </span>
+              </div>
             </div>
+
+            {/* Mobile Close X button */}
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden cursor-pointer"
+              title="Close Menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
+
+          {/* Mobile Portal Role Switcher */}
+          {onSelectPortal && (
+            <div className="px-3 pt-3 pb-2 border-b border-slate-800/60 lg:hidden shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-1.5 block">
+                Switch Portal Role
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
+                {portalKeys.map((pKey) => {
+                  const cfg = PORTAL_CONFIGS[pKey];
+                  const Icon = cfg.icon;
+                  const isActive = activePortal === pKey;
+                  const isAllowed = allowedPortals ? allowedPortals.includes(pKey) : true;
+
+                  return (
+                    <button
+                      key={pKey}
+                      type="button"
+                      disabled={!isAllowed}
+                      onClick={() => {
+                        if (isAllowed) {
+                          onSelectPortal(pKey);
+                          if (onCloseMobile) onCloseMobile();
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg text-[10px] font-bold transition-all ${
+                        isActive
+                          ? 'bg-teal-600 text-white shadow-xs'
+                          : isAllowed
+                          ? 'text-slate-400 hover:text-white hover:bg-slate-800'
+                          : 'opacity-30 cursor-not-allowed text-slate-600'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 mb-1" />
+                      <span className="truncate w-full text-center">{cfg.shortName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Portal Navigation Groups (Dynamically switched) */}
           <div className="flex-1 overflow-y-auto px-3 py-4 no-scrollbar">

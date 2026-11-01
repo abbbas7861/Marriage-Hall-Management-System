@@ -438,7 +438,7 @@ export const FeedbackReviewsModule: React.FC = () => {
       {/* Detail Modal for Viewing Feedback */}
       {selectedFeedbackModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-2xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-5">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl border border-slate-200 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500 fill-amber-500" />

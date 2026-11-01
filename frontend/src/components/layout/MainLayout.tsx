@@ -21,8 +21,29 @@ import { FeedbackReviewsModule } from '../modules/FeedbackReviewsModule';
 import { AdminExecutiveOverview } from '../dashboard/AdminExecutiveOverview';
 import { AdminUserManagement } from '../admin/AdminUserManagement';
 import { AdminPeriodicClosings } from '../admin/AdminPeriodicClosings';
+import { ManagerEventsOverview } from '../manager/ManagerEventsOverview';
+import { ManagerDutyRosters } from '../manager/ManagerDutyRosters';
+import { ManagerAssetRequisitions } from '../manager/ManagerAssetRequisitions';
+import { ManagerLiveChecklist } from '../manager/ManagerLiveChecklist';
+import { ManagerDepositSettlement } from '../manager/ManagerDepositSettlement';
+import { KitchenDisplayScreen } from '../kitchen/KitchenDisplayScreen';
+import { KitchenPantryInventory } from '../kitchen/KitchenPantryInventory';
+import { KitchenRecipeManager } from '../kitchen/KitchenRecipeManager';
+import { KitchenFormulaCalculator } from '../kitchen/KitchenFormulaCalculator';
+import { WaiterHallTableMonitoring } from '../waiter/WaiterHallTableMonitoring';
+import { WaiterRefillDispatcher } from '../waiter/WaiterRefillDispatcher';
+import { WaiterOvertimeTrigger } from '../waiter/WaiterOvertimeTrigger';
+import { VendorMasterDirectory } from '../vendors/VendorMasterDirectory';
+import { VendorContractorLabor } from '../vendors/VendorContractorLabor';
+import { VendorPurchaseOrdersGRN } from '../vendors/VendorPurchaseOrdersGRN';
+import { VendorTradePayables } from '../vendors/VendorTradePayables';
+import { FinanceExecutiveOverview } from '../finance/FinanceExecutiveOverview';
+import { FinanceGeneralLedger } from '../finance/FinanceGeneralLedger';
+import { FinanceReceivablesCollector } from '../finance/FinanceReceivablesCollector';
+import { FinanceAccountsPayable } from '../finance/FinanceAccountsPayable';
+import { FinanceProfitLossTax } from '../finance/FinanceProfitLossTax';
 import { PortalModulePlaceholder } from '../common/PortalModulePlaceholder';
-import { NavModuleId, AuthUser, PortalType } from '../../types';
+import { NavModuleId, AuthUser, PortalType, Booking } from '../../types';
 import { PORTAL_CONFIGS } from '../../config/portals';
 
 interface MainLayoutProps {
@@ -82,6 +103,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
     startTime?: string;
     endTime?: string;
   } | null>(null);
+
+  const [managerBookingContext, setManagerBookingContext] = useState<Booking | null>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
@@ -166,285 +189,120 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
       // Manager Portal Modules
       // -------------------------------------------------------------
       case 'manager-overview':
+        return (
+          <ManagerEventsOverview
+            onNavigateToTab={(tabId, booking) => {
+              if (booking) setManagerBookingContext(booking);
+              setActiveModule(tabId as NavModuleId);
+            }}
+          />
+        );
+
       case 'events':
         return <EventsModule />;
 
       case 'manager-decor':
-        return (
-          <PortalModulePlaceholder
-            title="Stage & Decor Checklist Management"
-            subtitle="Digital verification board for wedding themes, floral backdrops, LED ambient lighting, sound curfews, and photo booth staging."
-            phaseTag="Phase 3"
-            taskRef="Task 3.2"
-            features={[
-              'Stage setup verification with photo uploads',
-              'Sound system curfew timer adherence',
-              'Client custom theme inspection checklist',
-              'Digital handover sign-off with customer signature',
-            ]}
-          />
-        );
+        return <ManagerAssetRequisitions initialBooking={managerBookingContext} />;
 
       case 'manager-roster':
-        return (
-          <PortalModulePlaceholder
-            title="Staff Shift Rostering & Attendance"
-            subtitle="Daily and event-specific shift scheduling for managers, head waiters, cleaning crew, and floor helpers."
-            phaseTag="Phase 3"
-            taskRef="Task 3.3"
-            features={[
-              'Morning vs. Evening slot roster allocations',
-              'Attendance punch-in and overtime tracking',
-              'Floor supervisor assignment per hall',
-              'Instant replacement dispatcher for absent staff',
-            ]}
-          />
-        );
+        return <ManagerDutyRosters initialBooking={managerBookingContext} />;
 
       case 'manager-readiness':
-        return (
-          <PortalModulePlaceholder
-            title="Service Readiness Board"
-            subtitle="Live pre-event countdown tracker ensuring HVAC climate control, table seating, crockery hygiene, and buffet line readiness."
-            phaseTag="Phase 3"
-            taskRef="Task 3.4"
-            features={[
-              'Pre-event readiness checklist with time-to-guest countdown',
-              'HVAC temperature monitoring confirmation',
-              'Crockery and cutlery sanitization inspection',
-              'Emergency contact directory for rapid issue resolution',
-            ]}
-          />
-        );
+        return <ManagerLiveChecklist initialBooking={managerBookingContext} />;
 
       case 'manager-assets':
-        return (
-          <PortalModulePlaceholder
-            title="Asset Requisitions & Damage Deposit Protocol"
-            subtitle="Equipment checkout tracking, breakage deductions from security deposits, and settlement reconciliation."
-            phaseTag="Phase 3"
-            taskRef="Task 3.5"
-            features={[
-              'Banquet asset checkout (chafing dishes, projectors, chandeliers)',
-              'Damage incident reporting with repair cost appraisal',
-              'Customer deposit deduction voucher generation',
-              'Automatic sync with Accounts Receivable ledger',
-            ]}
-          />
-        );
+        return <ManagerDepositSettlement initialBooking={managerBookingContext} />;
 
       // -------------------------------------------------------------
       // Kitchen & Chef Modules
       // -------------------------------------------------------------
       case 'kitchen-kds':
-        return (
-          <PortalModulePlaceholder
-            title="Kitchen Display Screen (KDS)"
-            subtitle="High-contrast live preparation board receiving instant refill requests from floor staff with audible and visual alerts."
-            phaseTag="Phase 4"
-            taskRef="Task 4.1"
-            features={[
-              'Live dish queue prioritized by event serving schedule',
-              'Instant push alerts from Waiter Kiosk for urgent refills',
-              'Buffet readiness status: Queued -> In Prep -> Ready -> Dispatched',
-              'Audio chime for new urgent refill orders',
-            ]}
-          />
-        );
+        return <KitchenDisplayScreen />;
 
       case 'kitchen-menu':
+        return <KitchenRecipeManager />;
+
       case 'menu':
         return <MenuModule />;
 
       case 'kitchen-stock':
+        return <KitchenPantryInventory />;
+
       case 'inventory':
         return <InventoryModule />;
 
       case 'kitchen-calculator':
-        return (
-          <PortalModulePlaceholder
-            title="Raw Material Formula Calculator"
-            subtitle="Automatic grocery requisition engine calculating exact quantities (Rice, Meat, Cooking Oil, Spices, Dairy) based on Guest Count and per-head ratios."
-            phaseTag="Phase 4"
-            taskRef="Task 4.4"
-            features={[
-              'Dynamic Formula: Total Guests * Ratio (kg per head) = Requisition',
-              'Custom ingredient ratio profiles (e.g. Biryani, Mutton Karahi, Kheer)',
-              'Direct conversion into grocery purchase order requisition',
-              'Variance comparison against actual pantry consumption',
-            ]}
-          />
-        );
+        return <KitchenFormulaCalculator />;
 
       case 'kitchen-reorder':
-        return (
-          <PortalModulePlaceholder
-            title="Kitchen Stock Alert & Purchase Order Generator"
-            subtitle="Low stock threshold warnings with 1-click supplier purchase order generation."
-            phaseTag="Phase 4"
-            taskRef="Task 4.5"
-            features={[
-              'Color-coded low stock warnings',
-              'Automated reorder point triggers',
-              '1-click Purchase Order generation linked to Supplier Ledger',
-              'Direct dispatch to verified ingredient suppliers',
-            ]}
-          />
-        );
+        return <KitchenPantryInventory />;
 
       // -------------------------------------------------------------
       // Waiter Kiosk Modules
       // -------------------------------------------------------------
       case 'waiter-kiosk':
+      case 'waiter-tables':
       case 'staff':
-        return <FloorStaffTabletView />;
+        return (
+          <WaiterHallTableMonitoring
+            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
+          />
+        );
 
       case 'waiter-refills':
         return (
-          <PortalModulePlaceholder
-            title="Live Dish Refill Dispatcher"
-            subtitle="Touch-optimized mobile interface allowing floor waiters to notify the kitchen that a dish is running low with 1 tap."
-            phaseTag="Phase 5"
-            taskRef="Task 5.2"
-            features={[
-              'Big-button touch interface for tablet/mobile use on the floor',
-              'Dish running low alerts: 25% remaining, 10% remaining, Empty',
-              'Real-time socket/polling status updates from chef',
-              'Delivery confirmation when replacement chafing dish arrives',
-            ]}
+          <WaiterRefillDispatcher
+            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
           />
         );
 
-      case 'waiter-tables':
+      case 'waiter-overtime':
         return (
-          <PortalModulePlaceholder
-            title="Table Cleanliness & Turnover Tracker"
-            subtitle="Live seating status and rapid post-event table cleaning board."
-            phaseTag="Phase 5"
-            taskRef="Task 5.3"
-            features={[
-              'Table map with status: Occupied, Needs Clearing, Sanitized',
-              'Cleaning staff assignment per hall sector',
-              'Lost & Found item logger with customer phone lookup',
-            ]}
+          <WaiterOvertimeTrigger
+            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
+            currentUser={currentUser}
           />
         );
 
       // -------------------------------------------------------------
-      // Vendors & Suppliers Modules
+      // Vendors & Suppliers Modules (Phase 6)
       // -------------------------------------------------------------
       case 'vendors-directory':
       case 'vendors':
-        return <StaffVendorsModule initialTab="vendors" onLaunchTabletMode={() => setActiveModule('waiter-kiosk')} />;
+        return <VendorMasterDirectory onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'vendors-labor':
-        return (
-          <PortalModulePlaceholder
-            title="Outside Staff & Labor Contractor Section"
-            subtitle="Specialized contractor management tracking daily outside labor: male count, female count, hourly/shift rates, and automated wage bill calculation."
-            phaseTag="Phase 6"
-            taskRef="Task 6.2"
-            features={[
-              'Labor Contractor profile with rate cards',
-              'Shift attendance: Male Count, Female Count, Total Count',
-              'Automated bill: (Male * Rate) + (Female * Rate) = Total Payable',
-              'Contractor statement with payment voucher generation',
-            ]}
-          />
-        );
-
-      case 'vendors-payables':
-        return (
-          <PortalModulePlaceholder
-            title="Supplier Trade Ledger & Purchase Invoices"
-            subtitle="Financial trade history with decorators, caterers, lighting vendors, and raw ingredient suppliers."
-            phaseTag="Phase 6"
-            taskRef="Task 6.3"
-            features={[
-              'Supplier-by-supplier transaction history',
-              'Purchase invoice intake against purchase orders',
-              'Outstanding Accounts Payable ledger with due date alerts',
-              'Payment voucher disbursement recording',
-            ]}
-          />
-        );
+        return <VendorContractorLabor onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'vendors-deliveries':
-        return (
-          <PortalModulePlaceholder
-            title="Delivery Schedule & Goods Receipt Note (GRN)"
-            subtitle="Expected ingredient and floral deliveries check-in verification."
-            phaseTag="Phase 6"
-            taskRef="Task 6.4"
-            features={[
-              'Calendar view of scheduled vendor deliveries',
-              'Goods Receipt Note (GRN) quality and weight verification',
-              'Discrepancy / rejection reporting with vendor notification',
-            ]}
-          />
-        );
+        return <VendorPurchaseOrdersGRN onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
+
+      case 'vendors-payables':
+        return <VendorTradePayables onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       // -------------------------------------------------------------
-      // Financial Accounting Modules
+      // Financial Accounting Modules (Phase 7)
       // -------------------------------------------------------------
       case 'finance-overview':
       case 'reports':
-        return <ReportsModule />;
+        return <FinanceExecutiveOverview onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'finance-ledger':
-        return (
-          <PortalModulePlaceholder
-            title="General Ledger & Chart of Accounts (COA)"
-            subtitle="Full double-entry bookkeeping system: Assets, Liabilities, Equity, Revenue, and Cost of Goods Sold."
-            phaseTag="Phase 7"
-            taskRef="Task 7.2"
-            features={[
-              'Customizable Chart of Accounts tailored for hospitality/banquets',
-              'Journal entry composer with automatic debit = credit validation',
-              'Account-by-account transaction history with running balances',
-              'Trial Balance generation with 1 click',
-            ]}
-          />
-        );
+        return <FinanceGeneralLedger onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'finance-receivables':
       case 'payments':
-        return <PaymentsModule />;
+        return <FinanceReceivablesCollector onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'finance-payables':
-        return (
-          <PortalModulePlaceholder
-            title="Accounts Payable (A/P) Master Ledger"
-            subtitle="Comprehensive tracking of all supplier, contractor, and vendor liabilities with due dates and aging reports."
-            phaseTag="Phase 7"
-            taskRef="Task 7.4"
-            features={[
-              'Aging analysis: Current, 30 days, 60 days, 90+ days overdue',
-              'Vendor payment scheduling and batch settlement',
-              'Automatic sync with General Ledger and cash accounts',
-            ]}
-          />
-        );
+        return <FinanceAccountsPayable onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       case 'finance-expenses':
       case 'expenses':
         return <ExpensesModule />;
 
       case 'finance-statements':
-        return (
-          <PortalModulePlaceholder
-            title="Audited Income Statement & Balance Sheet"
-            subtitle="Interactive GAAP-compliant periodic financial statements with customizable date range filters and PDF exports."
-            phaseTag="Phase 7"
-            taskRef="Task 7.5"
-            features={[
-              'Income Statement (P&L): Gross Margin, Net Profit, Operating Expenses',
-              'Balance Sheet: Venue Assets, Retained Earnings, Current Liabilities',
-              'Multi-duration filter: Daily, Weekly, Monthly, Quarterly, Annual',
-              'High-resolution PDF report export for auditors and owners',
-            ]}
-          />
-        );
+        return <FinanceProfitLossTax onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)} />;
 
       default:
         return (
@@ -465,10 +323,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         onSelectModule={setActiveModule}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        onSelectPortal={handleSelectPortal}
+        allowedPortals={allowedPortals}
       />
 
       {/* Main Column */}
-      <div className="lg:pl-64 flex flex-col min-h-screen transition-all">
+      <div className="lg:pl-64 flex flex-col min-h-screen transition-all overflow-x-hidden min-w-0">
         {/* Topbar with 6 Portal Tabs, Global Search, and Profile Console */}
         <Topbar
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -487,8 +347,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         />
 
         {/* Main Content Area */}
-        <main className="relative pt-16 bg-[#f8fafc] flex-1">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">{renderActiveModule()}</div>
+        <main className="relative pt-16 bg-[#f8fafc] flex-1 overflow-x-hidden min-w-0">
+          <div className="w-full max-w-full px-3 sm:px-6 lg:px-8 py-5 sm:py-6 overflow-x-hidden min-w-0">{renderActiveModule()}</div>
         </main>
       </div>
     </div>

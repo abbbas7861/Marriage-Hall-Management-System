@@ -605,7 +605,7 @@ export const InventoryModule: React.FC = () => {
       {/* Simulated "Add / Edit Inventory Item" Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
@@ -753,7 +753,7 @@ export const InventoryModule: React.FC = () => {
       {/* Simulated "Issue to Event" Modal */}
       {issueModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div>
                 <h4 className="text-sm font-bold text-slate-900 font-['Plus_Jakarta_Sans']">

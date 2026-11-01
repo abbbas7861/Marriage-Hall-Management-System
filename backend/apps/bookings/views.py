@@ -15,8 +15,8 @@ class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'payment_status', 'hall_name', 'date']
-    search_fields = ['booking_ref', 'customer_name', 'event_type', 'hall_name', 'contact_ref', 'cnic']
+    filterset_fields = ['status', 'payment_status', 'hall_name', 'date', 'operational_status', 'assigned_manager']
+    search_fields = ['booking_ref', 'customer_name', 'event_type', 'hall_name', 'contact_ref', 'cnic', 'assigned_manager']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
 
@@ -38,11 +38,49 @@ class BookingViewSet(viewsets.ModelViewSet):
         if status_param and status_param not in ['All Statuses', 'All']:
             qs = qs.filter(status__iexact=status_param)
 
+        op_status = self.request.query_params.get('operationalStatus') or self.request.query_params.get('operational_status')
+        if op_status and op_status not in ['All', 'All Stages']:
+            qs = qs.filter(operational_status__iexact=op_status)
+
+        manager_param = self.request.query_params.get('manager') or self.request.query_params.get('assigned_manager')
+        if manager_param and manager_param not in ['All', 'All Managers']:
+            qs = qs.filter(assigned_manager__iexact=manager_param)
+
         pay_status = self.request.query_params.get('paymentStatus') or self.request.query_params.get('payment_status')
         if pay_status and pay_status not in ['All Statuses', 'All']:
             qs = qs.filter(payment_status__iexact=pay_status)
 
         return qs
+
+    @action(detail=True, methods=['post', 'patch'], url_path='update-operational-status')
+    def update_operational_status(self, request, pk=None):
+        booking = self.get_object()
+        new_status = request.data.get('operationalStatus') or request.data.get('operational_status')
+        if not new_status:
+            return Response({'error': 'operationalStatus is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_statuses = ['Setup in Progress', 'Guests Arrived', 'Food Service Active', 'Event Concluded']
+        if new_status not in valid_statuses:
+            return Response({'error': f'Invalid status. Allowed: {valid_statuses}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        old_status = booking.operational_status
+        booking.operational_status = new_status
+        booking.save()
+
+        # Log audit entry
+        try:
+            from apps.core.models import AuditLogEntry
+            AuditLogEntry.objects.create(
+                user=request.user.username if request.user and request.user.is_authenticated else 'Manager',
+                action=f"Changed operational status for {booking.booking_ref} from '{old_status}' to '{new_status}'",
+                module="Event Management",
+                ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+            )
+        except Exception:
+            pass
+
+        serializer = self.get_serializer(booking)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get', 'post'], url_path='check_availability')
     def check_availability(self, request):

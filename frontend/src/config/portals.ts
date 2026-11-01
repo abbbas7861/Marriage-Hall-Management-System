@@ -109,8 +109,8 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         groupTitle: 'Floor Command',
         items: [
           { id: 'manager-overview', label: 'Events Control Center', icon: CalendarDays },
-          { id: 'manager-decor', label: 'Stage & Decor Checklist', icon: Sparkles },
-          { id: 'manager-readiness', label: 'Service Readiness Board', icon: ClipboardCheck },
+          { id: 'manager-decor', label: 'Asset & Decor Requisitions', icon: Layers },
+          { id: 'manager-readiness', label: 'Service Readiness & Curfew', icon: ClipboardCheck },
         ],
       },
       {
@@ -168,6 +168,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'waiter-kiosk', label: 'Floor Staff Tablet', icon: Tablet },
           { id: 'waiter-refills', label: 'Dish Refill Dispatcher', icon: Coffee, badge: 'Urgent' },
           { id: 'waiter-tables', label: 'Table Readiness Turnover', icon: CheckCircle2 },
+          { id: 'waiter-overtime', label: 'Overtime Extension Trigger', icon: Clock, badge: 'Emergency' },
         ],
       },
     ],

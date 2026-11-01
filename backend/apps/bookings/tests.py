@@ -176,20 +176,35 @@ class MHMSEnterpriseAPITests(TestCase):
         self.assertEqual(self.item.in_use_quantity, 30)
 
     def test_extra_time_request_approve_reject(self):
-        req = ExtraTimeRequest.objects.create(
+        # 1. Create via API
+        create_res = self.client.post('/api/v1/extra-time-requests/', {
+            'hallName': self.hall.name,
+            'bookingRef': 'BK-TEST',
+            'requestedHours': 1.5,
+            'reason': 'Extended photo session and late bride arrival',
+        }, format='json')
+        self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
+        req_id = create_res.data['id']
+        self.assertEqual(create_res.data['status'], 'Pending')
+
+        # 2. Approve
+        res = self.client.post(f'/api/v1/extra-time-requests/{req_id}/approve/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['status'], 'Approved')
+
+        # 3. Create second request and reject
+        req2 = ExtraTimeRequest.objects.create(
             hall_name=self.hall.name,
             booking_ref="BK-TEST",
-            requested_hours=2,
-            reason="Guest arrival delayed",
-            estimated_charges=50000,
+            requested_hours=0.5,
+            reason="Additional dance performance",
+            estimated_charges=12500,
             status="Pending"
         )
-
-        # Approve
-        res = self.client.post(f'/api/v1/extra-time-requests/{req.id}/approve/')
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        req.refresh_from_db()
-        self.assertEqual(req.status, "Approved")
+        rej_res = self.client.post(f'/api/v1/extra-time-requests/{req2.id}/reject/')
+        self.assertEqual(rej_res.status_code, status.HTTP_200_OK)
+        req2.refresh_from_db()
+        self.assertEqual(req2.status, "Rejected")
 
     def test_dashboard_and_reports_api(self):
         dash_res = self.client.get('/api/v1/dashboard/metrics/')

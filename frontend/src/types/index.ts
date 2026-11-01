@@ -52,6 +52,7 @@ export type NavModuleId =
   | 'waiter-kiosk'
   | 'waiter-refills'
   | 'waiter-tables'
+  | 'waiter-overtime'
   // Vendors Portal Tabs
   | 'vendors-directory'
   | 'vendors-labor'
@@ -76,6 +77,12 @@ export interface FeedbackLogEntry {
   generatedReview?: string;
 }
 
+export type OperationalStatus =
+  | 'Setup in Progress'
+  | 'Guests Arrived'
+  | 'Food Service Active'
+  | 'Event Concluded';
+
 export interface Booking {
   id: string;
   bookingRef: string;
@@ -90,6 +97,9 @@ export interface Booking {
   paymentStatus?: 'Paid' | 'Partial' | 'Unpaid' | 'Pending';
   amount?: number;
   guestCount?: number;
+  operationalStatus?: OperationalStatus;
+  assignedManager?: string;
+  securityDeposit?: number;
 }
 
 export interface Hall {
@@ -139,10 +149,37 @@ export interface MenuPackage {
   id: string;
   packageCode?: string;
   name: string;
+  tier?: 'Royal' | 'Executive' | 'Budget' | 'Corporate';
   pricePerHead: number;
+  costPerHead?: number;
+  profitMarginPct?: number;
   description: string;
   includedItems: string[];
   status: 'Active' | 'Inactive';
+}
+
+export interface RecipeIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  cost: number;
+}
+
+export interface Recipe {
+  id: string;
+  recipeCode: string;
+  dishName: string;
+  category: string;
+  servingYield: number;
+  prepTimeMinutes: number;
+  ingredients: RecipeIngredient[];
+  totalBatchCost: number;
+  costPerServing: number;
+  recommendedSalePrice: number;
+  marginPct: number;
+  instructions?: string;
+  createdAt?: string;
 }
 
 export interface MenuItem {
@@ -254,9 +291,38 @@ export interface VendorPartner {
   id: string;
   vendorId: string;
   businessName: string;
-  category: 'Decorator' | 'Caterer' | 'Photographer' | 'Sound/Lights' | 'Other' | string;
+  category: string;
   contactPerson: string;
   phoneNumber: string;
+  ntnNumber?: string;
+  paymentTerms?: string;
+  totalBilled?: number;
+  totalPaid?: number;
+  balanceDue?: number;
+  rating?: number;
+  status?: 'Active' | 'Suspended' | 'Preferred' | string;
+  address?: string;
+  bankDetails?: string;
+}
+
+export interface ContractorLaborShift {
+  id: string;
+  bookingRef: string;
+  eventDate: string;
+  contractorName: string;
+  maleCount: number;
+  femaleCount: number;
+  totalHeadcount: number;
+  maleRatePerShift: number;
+  femaleRatePerShift: number;
+  overtimeHours: number;
+  overtimeRatePerHour: number;
+  totalCost: number;
+  supervisorName?: string;
+  shiftType?: string;
+  status: 'Scheduled' | 'In Progress' | 'Completed' | 'Settled' | string;
+  notes?: string;
+  expenseRef?: string;
 }
 
 export interface AuditLogEntry {

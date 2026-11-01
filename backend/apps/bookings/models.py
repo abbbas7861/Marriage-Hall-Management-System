@@ -15,6 +15,12 @@ class Booking(models.Model):
         ('Unpaid', 'Unpaid'),
         ('Pending', 'Pending'),
     ]
+    OPERATIONAL_STATUS_CHOICES = [
+        ('Setup in Progress', 'Setup in Progress'),
+        ('Guests Arrived', 'Guests Arrived'),
+        ('Food Service Active', 'Food Service Active'),
+        ('Event Concluded', 'Event Concluded'),
+    ]
 
     booking_ref = models.CharField(max_length=50, unique=True, db_index=True)
     customer_name = models.CharField(max_length=200)
@@ -36,6 +42,9 @@ class Booking(models.Model):
     special_instructions = models.TextField(blank=True, default='')
     extra_hours = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     rate_per_hour = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    operational_status = models.CharField(max_length=50, choices=OPERATIONAL_STATUS_CHOICES, default='Setup in Progress')
+    assigned_manager = models.CharField(max_length=150, blank=True, default='Manager')
+    security_deposit = models.DecimalField(max_digits=12, decimal_places=2, default=50000)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
