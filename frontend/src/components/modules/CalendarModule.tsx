@@ -176,6 +176,24 @@ export const CalendarModule: React.FC<{
     });
   }
 
+  // 7 days of the current week for Week View
+  const startOfWeek = new Date(currentDate);
+  const currentDayOfWeek = (startOfWeek.getDay() + 6) % 7; // Monday = 0
+  startOfWeek.setDate(startOfWeek.getDate() - currentDayOfWeek);
+
+  const weekDays: CalendarCell[] = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(d.getDate() + i);
+    const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return {
+      date: d,
+      dayNum: d.getDate(),
+      isCurrentMonth: d.getMonth() === month,
+      dateString: dStr,
+      isToday: dStr === todayStr,
+    };
+  });
+
   // Filter Bookings & Blocks for a Date
   const getBookingsForDate = (dateStr: string) => {
     return bookings.filter((b) => {
@@ -246,31 +264,42 @@ export const CalendarModule: React.FC<{
     }
   };
 
+  const handleResetBlocks = async () => {
+    try {
+      await Promise.all(blockedDates.map((b) => blockedDatesApi.delete(b.id)));
+      setBlockedDates([]);
+      showToast('All maintenance blocks cleared.');
+    } catch (err) {
+      console.error('Failed to reset blocks:', err);
+      showToast('Failed to reset blocks.');
+    }
+  };
+
   const hallNames = ['All Halls', ...halls.map((h) => h.name)];
 
   return (
-    <div className="flex flex-col w-full gap-5 pb-12 select-none animate-in fade-in duration-150">
+    <div className="flex flex-col w-full gap-6 pb-12 select-none animate-in fade-in duration-150 text-slate-100">
       {/* Toast Feedback */}
       {feedbackToast && (
-        <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-teal-900 text-white shadow-xl flex items-center gap-2.5 text-xs font-medium border border-teal-700 animate-in slide-in-from-top-2">
+        <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-slate-800 text-teal-300 shadow-2xl flex items-center gap-2.5 text-xs font-semibold border border-teal-500/40 animate-in slide-in-from-top-2">
           <Check className="w-4 h-4 text-teal-400 shrink-0" />
           <span>{feedbackToast}</span>
         </div>
       )}
 
       {/* Top Section (Header) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/70">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-['Plus_Jakarta_Sans']">
               Calendar &amp; Availability
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-mono font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00685f]"></span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-teal-300 text-xs font-mono font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
               REAL-TIME OCCUPANCY
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             View hall bookings, availability, and block dates for maintenance.
           </p>
         </div>
@@ -281,7 +310,7 @@ export const CalendarModule: React.FC<{
             <button
               type="button"
               onClick={handleResetBlocks}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Blocks</span>
@@ -291,29 +320,29 @@ export const CalendarModule: React.FC<{
           <button
             type="button"
             onClick={() => openBlockModal()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-teal-500/20 transition-all cursor-pointer active:scale-[0.98]"
           >
-            <Lock className="w-3.5 h-3.5 stroke-[2.2]" />
+            <Lock className="w-4 h-4 stroke-[2.2]" />
             <span>Block Date</span>
           </button>
         </div>
       </div>
 
       {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-slate-200/90 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl">
         {/* Left Side: Month Navigation & Today Button */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-xs">
+          <div className="inline-flex items-center bg-slate-900 border border-slate-700 rounded-xl p-1 text-xs">
             <button
               type="button"
               onClick={handlePrevMonth}
               title="Previous Month"
-              className="p-1.5 rounded-md hover:bg-white text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="px-3 font-semibold text-slate-900 font-['Plus_Jakarta_Sans'] min-w-[140px] text-center">
+            <span className="px-3 font-semibold text-white font-['Plus_Jakarta_Sans'] min-w-[140px] text-center">
               [{formattedMonthYear}]
             </span>
 
@@ -321,7 +350,7 @@ export const CalendarModule: React.FC<{
               type="button"
               onClick={handleNextMonth}
               title="Next Month"
-              className="p-1.5 rounded-md hover:bg-white text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -330,7 +359,7 @@ export const CalendarModule: React.FC<{
           <button
             type="button"
             onClick={handleToday}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs font-semibold shadow-md transition-colors cursor-pointer"
           >
             Today
           </button>
@@ -343,7 +372,7 @@ export const CalendarModule: React.FC<{
             <select
               value={selectedHall}
               onChange={(e) => setSelectedHall(e.target.value)}
-              className="pl-3 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+              className="pl-3 pr-8 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-medium text-slate-200 focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
             >
               {hallNames.map((hall) => (
                 <option key={hall} value={hall}>
@@ -354,14 +383,14 @@ export const CalendarModule: React.FC<{
           </div>
 
           {/* View Toggle (Month View / Week View) */}
-          <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 text-xs font-medium">
+          <div className="inline-flex items-center bg-slate-900 p-1 rounded-xl border border-slate-700 text-xs font-medium">
             <button
               type="button"
               onClick={() => setViewMode('Month')}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'Month'
-                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-slate-800 text-teal-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Month View
@@ -369,10 +398,10 @@ export const CalendarModule: React.FC<{
             <button
               type="button"
               onClick={() => setViewMode('Week')}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'Week'
-                  ? 'bg-white text-slate-900 font-semibold shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-slate-800 text-teal-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Week View
@@ -383,14 +412,14 @@ export const CalendarModule: React.FC<{
 
       {/* Main Section: Calendar Grid (Month View) */}
       {viewMode === 'Month' ? (
-        <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
+        <div className="w-full bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col">
           {/* Days of the Week Header */}
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center">
+          <div className="grid grid-cols-7 border-b border-slate-700/60 bg-slate-900/80 text-center">
             {DAYS_OF_WEEK.map((day, idx) => (
               <div
                 key={day}
                 className={`py-3 text-[11px] font-bold uppercase tracking-wider ${
-                  idx >= 5 ? 'text-teal-700' : 'text-slate-500'
+                  idx >= 5 ? 'text-teal-400' : 'text-slate-400'
                 }`}
               >
                 {day}
@@ -399,14 +428,13 @@ export const CalendarModule: React.FC<{
           </div>
 
           {/* Month Calendar Cells Grid */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-slate-100">
+          <div className="grid grid-cols-7 divide-x divide-y divide-slate-700/50">
             {calendarCells.map((cell, idx) => {
               const blocks = getBlockedForDate(cell.dateString);
               const dayBookings = getBookingsForDate(cell.dateString);
               const isBlocked = blocks.length > 0;
               const hasBookings = dayBookings.length > 0;
 
-              // Check slots: morning vs evening
               const morningBooking = dayBookings.find((b) => b.slot?.toLowerCase().includes('morning') || b.slot?.toLowerCase().includes('lunch'));
               const eveningBooking = dayBookings.find((b) => b.slot?.toLowerCase().includes('evening') || b.slot?.toLowerCase().includes('dinner'));
 
@@ -416,12 +444,12 @@ export const CalendarModule: React.FC<{
                   onClick={() => setSelectedDayDetails({ dateString: cell.dateString, bookings: dayBookings, blocks })}
                   className={`min-h-[110px] sm:min-h-[125px] p-2 sm:p-2.5 flex flex-col justify-between transition-all relative group cursor-pointer ${
                     !cell.isCurrentMonth
-                      ? 'bg-slate-50/40 text-slate-400'
+                      ? 'bg-slate-900/40 text-slate-600'
                       : isBlocked
-                      ? 'bg-amber-50/40'
+                      ? 'bg-amber-950/20'
                       : hasBookings
-                      ? 'bg-teal-50/20 hover:bg-teal-50/40'
-                      : 'bg-white hover:bg-slate-50/80 text-slate-800'
+                      ? 'bg-teal-950/20 hover:bg-teal-950/30'
+                      : 'bg-slate-800/40 hover:bg-slate-800/80 text-slate-200'
                   }`}
                 >
                   {/* Cell Top Header: Date Number */}
@@ -429,10 +457,10 @@ export const CalendarModule: React.FC<{
                     <span
                       className={`inline-flex items-center justify-center text-xs font-semibold rounded-full w-6 h-6 transition-colors ${
                         cell.isToday
-                          ? 'bg-[#00685f] text-white font-bold shadow-xs'
+                          ? 'bg-teal-600 text-white font-bold shadow-sm'
                           : cell.isCurrentMonth
-                          ? 'text-slate-700 group-hover:text-slate-900'
-                          : 'text-slate-400'
+                          ? 'text-slate-300 group-hover:text-white'
+                          : 'text-slate-600'
                       }`}
                     >
                       {cell.dayNum}
@@ -441,14 +469,14 @@ export const CalendarModule: React.FC<{
                     {/* Dual Slot Pills Preview */}
                     <div className="flex items-center gap-1">
                       {morningBooking ? (
-                        <span className="w-2 h-2 rounded-full bg-amber-500" title={`Morning: ${morningBooking.customer_name || morningBooking.customerName}`} />
+                        <span className="w-2 h-2 rounded-full bg-amber-400" title={`Morning: ${morningBooking.customerName}`} />
                       ) : (
-                        <span className="w-2 h-2 rounded-full bg-slate-200" title="Morning Slot Available" />
+                        <span className="w-2 h-2 rounded-full bg-slate-700" title="Morning Slot Available" />
                       )}
                       {eveningBooking ? (
-                        <span className="w-2 h-2 rounded-full bg-indigo-600" title={`Evening: ${eveningBooking.customer_name || eveningBooking.customerName}`} />
+                        <span className="w-2 h-2 rounded-full bg-teal-400" title={`Evening: ${eveningBooking.customerName}`} />
                       ) : (
-                        <span className="w-2 h-2 rounded-full bg-slate-200" title="Evening Slot Available" />
+                        <span className="w-2 h-2 rounded-full bg-slate-700" title="Evening Slot Available" />
                       )}
                     </div>
                   </div>
@@ -459,9 +487,9 @@ export const CalendarModule: React.FC<{
                       blocks.map((b) => (
                         <div
                           key={b.id}
-                          className="px-2 py-0.5 rounded-md bg-amber-100 border border-amber-200 text-amber-900 text-[10px] font-semibold flex items-center gap-1 shadow-2xs truncate"
+                          className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 shadow-sm truncate"
                         >
-                          <Lock className="w-2.5 h-2.5 text-amber-700 shrink-0" />
+                          <Lock className="w-2.5 h-2.5 text-amber-400 shrink-0" />
                           <span className="truncate">[{b.hallName}]</span>
                         </div>
                       ))
@@ -471,21 +499,21 @@ export const CalendarModule: React.FC<{
                           key={b.id}
                           className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 truncate border ${
                             b.slot?.toLowerCase().includes('morning')
-                              ? 'bg-amber-50 text-amber-900 border-amber-200'
-                              : 'bg-indigo-50 text-indigo-900 border-indigo-200'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-teal-500/20 text-teal-300 border-teal-500/30'
                           }`}
                         >
                           {b.slot?.toLowerCase().includes('morning') ? (
-                            <Sun className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                            <Sun className="w-2.5 h-2.5 text-amber-400 shrink-0" />
                           ) : (
-                            <Moon className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
+                            <Moon className="w-2.5 h-2.5 text-teal-400 shrink-0" />
                           )}
-                          <span className="truncate">{b.customer_name || b.customerName}</span>
+                          <span className="truncate">{b.customerName}</span>
                         </div>
                       ))
                     ) : (
                       <div className="text-center py-1">
-                        <span className="text-[10px] font-mono text-slate-300 group-hover:text-slate-400 transition-colors">
+                        <span className="text-[10px] font-mono text-slate-500 group-hover:text-slate-400 transition-colors">
                           Open Slots
                         </span>
                       </div>
@@ -493,9 +521,9 @@ export const CalendarModule: React.FC<{
                   </div>
 
                   {/* Cell Footer */}
-                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-mono">
+                  <div className="flex items-center justify-between text-[9px] text-slate-500 font-mono">
                     <span>{hasBookings ? `${dayBookings.length} Booked` : ''}</span>
-                    <span className="opacity-0 group-hover:opacity-70 transition-opacity">Details &rarr;</span>
+                    <span className="opacity-0 group-hover:opacity-70 transition-opacity text-teal-400">Details &rarr;</span>
                   </div>
                 </div>
               );
@@ -504,22 +532,22 @@ export const CalendarModule: React.FC<{
         </div>
       ) : (
         /* Week View Grid */
-        <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
+        <div className="w-full bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden flex flex-col">
           {/* Week Header */}
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80 text-center">
+          <div className="grid grid-cols-7 border-b border-slate-700/60 bg-slate-900/80 text-center">
             {weekDays.map((cell, idx) => (
               <div
                 key={idx}
                 className={`py-3 px-2 flex flex-col items-center justify-center gap-1 ${
-                  cell.isToday ? 'bg-teal-50/60' : ''
+                  cell.isToday ? 'bg-teal-500/10' : ''
                 }`}
               >
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   {DAYS_OF_WEEK[idx]}
                 </span>
                 <span
                   className={`inline-flex items-center justify-center text-xs font-bold rounded-full w-6 h-6 ${
-                    cell.isToday ? 'bg-[#00685f] text-white shadow-xs' : 'text-slate-800'
+                    cell.isToday ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-200'
                   }`}
                 >
                   {cell.dayNum}
@@ -529,7 +557,7 @@ export const CalendarModule: React.FC<{
           </div>
 
           {/* Week Slots Grid */}
-          <div className="grid grid-cols-7 divide-x divide-slate-100 min-h-[420px]">
+          <div className="grid grid-cols-7 divide-x divide-slate-700/50 min-h-[420px]">
             {weekDays.map((cell, idx) => {
               const blocks = getBlockedForDate(cell.dateString);
               const isBlocked = blocks.length > 0;
@@ -538,7 +566,7 @@ export const CalendarModule: React.FC<{
                 <div
                   key={idx}
                   onClick={() => openBlockModal(cell.dateString)}
-                  className="p-3 flex flex-col gap-2 hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  className="p-3 flex flex-col gap-2 hover:bg-slate-800/60 transition-colors cursor-pointer group"
                 >
                   <div className="text-[10px] text-slate-400 font-mono text-center">
                     {cell.dateString}
@@ -548,21 +576,21 @@ export const CalendarModule: React.FC<{
                     blocks.map((b) => (
                       <div
                         key={b.id}
-                        className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex flex-col gap-1"
+                        className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-medium flex flex-col gap-1"
                       >
-                        <div className="flex items-center gap-1 font-bold text-[11px] text-amber-800">
+                        <div className="flex items-center gap-1 font-bold text-[11px] text-amber-400">
                           <Lock className="w-3 h-3" />
                           <span>BLOCKED</span>
                         </div>
                         <span className="text-[10px]">{b.hallName}</span>
-                        <span className="text-[10px] text-amber-700 italic">[{b.reason}]</span>
+                        <span className="text-[10px] text-amber-400 italic">[{b.reason}]</span>
                       </div>
                     ))
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-center gap-1 py-8">
-                      <span className="text-xs font-mono text-slate-400">No Events</span>
-                      <span className="text-[10px] font-mono text-slate-300">[--]</span>
-                      <span className="text-[10px] text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
+                      <span className="text-xs font-mono text-slate-500">No Events</span>
+                      <span className="text-[10px] font-mono text-slate-600">[--]</span>
+                      <span className="text-[10px] text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
                         Block Day
                       </span>
                     </div>
@@ -575,42 +603,42 @@ export const CalendarModule: React.FC<{
       )}
 
       {/* Legend & Guidance Footer */}
-      <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600">
+      <div className="p-4 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[#00685f]"></span>
+            <span className="w-3 h-3 rounded-full bg-teal-500"></span>
             <span>Current Day (Today)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-300"></span>
+            <span className="w-3 h-3 rounded-sm bg-amber-500/30 border border-amber-400/40"></span>
             <span>Maintenance / Blocked Date</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-mono text-[11px]">[--]</span>
+            <span className="text-slate-500 font-mono text-[11px]">[--]</span>
             <span>Empty Scheduled Slot</span>
           </div>
         </div>
 
         <div className="text-slate-400 font-mono text-[11px]">
-          [Calendar Status: 0 Bookings Scheduled]
+          [Calendar Status: {bookings.length} Bookings Scheduled]
         </div>
       </div>
 
-      {/* "Block Date" Modal (Simulated) */}
+      {/* "Block Date" Modal */}
       {isBlockModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] overflow-y-auto flex flex-col text-slate-200">
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     Block Dates for Venue
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-400">
                     Reserve timeframes for deep cleaning, acoustics, or scheduled renovations.
                   </p>
                 </div>
@@ -619,7 +647,7 @@ export const CalendarModule: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsBlockModalOpen(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -628,22 +656,22 @@ export const CalendarModule: React.FC<{
             {/* Modal Form */}
             <form onSubmit={handleSaveBlock} className="p-6 flex flex-col gap-4 text-xs">
               {blockError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs font-medium">
                   {blockError}
                 </div>
               )}
 
               {/* Select Hall Dropdown */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-slate-700">
-                  Select Hall <span className="text-rose-500">*</span>
+                <label className="font-semibold text-slate-300">
+                  Select Hall <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
                   <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <select
                     value={blockHall}
                     onChange={(e) => setBlockHall(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] cursor-pointer"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 cursor-pointer"
                   >
                     {hallNames.map((h) => (
                       <option key={h} value={h}>
@@ -654,30 +682,30 @@ export const CalendarModule: React.FC<{
                 </div>
               </div>
 
-              {/* Start Date & End Date (Date Pickers) */}
+              {/* Start Date & End Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-slate-700">
-                    Start Date <span className="text-rose-500">*</span>
+                  <label className="font-semibold text-slate-300">
+                    Start Date <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="date"
                     value={blockStartDate}
                     onChange={(e) => setBlockStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f]"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500"
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-semibold text-slate-700">
-                    End Date <span className="text-rose-500">*</span>
+                  <label className="font-semibold text-slate-300">
+                    End Date <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="date"
                     value={blockEndDate}
                     onChange={(e) => setBlockEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f]"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500"
                     required
                   />
                 </div>
@@ -685,31 +713,31 @@ export const CalendarModule: React.FC<{
 
               {/* Reason Textarea */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold text-slate-700">
-                  Reason <span className="text-rose-500">*</span>
+                <label className="font-semibold text-slate-300">
+                  Reason <span className="text-rose-400">*</span>
                 </label>
                 <textarea
                   rows={3}
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
                   placeholder="[Maintenance / Holiday / Carpet Replacement]"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] resize-none"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 resize-none"
                   required
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 mt-2">
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3 mt-2">
                 <button
                   type="button"
                   onClick={() => setIsBlockModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold text-xs transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5 stroke-[2.2]" />
                   <span>Block Dates</span>
@@ -722,19 +750,19 @@ export const CalendarModule: React.FC<{
 
       {/* Selected Day Details Drawer */}
       {selectedDayDetails && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-800 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto text-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-teal-700" />
-                <h3 className="font-bold text-base text-slate-900">
+                <CalendarDays className="w-5 h-5 text-teal-400" />
+                <h3 className="font-bold text-base text-white">
                   Hall Occupancy &amp; Availability: {selectedDayDetails.dateString}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedDayDetails(null)}
-                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -742,8 +770,8 @@ export const CalendarModule: React.FC<{
 
             <div className="py-4 space-y-5">
               {/* 1 Hour Cleaning Notice */}
-              <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-                <Clock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+                <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <strong>Turnover Protocol Active:</strong> 1 hour before and 1 hour after each booked event is strictly reserved for hall cleaning, sanitation, and staging. New bookings must fall outside of this blocked cleaning window.
                 </div>
@@ -751,7 +779,7 @@ export const CalendarModule: React.FC<{
 
               {/* Hall-by-Hall Status Breakdown */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
                   All Venue Halls Status on {selectedDayDetails.dateString}:
                 </h4>
 
@@ -766,24 +794,24 @@ export const CalendarModule: React.FC<{
                   return (
                     <div
                       key={hall.id}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-all space-y-2.5"
+                      className="p-4 rounded-xl border border-slate-800 bg-slate-850 bg-slate-800/50 hover:bg-slate-800 transition-all space-y-2.5"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-teal-700" />
-                          <span className="font-bold text-slate-900 text-sm">{hall.name}</span>
+                          <Building2 className="w-4 h-4 text-teal-400" />
+                          <span className="font-bold text-white text-sm">{hall.name}</span>
                           <span className="text-[11px] text-slate-400 font-mono">({hall.code || 'HL'}) • Cap: {hall.capacity}</span>
                         </div>
                         {isBlocked ? (
-                          <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-bold uppercase border border-rose-200">
+                          <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold uppercase border border-rose-500/30">
                             Maintenance Blocked
                           </span>
                         ) : hallBookings.length === 0 ? (
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase border border-emerald-200">
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase border border-emerald-500/30">
                             All Day Available
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold uppercase border border-amber-200">
+                          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase border border-amber-500/30">
                             {hallBookings.length} Event(s) Booked
                           </span>
                         )}
@@ -799,27 +827,27 @@ export const CalendarModule: React.FC<{
                             return (
                               <div
                                 key={b.id}
-                                className="p-3 rounded-lg bg-white border border-slate-200 text-xs space-y-1.5 shadow-2xs"
+                                className="p-3 rounded-lg bg-slate-900 border border-slate-700/60 text-xs space-y-1.5 shadow-sm"
                               >
                                 <div className="flex items-center justify-between">
-                                  <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                    <span>Occupied by: {b.customer_name || b.customerName}</span>
-                                    <span className="text-slate-400 font-mono text-[10px]">[{b.booking_ref || b.bookingRef}]</span>
+                                  <div className="font-semibold text-slate-200 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                                    <span>Occupied by: {b.customerName}</span>
+                                    <span className="text-slate-400 font-mono text-[10px]">[{b.bookingRef}]</span>
                                   </div>
-                                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-semibold">
+                                  <span className="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-mono text-[10px] font-semibold border border-slate-700">
                                     {b.eventType}
                                   </span>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono pt-1 border-t border-slate-100">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono pt-1 border-t border-slate-800">
                                   <div>
-                                    <strong className="text-slate-600">Event Time (12h):</strong>{' '}
-                                    <span className="text-teal-800 font-bold">{formattedTime}</span>
+                                    <strong className="text-slate-400">Event Time (12h):</strong>{' '}
+                                    <span className="text-teal-300 font-bold">{formattedTime}</span>
                                   </div>
                                   <div>
-                                    <strong className="text-slate-600">Reserved Window:</strong>{' '}
-                                    <span className="text-amber-800 font-bold">Incl. 1h Pre &amp; Post Cleaning</span>
+                                    <strong className="text-slate-400">Reserved Window:</strong>{' '}
+                                    <span className="text-amber-300 font-bold">Incl. 1h Pre &amp; Post Cleaning</span>
                                   </div>
                                 </div>
                               </div>
@@ -829,8 +857,8 @@ export const CalendarModule: React.FC<{
                       )}
 
                       {/* Available Free Windows for Booking */}
-                      <div className="pt-1.5 flex items-center justify-between text-xs text-slate-600">
-                        <span className="text-[11px] font-semibold text-slate-500">
+                      <div className="pt-1.5 flex items-center justify-between text-xs text-slate-400">
+                        <span className="text-[11px] font-semibold text-slate-400">
                           {isBlocked
                             ? 'No slots available (Maintenance active)'
                             : hallBookings.length === 0
@@ -861,7 +889,7 @@ export const CalendarModule: React.FC<{
                                 });
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-2xs transition-all shrink-0 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-sm transition-all shrink-0 cursor-pointer"
                           >
                             <CalendarDays className="w-3.5 h-3.5" />
                             <span>Book This Hall</span>
@@ -875,21 +903,21 @@ export const CalendarModule: React.FC<{
 
               {/* Maintenance blocks on this date */}
               {selectedDayDetails.blocks.length > 0 && (
-                <div className="p-3 rounded-xl border border-rose-200 bg-rose-50/60">
-                  <div className="text-xs font-bold text-rose-900 flex items-center gap-1 mb-2">
-                    <Lock className="w-3.5 h-3.5 text-rose-600" />
+                <div className="p-3.5 rounded-xl border border-rose-800/50 bg-rose-950/30">
+                  <div className="text-xs font-bold text-rose-300 flex items-center gap-1 mb-2">
+                    <Lock className="w-3.5 h-3.5 text-rose-400" />
                     <span>Active Maintenance Blocks ({selectedDayDetails.blocks.length})</span>
                   </div>
                   <div className="space-y-1.5">
                     {selectedDayDetails.blocks.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-rose-100">
+                      <div key={b.id} className="flex items-center justify-between text-xs bg-slate-900 p-2.5 rounded-lg border border-rose-900/40">
                         <div>
-                          <span className="font-bold text-slate-800">[{b.hallName}]</span> {b.reason}
+                          <span className="font-bold text-slate-200">[{b.hallName}]</span> {b.reason}
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteBlock(b.id)}
-                          className="text-rose-600 hover:text-rose-800 p-1"
+                          className="text-rose-400 hover:text-rose-300 p-1"
                           title="Remove block"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -901,7 +929,7 @@ export const CalendarModule: React.FC<{
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => {
@@ -909,9 +937,9 @@ export const CalendarModule: React.FC<{
                   setSelectedDayDetails(null);
                   openBlockModal(d);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-slate-300 cursor-pointer"
               >
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
                 <span>Block this Day</span>
               </button>
 
@@ -926,7 +954,7 @@ export const CalendarModule: React.FC<{
                     });
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs font-bold shadow-md cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create Booking for this Date</span>

@@ -85,7 +85,7 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
 
   const openAuthDialog = (vendor: VendorPartner) => {
     setSelectedVendor(vendor);
-    setDisbursementGross(vendor.balanceDue || 0);
+    setDisbursementGross(Number(vendor.balanceDue) || 0);
     setWithholdingTaxPct(vendor.ntnNumber ? 4 : 0); // 4% withholding if NTN registered filer
     setDisbursementRef(`DISB-${Math.floor(10000 + Math.random() * 90000)}`);
     setDisbursementAuthNotes(`Disbursement approved for ${vendor.businessName} under ${vendor.paymentTerms || 'Net 15 Days'}`);
@@ -121,7 +121,7 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
         date: new Date().toISOString().slice(0, 10),
       });
       setIsVoucherModalOpen(true);
-      showToast(`Payment of Rs. ${netPayable.toLocaleString()} authorized for ${res.vendor.businessName}!`);
+      showToast(`Payment of Rs. ${Number(netPayable || 0).toLocaleString()} authorized for ${res.vendor.businessName}!`);
     } catch (err) {
       console.error('Failed to authorize disbursement:', err);
       showToast('Error recording disbursement authorization.');
@@ -134,9 +134,9 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          v.businessName.toLowerCase().includes(q) ||
-          v.category.toLowerCase().includes(q) ||
-          v.vendorId.toLowerCase().includes(q)
+          (v.businessName || '').toLowerCase().includes(q) ||
+          (v.category || '').toLowerCase().includes(q) ||
+          (v.vendorId || '').toLowerCase().includes(q)
         );
       }
       return true;
@@ -144,11 +144,16 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
   }, [vendors, categoryFilter, searchQuery]);
 
   const stats = useMemo(() => {
-    const totalPayables = vendors.reduce((acc, v) => acc + (v.balanceDue || 0), 0);
-    const totalDisbursed = vendors.reduce((acc, v) => acc + (v.totalPaid || 0), 0);
-    const totalBilled = vendors.reduce((acc, v) => acc + (v.totalBilled || 0), 0);
-    const dueCount = vendors.filter((v) => (v.balanceDue || 0) > 0).length;
-    return { totalPayables, totalDisbursed, totalBilled, dueCount };
+    const totalPayables = vendors.reduce((acc, v) => acc + (Number(v.balanceDue) || 0), 0);
+    const totalDisbursed = vendors.reduce((acc, v) => acc + (Number(v.totalPaid) || 0), 0);
+    const totalBilled = vendors.reduce((acc, v) => acc + (Number(v.totalBilled) || 0), 0);
+    const dueCount = vendors.filter((v) => (Number(v.balanceDue) || 0) > 0).length;
+    return {
+      totalPayables: Number(totalPayables) || 0,
+      totalDisbursed: Number(totalDisbursed) || 0,
+      totalBilled: Number(totalBilled) || 0,
+      dueCount,
+    };
   }, [vendors]);
 
   return (
@@ -167,11 +172,7 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
 
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-300 font-bold text-xs uppercase tracking-wider">
-              <ArrowUpRight className="w-4 h-4 text-rose-400" />
-              <span>Phase 7 • Task 7.4: Accounts Payable (A/P) Master</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Tax Withholding &amp; Vouchers</span>
             </span>
@@ -187,156 +188,156 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total A/P Liabilities</span>
-            <span className="text-2xl font-black text-rose-600 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalPayables).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total A/P Liabilities</span>
+            <span className="text-2xl font-black text-rose-400 font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalPayables || 0)).toLocaleString()}
             </span>
-            <span className="text-[11px] text-rose-500 font-semibold mt-0.5 block">{stats.dueCount} Suppliers Due</span>
+            <span className="text-[11px] text-rose-300 font-semibold mt-0.5 block">{stats.dueCount} Suppliers Due</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center font-bold">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Disbursed</span>
-            <span className="text-2xl font-black text-emerald-600 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalDisbursed).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Disbursed</span>
+            <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalDisbursed || 0)).toLocaleString()}
             </span>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-0.5 block">Settled to Date</span>
+            <span className="text-[11px] text-emerald-400 font-semibold mt-0.5 block">Settled to Date</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Gross Procurement</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalBilled).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Gross Procurement</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalBilled || 0)).toLocaleString()}
             </span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 block">Lifetime Vendor Intake</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
             <Building className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Disbursement Ratio</span>
-            <span className="text-2xl font-black text-teal-600 font-mono mt-1 block">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Disbursement Ratio</span>
+            <span className="text-2xl font-black text-teal-400 font-mono mt-1 block">
               {stats.totalBilled > 0
-                ? `${Math.round((stats.totalDisbursed / stats.totalBilled) * 100)}%`
+                ? `${Math.round(((stats.totalDisbursed || 0) / stats.totalBilled) * 100)}%`
                 : '100%'}
             </span>
-            <span className="text-[11px] text-teal-600 font-semibold mt-0.5 block">Payment Reliability</span>
+            <span className="text-[11px] text-teal-300 font-semibold mt-0.5 block">Payment Reliability</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
             <ShieldCheck className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search vendor name, ID, or trade category..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-slate-900 text-xs font-bold text-white focus:outline-none cursor-pointer"
             >
-              <option value="All">All Categories</option>
-              <option value="Poultry/Meat">Poultry/Meat</option>
-              <option value="Dairy & Bakery">Dairy &amp; Bakery</option>
-              <option value="Floral Decor">Floral Decor</option>
-              <option value="Stage & Lighting">Stage &amp; Lighting</option>
-              <option value="Outsourced Labor">Outsourced Labor</option>
-              <option value="Valet & Security">Valet &amp; Security</option>
+              <option value="All" className="bg-slate-900 text-white">All Categories</option>
+              <option value="Poultry/Meat" className="bg-slate-900 text-white">Poultry/Meat</option>
+              <option value="Dairy & Bakery" className="bg-slate-900 text-white">Dairy &amp; Bakery</option>
+              <option value="Floral Decor" className="bg-slate-900 text-white">Floral Decor</option>
+              <option value="Stage & Lighting" className="bg-slate-900 text-white">Stage &amp; Lighting</option>
+              <option value="Outsourced Labor" className="bg-slate-900 text-white">Outsourced Labor</option>
+              <option value="Valet & Security" className="bg-slate-900 text-white">Valet &amp; Security</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Payables Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-4 px-6">Vendor Name &amp; ID</th>
-                <th className="py-4 px-4">Trade Category</th>
-                <th className="py-4 px-4">NTN / Tax Status</th>
-                <th className="py-4 px-4 text-right">Total Billed</th>
-                <th className="py-4 px-4 text-right">Total Paid</th>
-                <th className="py-4 px-4 text-right">Outstanding A/P</th>
-                <th className="py-4 px-6 text-center">Action</th>
+              <tr className="bg-slate-900/80 border-b border-slate-700/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <th className="py-4 px-6 whitespace-nowrap">Vendor Name &amp; ID</th>
+                <th className="py-4 px-4 whitespace-nowrap">Trade Category</th>
+                <th className="py-4 px-4 whitespace-nowrap">NTN / Tax Status</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Total Billed</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Total Paid</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Outstanding A/P</th>
+                <th className="py-4 px-6 text-center whitespace-nowrap">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-mono">
+            <tbody className="divide-y divide-slate-700/50 text-xs sm:text-sm font-mono">
               {filteredVendors.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-4 px-6">
-                    <span className="font-bold text-slate-900 block font-sans">{v.businessName}</span>
+                <tr key={v.id} className="hover:bg-slate-800/40 border-b border-slate-700/50 transition-colors">
+                  <td className="py-4 px-6 whitespace-nowrap">
+                    <span className="font-bold text-white block font-sans">{v.businessName}</span>
                     <span className="text-[11px] text-slate-400 block">{v.vendorId} • {v.paymentTerms || 'Net 15 Days'}</span>
                   </td>
-                  <td className="py-4 px-4 font-sans">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                  <td className="py-4 px-4 font-sans whitespace-nowrap">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900/80 border border-slate-700 text-slate-300">
                       {v.category}
                     </span>
                   </td>
-                  <td className="py-4 px-4 font-sans text-xs">
+                  <td className="py-4 px-4 font-sans text-xs whitespace-nowrap">
                     {v.ntnNumber ? (
-                      <span className="text-emerald-700 font-bold font-mono">NTN: {v.ntnNumber} (Active Filer)</span>
+                      <span className="text-emerald-400 font-bold font-mono">NTN: {v.ntnNumber} (Active Filer)</span>
                     ) : (
-                      <span className="text-slate-400">Non-Filer / Unregistered</span>
+                      <span className="text-slate-500">Non-Filer / Unregistered</span>
                     )}
                   </td>
-                  <td className="py-4 px-4 text-right font-bold text-slate-900">
-                    Rs. {Math.round(v.totalBilled || 0).toLocaleString()}
+                  <td className="py-4 px-4 text-right font-bold text-white whitespace-nowrap">
+                    Rs. {Math.round(Number(v.totalBilled || 0)).toLocaleString()}
                   </td>
-                  <td className="py-4 px-4 text-right font-bold text-emerald-700">
-                    Rs. {Math.round(v.totalPaid || 0).toLocaleString()}
+                  <td className="py-4 px-4 text-right font-bold text-emerald-400 whitespace-nowrap">
+                    Rs. {Math.round(Number(v.totalPaid || 0)).toLocaleString()}
                   </td>
-                  <td className="py-4 px-4 text-right font-black">
+                  <td className="py-4 px-4 text-right font-black whitespace-nowrap">
                     <span
-                      className={`px-2.5 py-1 rounded-xl ${
+                      className={`px-2.5 py-1 rounded-xl border ${
                         v.balanceDue && v.balanceDue > 0
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-emerald-50 text-emerald-700'
+                          ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                          : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                       }`}
                     >
-                      Rs. {Math.round(v.balanceDue || 0).toLocaleString()}
+                      Rs. {Math.round(Number(v.balanceDue || 0)).toLocaleString()}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-center">
+                  <td className="py-4 px-6 text-center whitespace-nowrap">
                     {v.balanceDue && v.balanceDue > 0 ? (
                       <button
                         type="button"
                         onClick={() => openAuthDialog(v)}
-                        className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-950 font-extrabold text-xs shadow-xs transition cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-xs transition cursor-pointer whitespace-nowrap inline-flex items-center justify-center shrink-0"
                       >
                         Authorize Payment
                       </button>
                     ) : (
-                      <span className="text-xs text-emerald-600 font-bold font-sans">Account Settled</span>
+                      <span className="text-xs text-emerald-400 font-bold font-sans">Account Settled</span>
                     )}
                   </td>
                 </tr>
@@ -348,46 +349,46 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
 
       {/* Authorization Modal */}
       {isAuthModalOpen && selectedVendor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     Authorize Vendor Disbursement
                   </h3>
-                  <span className="text-xs text-slate-500">Apply withholding tax deductions and generate payment voucher</span>
+                  <span className="text-xs text-slate-400">Apply withholding tax deductions and generate payment voucher</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAuthorizeDisbursement} className="p-6 space-y-4">
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs grid grid-cols-2 gap-2">
+              <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700 text-xs grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-slate-400 block">Vendor Account:</span>
-                  <strong className="text-slate-900 text-sm">{selectedVendor.businessName}</strong>
+                  <strong className="text-white text-sm">{selectedVendor.businessName}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Total Outstanding:</span>
-                  <strong className="text-rose-600 font-mono text-sm">
-                    Rs. {Math.round(selectedVendor.balanceDue || 0).toLocaleString()}
+                  <strong className="text-rose-400 font-mono text-sm">
+                    Rs. {Math.round(Number(selectedVendor.balanceDue || 0)).toLocaleString()}
                   </strong>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Gross Bill Amount to Clear (Rs.) <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Gross Bill Amount to Clear (Rs.) <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -395,70 +396,70 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
                   required
                   value={disbursementGross}
                   onChange={(e) => setDisbursementGross(parseFloat(e.target.value) || 0)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-black font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-base font-black font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Withholding Tax (WHT %)</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Withholding Tax (WHT %)</label>
                   <select
                     value={withholdingTaxPct}
                     onChange={(e) => setWithholdingTaxPct(parseFloat(e.target.value))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-teal-500 transition"
                   >
-                    <option value={0}>0% (Tax Exempt / Non-deductible)</option>
-                    <option value={4}>4% (Goods / Raw Materials - Filer)</option>
-                    <option value={7.5}>7.5% (Services / Decoration / Sound)</option>
-                    <option value={10}>10% (Non-Filer Penalty Rate)</option>
+                    <option value={0} className="bg-slate-900 text-white">0% (Tax Exempt / Non-deductible)</option>
+                    <option value={4} className="bg-slate-900 text-white">4% (Goods / Raw Materials - Filer)</option>
+                    <option value={7.5} className="bg-slate-900 text-white">7.5% (Services / Decoration / Sound)</option>
+                    <option value={10} className="bg-slate-900 text-white">10% (Non-Filer Penalty Rate)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Disbursement Channel</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Disbursement Channel</label>
                   <select
                     value={disbursementChannel}
                     onChange={(e) => setDisbursementChannel(e.target.value as 'Bank Transfer' | 'Cheque' | 'Cash')}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-teal-500 transition"
                   >
-                    <option value="Bank Transfer">Bank Transfer (Online/IBAN)</option>
-                    <option value="Cheque">Crossed Cheque</option>
-                    <option value="Cash">Cash Voucher</option>
+                    <option value="Bank Transfer" className="bg-slate-900 text-white">Bank Transfer (Online/IBAN)</option>
+                    <option value="Cheque" className="bg-slate-900 text-white">Crossed Cheque</option>
+                    <option value="Cash" className="bg-slate-900 text-white">Cash Voucher</option>
                   </select>
                 </div>
               </div>
 
               {/* Deduction & Net Payable Calculation Box */}
-              <div className="p-4 bg-teal-50 rounded-2xl border border-teal-200 space-y-1.5 text-xs font-mono">
-                <div className="flex justify-between text-slate-600 font-sans">
+              <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between text-slate-400 font-sans">
                   <span>Gross Invoice Amount:</span>
-                  <span className="font-bold text-slate-900">Rs. {disbursementGross.toLocaleString()}</span>
+                  <span className="font-bold text-white">Rs. {Number(disbursementGross || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-rose-700 font-sans">
+                <div className="flex justify-between text-rose-400 font-sans">
                   <span>Less Withholding Tax ({withholdingTaxPct}%):</span>
-                  <span>- Rs. {taxAmount.toLocaleString()}</span>
+                  <span>- Rs. {Number(taxAmount || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-teal-950 font-bold text-sm border-t border-teal-200 pt-1 font-sans">
+                <div className="flex justify-between text-teal-300 font-bold text-sm border-t border-slate-700 pt-1 font-sans">
                   <span>NET PAYABLE DISBURSEMENT:</span>
-                  <span className="font-mono text-base text-teal-800">Rs. {netPayable.toLocaleString()}</span>
+                  <span className="font-mono text-base text-teal-400">Rs. {Number(netPayable || 0).toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Authorization Signature / Notes</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Authorization Signature / Notes</label>
                 <textarea
                   rows={2}
                   value={disbursementAuthNotes}
                   onChange={(e) => setDisbursementAuthNotes(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAuthModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -476,9 +477,9 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
 
       {/* Payment Voucher Modal */}
       {isVoucherModalOpen && voucherData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-800/80 text-white">
               <div>
                 <span className="text-[11px] font-mono text-teal-400 uppercase tracking-widest block">
                   MARRIAGE HALL MANAGEMENT SYSTEM
@@ -495,45 +496,45 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
             </div>
 
             <div className="p-6 space-y-4 text-xs font-sans">
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700">
                 <div>
                   <span className="text-slate-400 block">Voucher Ref:</span>
-                  <strong className="text-slate-900 font-mono text-sm">{voucherData.refNumber}</strong>
+                  <strong className="text-white font-mono text-sm">{voucherData.refNumber}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Date:</span>
-                  <strong className="text-slate-900">{voucherData.date}</strong>
+                  <strong className="text-white">{voucherData.date}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Beneficiary / Payee:</span>
-                  <strong className="text-slate-900">{voucherData.vendor.businessName}</strong>
+                  <strong className="text-white">{voucherData.vendor.businessName}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Payment Mode:</span>
-                  <strong className="text-slate-900">{voucherData.channel}</strong>
+                  <strong className="text-white">{voucherData.channel}</strong>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1 font-mono text-xs">
-                <div className="flex justify-between text-slate-600">
+              <div className="p-3 bg-slate-800/60 rounded-xl border border-slate-700 space-y-1 font-mono text-xs">
+                <div className="flex justify-between text-slate-400">
                   <span>Gross Invoice Total:</span>
-                  <span>Rs. {voucherData.grossAmount.toLocaleString()}</span>
+                  <span className="text-white">Rs. {Number(voucherData.grossAmount || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-rose-700">
+                <div className="flex justify-between text-rose-400">
                   <span>Withholding Tax Deduction:</span>
-                  <span>- Rs. {voucherData.taxWithheld.toLocaleString()}</span>
+                  <span>- Rs. {Number(voucherData.taxWithheld || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-1 text-sm">
+                <div className="flex justify-between text-white font-bold border-t border-slate-700 pt-1 text-sm">
                   <span>Net Disbursed Amount:</span>
-                  <span className="text-teal-700">Rs. {voucherData.netPaid.toLocaleString()}</span>
+                  <span className="text-teal-400">Rs. {Number(voucherData.netPaid || 0).toLocaleString()}</span>
                 </div>
               </div>
 
               <div className="pt-6 grid grid-cols-2 gap-8 text-center text-[11px] text-slate-400">
-                <div className="border-t border-slate-300 pt-1">
+                <div className="border-t border-slate-700 pt-1">
                   <span>Payee Acknowledgment</span>
                 </div>
-                <div className="border-t border-slate-300 pt-1">
+                <div className="border-t border-slate-700 pt-1">
                   <span>Authorized Executive Signatory</span>
                 </div>
               </div>
@@ -542,7 +543,7 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Voucher</span>
@@ -555,4 +556,3 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
     </div>
   );
 };
-

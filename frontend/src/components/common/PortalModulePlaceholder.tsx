@@ -4,8 +4,8 @@ import { Sparkles, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 interface PortalModulePlaceholderProps {
   title: string;
   subtitle: string;
-  phaseTag: string;
-  taskRef: string;
+  phaseTag?: string;
+  taskRef?: string;
   features: string[];
   onAction?: () => void;
   actionLabel?: string;
@@ -14,8 +14,6 @@ interface PortalModulePlaceholderProps {
 export const PortalModulePlaceholder: React.FC<PortalModulePlaceholderProps> = ({
   title,
   subtitle,
-  phaseTag,
-  taskRef,
   features,
   onAction,
   actionLabel,
@@ -29,7 +27,7 @@ export const PortalModulePlaceholder: React.FC<PortalModulePlaceholderProps> = (
       <div className="relative z-10 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold mb-4">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>{phaseTag} • {taskRef}</span>
+          <span>Coming Soon</span>
         </div>
 
         <h2 className="text-2xl font-bold tracking-tight text-white mb-2">{title}</h2>
@@ -64,4 +62,3 @@ export const PortalModulePlaceholder: React.FC<PortalModulePlaceholderProps> = (
     </div>
   );
 };
-

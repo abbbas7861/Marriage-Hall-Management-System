@@ -81,22 +81,37 @@ export type OperationalStatus =
   | 'Setup in Progress'
   | 'Guests Arrived'
   | 'Food Service Active'
-  | 'Event Concluded';
+  | 'Event Concluded'
+  | 'In Progress'
+  | 'Ready for Event';
 
 export interface Booking {
   id: string;
   bookingRef: string;
+  booking_ref?: string;
   customerName: string;
+  customer_name?: string;
   contactRef: string;
+  contact_ref?: string;
+  cnic?: string;
+  address?: string;
   eventType: string;
+  event_type?: string;
   hallName: string;
+  hall_name?: string;
   date: string;
   time?: string;
   slot: string;
   status: 'Confirmed' | 'Pending' | 'Cancelled' | 'Under Review' | 'Deposit Paid' | 'Completed';
   paymentStatus?: 'Paid' | 'Partial' | 'Unpaid' | 'Pending';
   amount?: number;
+  advancePayment?: number;
   guestCount?: number;
+  seatingArrangement?: string;
+  menuPackage?: string;
+  specialInstructions?: string;
+  extraHours?: number;
+  ratePerHour?: number;
   operationalStatus?: OperationalStatus;
   assignedManager?: string;
   securityDeposit?: number;

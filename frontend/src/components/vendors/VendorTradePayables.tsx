@@ -103,7 +103,7 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
       setVendors((prev) => prev.map((v) => (v.id === res.vendor.id ? res.vendor : v)));
       setIsDisbursementModalOpen(false);
-      showToast(`Disbursed Rs. ${disbursementAmount.toLocaleString()} to ${res.vendor.businessName} via ${disbursementChannel}!`);
+      showToast(`Disbursed Rs. ${Number(disbursementAmount || 0).toLocaleString()} to ${res.vendor.businessName} via ${disbursementChannel}!`);
     } catch (err) {
       console.error('Failed to disburse payment:', err);
       showToast('Error recording disbursement.');
@@ -123,7 +123,7 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
       setVendors((prev) => prev.map((v) => (v.id === res.vendor.id ? res.vendor : v)));
       setIsBillModalOpen(false);
-      showToast(`Supplier bill of Rs. ${billAmount.toLocaleString()} added to ${res.vendor.businessName}!`);
+      showToast(`Supplier bill of Rs. ${Number(billAmount || 0).toLocaleString()} added to ${res.vendor.businessName}!`);
     } catch (err) {
       console.error('Failed to add bill:', err);
       showToast('Error recording supplier bill.');
@@ -184,11 +184,7 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-500/20 border border-teal-400/40 text-teal-300 font-bold text-xs uppercase tracking-wider">
-              <FileSpreadsheet className="w-4 h-4 text-teal-400" />
-              <span>Phase 6 • Task 6.4: Trade Ledgers &amp; Accounts Payable</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Disbursement &amp; Expense Sync</span>
             </span>
@@ -215,151 +211,151 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Billed Trade</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalBilled).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Billed Trade</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalBilled || 0)).toLocaleString()}
             </span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 block">Supplier Invoices Intake</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
             <Building className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Disbursements Paid</span>
-            <span className="text-2xl font-black text-emerald-600 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalPaid).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Disbursements Paid</span>
+            <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalPaid || 0)).toLocaleString()}
             </span>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-0.5 block">Settled Transactions</span>
+            <span className="text-[11px] text-emerald-400 font-semibold mt-0.5 block">Settled Transactions</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Outstanding A/P Due</span>
-            <span className="text-2xl font-black text-rose-600 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalDue).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Outstanding A/P Due</span>
+            <span className="text-2xl font-black text-rose-400 font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalDue || 0)).toLocaleString()}
             </span>
-            <span className="text-[11px] text-rose-500 font-semibold mt-0.5 block">
+            <span className="text-[11px] text-rose-300 font-semibold mt-0.5 block">
               {stats.vendorsWithDues} Vendors with Balance
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center font-bold">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Payment Compliance</span>
-            <span className="text-2xl font-black text-blue-600 font-mono mt-1 block">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Payment Compliance</span>
+            <span className="text-2xl font-black text-blue-400 font-mono mt-1 block">
               {stats.totalBilled > 0
-                ? `${Math.round((stats.totalPaid / stats.totalBilled) * 100)}%`
+                ? `${Math.round(((stats.totalPaid || 0) / stats.totalBilled) * 100)}%`
                 : '100%'}
             </span>
-            <span className="text-[11px] text-blue-600 font-semibold mt-0.5 block">Paid / Billed Ratio</span>
+            <span className="text-[11px] text-blue-400 font-semibold mt-0.5 block">Paid / Billed Ratio</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
             <ArrowUpRight className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Search & Filter */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search vendor name, ID, or trade category..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-slate-900 text-xs font-bold text-white focus:outline-none cursor-pointer"
             >
-              <option value="All">All Categories</option>
-              <option value="Poultry/Meat">Poultry/Meat</option>
-              <option value="Dairy & Bakery">Dairy &amp; Bakery</option>
-              <option value="Floral Decor">Floral Decor</option>
-              <option value="Stage & Lighting">Stage &amp; Lighting</option>
-              <option value="Outsourced Labor">Outsourced Labor</option>
-              <option value="Valet & Security">Valet &amp; Security</option>
+              <option value="All" className="bg-slate-900 text-white">All Categories</option>
+              <option value="Poultry/Meat" className="bg-slate-900 text-white">Poultry/Meat</option>
+              <option value="Dairy & Bakery" className="bg-slate-900 text-white">Dairy &amp; Bakery</option>
+              <option value="Floral Decor" className="bg-slate-900 text-white">Floral Decor</option>
+              <option value="Stage & Lighting" className="bg-slate-900 text-white">Stage &amp; Lighting</option>
+              <option value="Outsourced Labor" className="bg-slate-900 text-white">Outsourced Labor</option>
+              <option value="Valet & Security" className="bg-slate-900 text-white">Valet &amp; Security</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Trade Ledger Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full min-w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-4 px-6">Vendor / Supplier</th>
-                <th className="py-4 px-4">Category</th>
-                <th className="py-4 px-4">Credit Terms</th>
-                <th className="py-4 px-4 text-right">Total Billed</th>
-                <th className="py-4 px-4 text-right">Total Paid</th>
-                <th className="py-4 px-4 text-right">Balance Due</th>
-                <th className="py-4 px-6 text-center">Quick Actions</th>
+              <tr className="bg-slate-900/80 border-b border-slate-700/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <th className="py-4 px-6 whitespace-nowrap">Vendor / Supplier</th>
+                <th className="py-4 px-4 whitespace-nowrap">Category</th>
+                <th className="py-4 px-4 whitespace-nowrap">Credit Terms</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Total Billed</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Total Paid</th>
+                <th className="py-4 px-4 text-right whitespace-nowrap">Balance Due</th>
+                <th className="py-4 px-6 text-center whitespace-nowrap">Quick Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+            <tbody className="divide-y divide-slate-700/50 text-xs sm:text-sm">
               {filteredVendors.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-4 px-6">
-                    <span className="font-bold text-slate-900 block">{v.businessName}</span>
+                <tr key={v.id} className="hover:bg-slate-800/40 border-b border-slate-700/50 transition-colors">
+                  <td className="py-4 px-6 whitespace-nowrap">
+                    <span className="font-bold text-white block">{v.businessName}</span>
                     <span className="text-[11px] text-slate-400 font-mono">
                       {v.vendorId} {v.contactPerson && `• ${v.contactPerson}`}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900/80 border border-slate-700 text-slate-300">
                       {v.category}
                     </span>
                   </td>
-                  <td className="py-4 px-4 font-medium text-slate-600">
+                  <td className="py-4 px-4 font-medium text-slate-300 whitespace-nowrap">
                     {v.paymentTerms || 'Net 15 Days'}
                   </td>
-                  <td className="py-4 px-4 text-right font-mono font-bold text-slate-900">
-                    Rs. {Math.round(v.totalBilled || 0).toLocaleString()}
+                  <td className="py-4 px-4 text-right font-mono font-bold text-white whitespace-nowrap">
+                    Rs. {Math.round(Number(v.totalBilled || 0)).toLocaleString()}
                   </td>
-                  <td className="py-4 px-4 text-right font-mono font-bold text-emerald-700">
-                    Rs. {Math.round(v.totalPaid || 0).toLocaleString()}
+                  <td className="py-4 px-4 text-right font-mono font-bold text-emerald-400 whitespace-nowrap">
+                    Rs. {Math.round(Number(v.totalPaid || 0)).toLocaleString()}
                   </td>
-                  <td className="py-4 px-4 text-right font-mono font-black">
+                  <td className="py-4 px-4 text-right font-mono font-black whitespace-nowrap">
                     <span
-                      className={`px-2.5 py-1 rounded-xl ${
+                      className={`px-2.5 py-1 rounded-xl border ${
                         v.balanceDue && v.balanceDue > 0
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-emerald-50 text-emerald-700'
+                          ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                          : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                       }`}
                     >
-                      Rs. {Math.round(v.balanceDue || 0).toLocaleString()}
+                      Rs. {Math.round(Number(v.balanceDue || 0)).toLocaleString()}
                     </span>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-4 px-6 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
                         onClick={() => openDisbursementModal(v)}
-                        className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-950 font-extrabold text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
+                        className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-xs transition flex items-center gap-1 cursor-pointer"
                       >
                         <CreditCard className="w-3.5 h-3.5" />
                         <span>Pay</span>
@@ -368,7 +364,7 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
                       <button
                         type="button"
                         onClick={() => openBillModal(v)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs transition cursor-pointer"
+                        className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer"
                       >
                         + Bill
                       </button>
@@ -383,46 +379,46 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
       {/* Disbursement Modal */}
       {isDisbursementModalOpen && selectedVendorForPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     Record Vendor Disbursement
                   </h3>
-                  <span className="text-xs text-slate-500">Pay supplier invoice and auto-log to General Expense</span>
+                  <span className="text-xs text-slate-400">Pay supplier invoice and auto-log to General Expense</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDisbursementModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleRecordDisbursement} className="p-6 space-y-4">
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs grid grid-cols-2 gap-2">
+              <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700 text-xs grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-slate-400 block">Vendor:</span>
-                  <strong className="text-slate-900 text-sm">{selectedVendorForPayment.businessName}</strong>
+                  <strong className="text-white text-sm">{selectedVendorForPayment.businessName}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Current Balance Due:</span>
-                  <strong className="text-rose-600 text-sm font-mono">
-                    Rs. {Math.round(selectedVendorForPayment.balanceDue || 0).toLocaleString()}
+                  <strong className="text-rose-400 text-sm font-mono">
+                    Rs. {Math.round(Number(selectedVendorForPayment.balanceDue || 0)).toLocaleString()}
                   </strong>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Disbursement Amount (Rs.) <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Disbursement Amount (Rs.) <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -430,52 +426,52 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
                   required
                   value={disbursementAmount}
                   onChange={(e) => setDisbursementAmount(parseFloat(e.target.value) || 0)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-black font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-base font-black font-mono text-white focus:outline-none focus:border-teal-500 transition"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Payment Method</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Payment Method</label>
                   <select
                     value={disbursementChannel}
                     onChange={(e) => setDisbursementChannel(e.target.value as 'Bank Transfer' | 'Cash' | 'Cheque')}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-teal-500 transition"
                   >
-                    <option value="Bank Transfer">Bank Transfer (IBAN/Online)</option>
-                    <option value="Cash">Cash Voucher</option>
-                    <option value="Cheque">Crossed Cheque</option>
+                    <option value="Bank Transfer" className="bg-slate-900 text-white">Bank Transfer (IBAN/Online)</option>
+                    <option value="Cash" className="bg-slate-900 text-white">Cash Voucher</option>
+                    <option value="Cheque" className="bg-slate-900 text-white">Crossed Cheque</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Transaction Ref / Cheque #</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Transaction Ref / Cheque #</label>
                   <input
                     type="text"
                     required
                     value={disbursementRef}
                     onChange={(e) => setDisbursementRef(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Disbursement Notes / Invoice Allocation</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Disbursement Notes / Invoice Allocation</label>
                 <textarea
                   rows={2}
                   value={disbursementNotes}
                   onChange={(e) => setDisbursementNotes(e.target.value)}
                   placeholder="e.g. Cleared 50% invoice for Barat meat supply..."
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsDisbursementModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -493,39 +489,39 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
 
       {/* Bill Intake Modal */}
       {isBillModalOpen && selectedVendorForBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     Intake Supplier Bill / Invoice
                   </h3>
-                  <span className="text-xs text-slate-500">Record incoming bill to increase vendor Accounts Payable</span>
+                  <span className="text-xs text-slate-400">Record incoming bill to increase vendor Accounts Payable</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsBillModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleRecordBill} className="p-6 space-y-4">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+              <div className="p-3 bg-slate-800/60 rounded-2xl border border-slate-700 text-xs">
                 <span className="text-slate-400 block">Vendor Account:</span>
-                <strong className="text-slate-900 text-sm">{selectedVendorForBill.businessName}</strong>
+                <strong className="text-white text-sm">{selectedVendorForBill.businessName}</strong>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Bill Amount (Rs.) <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Bill Amount (Rs.) <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="number"
@@ -534,44 +530,44 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
                     value={billAmount}
                     onChange={(e) => setBillAmount(parseFloat(e.target.value) || 0)}
                     placeholder="e.g. 75000"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-black font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-base font-black font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Supplier Invoice #</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Supplier Invoice #</label>
                   <input
                     type="text"
                     required
                     value={billInvoiceRef}
                     onChange={(e) => setBillInvoiceRef(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Description / Goods Details</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Description / Goods Details</label>
                 <textarea
                   rows={2}
                   value={billNotes}
                   onChange={(e) => setBillNotes(e.target.value)}
                   placeholder="e.g. 50kg fresh mutton + 30kg chicken breast for Barat event..."
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsBillModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md transition cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-md transition cursor-pointer"
                 >
                   Intake Bill to Ledger
                 </button>
@@ -583,4 +579,3 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
     </div>
   );
 };
-

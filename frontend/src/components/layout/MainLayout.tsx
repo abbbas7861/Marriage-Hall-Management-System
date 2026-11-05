@@ -11,6 +11,7 @@ import { PaymentsModule } from '../modules/PaymentsModule';
 import { ExpensesModule } from '../modules/ExpensesModule';
 import { ReportsModule } from '../modules/ReportsModule';
 import { SettingsModule } from '../modules/SettingsModule';
+import { FBRModule } from '../modules/FBRModule';
 import { CalendarModule } from '../modules/CalendarModule';
 import { FloorStaffTabletView } from '../modules/FloorStaffTabletView';
 import { EventsModule } from '../modules/EventsModule';
@@ -91,8 +92,21 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
     return ['admin'];
   }, [currentUser]);
 
-  const [activePortal, setActivePortal] = useState<PortalType>(resolveInitialPortal);
+  const [activePortal, setActivePortal] = useState<PortalType>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p === '/admin/fbr' || p === '/fbr' || p === '/admin/settings' || p === '/settings') {
+        return 'admin';
+      }
+    }
+    return resolveInitialPortal();
+  });
   const [activeModule, setActiveModule] = useState<NavModuleId>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      if (p === '/admin/fbr' || p === '/fbr') return 'admin-fbr';
+      if (p === '/admin/settings' || p === '/settings') return 'settings';
+    }
     const p = resolveInitialPortal();
     return PORTAL_CONFIGS[p]?.defaultModule || 'dashboard';
   });
@@ -108,6 +122,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/admin/fbr' || path === '/fbr') {
+        setActivePortal('admin');
+        setActiveModule('admin-fbr');
+      } else if (path === '/admin/settings' || path === '/settings') {
+        setActivePortal('admin');
+        setActiveModule('settings');
+      }
+    };
+
+    handlePopState();
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
 
   // Handle portal switch
   const handleSelectPortal = (newPortal: PortalType) => {
@@ -171,8 +203,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
       case 'feedback':
         return <FeedbackReviewsModule />;
 
-      case 'settings':
       case 'admin-fbr':
+        return <FBRModule />;
+
+      case 'settings':
         return <SettingsModule />;
 
       case 'admin-audit':
@@ -315,7 +349,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#131b2e] flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-[#0b1120] text-slate-100 flex flex-col antialiased selection:bg-teal-900/50 selection:text-teal-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Sidebar with Navigation Links Dynamically Contextualized to Active Portal */}
       <Sidebar
         activePortal={activePortal}
@@ -347,7 +381,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         />
 
         {/* Main Content Area */}
-        <main className="relative pt-16 bg-[#f8fafc] flex-1 overflow-x-hidden min-w-0">
+        <main className="relative pt-16 bg-[#0b1120] flex-1 overflow-x-hidden min-w-0">
           <div className="w-full max-w-full px-3 sm:px-6 lg:px-8 py-5 sm:py-6 overflow-x-hidden min-w-0">{renderActiveModule()}</div>
         </main>
       </div>

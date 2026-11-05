@@ -200,11 +200,7 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
 
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-500/20 border border-teal-400/40 text-teal-300 font-bold text-xs uppercase tracking-wider">
-              <Store className="w-4 h-4 text-teal-400" />
-              <span>Phase 6 • Task 6.1: Vendors &amp; Suppliers Suite</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Verified Directory</span>
             </span>
@@ -231,100 +227,100 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Directory</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">{stats.total} Partners</span>
-            <span className="text-[11px] text-teal-600 font-semibold mt-0.5 block">{stats.active} Active Contracts</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Directory</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">{stats.total} Partners</span>
+            <span className="text-[11px] text-teal-400 font-semibold mt-0.5 block">{stats.active} Active Contracts</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
             <Store className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total Trade Volume</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalBilled).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Trade Volume</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalBilled || 0)).toLocaleString()}
             </span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 block">Lifetime Billed Invoices</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
             <TrendingUp className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total A/P Balance Due</span>
-            <span className="text-2xl font-black text-rose-600 font-mono mt-1 block">
-              Rs. {Math.round(stats.balanceDue).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total A/P Balance Due</span>
+            <span className="text-2xl font-black text-rose-400 font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.balanceDue || 0)).toLocaleString()}
             </span>
-            <span className="text-[11px] text-rose-500 font-semibold mt-0.5 block">Pending Disbursements</span>
+            <span className="text-[11px] text-rose-300 font-semibold mt-0.5 block">Pending Disbursements</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center font-bold">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Settlement Health</span>
-            <span className="text-2xl font-black text-emerald-600 font-mono mt-1 block">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Settlement Health</span>
+            <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">
               {stats.totalBilled > 0
                 ? `${Math.round(((stats.totalBilled - stats.balanceDue) / stats.totalBilled) * 100)}%`
                 : '100%'}
             </span>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-0.5 block">Disbursement Ratio</span>
+            <span className="text-[11px] text-emerald-400 font-semibold mt-0.5 block">Disbursement Ratio</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search Input */}
         <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by vendor, person, NTN or category..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
           />
         </div>
 
         {/* Category & Status Filters */}
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-slate-900 text-xs font-bold text-white focus:outline-none cursor-pointer"
             >
               {VENDOR_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
+                <option key={c} value={c} className="bg-slate-900 text-white">
                   {c}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
+          <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-700">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-slate-900 text-xs font-bold text-white focus:outline-none cursor-pointer"
             >
-              <option value="All">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Preferred">Preferred Partner</option>
-              <option value="Suspended">Suspended</option>
+              <option value="All" className="bg-slate-900 text-white">All Statuses</option>
+              <option value="Active" className="bg-slate-900 text-white">Active</option>
+              <option value="Preferred" className="bg-slate-900 text-white">Preferred Partner</option>
+              <option value="Suspended" className="bg-slate-900 text-white">Suspended</option>
             </select>
           </div>
         </div>
@@ -332,14 +328,14 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
 
       {/* Vendors Grid */}
       {loading ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
+        <div className="p-12 text-center bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50">
           <div className="w-10 h-10 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs text-slate-500 font-medium">Loading verified vendor profiles...</p>
+          <p className="text-xs text-slate-400 font-medium">Loading verified vendor profiles...</p>
         </div>
       ) : filteredVendors.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
-          <Store className="w-10 h-10 text-slate-300" />
-          <span className="text-base font-bold text-slate-800">No matching vendors found</span>
+        <div className="p-12 text-center bg-slate-800/60 backdrop-blur-md rounded-3xl border border-dashed border-slate-700 flex flex-col items-center justify-center gap-2">
+          <Store className="w-10 h-10 text-slate-500" />
+          <span className="text-base font-bold text-white">No matching vendors found</span>
           <span className="text-xs text-slate-400">Try adjusting your category filter or search keywords.</span>
         </div>
       ) : (
@@ -347,22 +343,22 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
           {filteredVendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+              className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-6 border border-slate-700/50 shadow-xs hover:border-slate-600 transition-all flex flex-col justify-between group"
             >
               <div>
                 {/* Top Badge & Rating */}
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-teal-50 text-teal-700 border border-teal-200">
+                  <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-teal-500/10 text-teal-300 border border-teal-500/30">
                     {vendor.category}
                   </span>
-                  <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200 text-xs font-bold text-amber-700">
+                  <div className="flex items-center gap-1 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30 text-xs font-bold text-amber-300">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     <span>{vendor.rating || 4.8}</span>
                   </div>
                 </div>
 
                 {/* Business Name & ID */}
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition">
+                <h3 className="text-lg font-bold text-white group-hover:text-teal-300 transition">
                   {vendor.businessName}
                 </h3>
                 <span className="text-xs font-mono text-slate-400 block mt-0.5">
@@ -370,51 +366,51 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
                 </span>
 
                 {/* Contact Person & Phone */}
-                <div className="mt-4 space-y-2 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-2xl">
+                <div className="mt-4 space-y-2 text-xs text-slate-300 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-700/40">
                   <div className="flex items-center gap-2 font-medium">
                     <Building className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-slate-800 font-bold">{vendor.contactPerson || 'Authorized Rep'}</span>
+                    <span className="text-white font-bold">{vendor.contactPerson || 'Authorized Rep'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="font-mono">{vendor.phoneNumber || 'N/A'}</span>
+                    <span className="font-mono text-slate-300">{vendor.phoneNumber || 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Terms: <strong className="text-slate-800">{vendor.paymentTerms || 'Net 15 Days'}</strong></span>
+                    <span className="text-slate-300">Terms: <strong className="text-white">{vendor.paymentTerms || 'Net 15 Days'}</strong></span>
                   </div>
                 </div>
 
                 {/* Financial Summary */}
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-xl">
+                  <div className="p-3 bg-slate-900/60 border border-slate-700/40 rounded-xl">
                     <span className="text-slate-400 block text-[11px]">Total Billed</span>
-                    <span className="font-extrabold text-slate-800 font-mono mt-0.5 block">
-                      Rs. {Math.round(vendor.totalBilled || 0).toLocaleString()}
+                    <span className="font-extrabold text-white font-mono mt-0.5 block">
+                      Rs. {Math.round(Number(vendor.totalBilled || 0)).toLocaleString()}
                     </span>
                   </div>
-                  <div className={`p-3 rounded-xl ${vendor.balanceDue && vendor.balanceDue > 0 ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800'}`}>
+                  <div className={`p-3 rounded-xl border ${vendor.balanceDue && vendor.balanceDue > 0 ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}`}>
                     <span className="block text-[11px] opacity-80">Balance Due</span>
                     <span className="font-extrabold font-mono mt-0.5 block">
-                      Rs. {Math.round(vendor.balanceDue || 0).toLocaleString()}
+                      Rs. {Math.round(Number(vendor.balanceDue || 0)).toLocaleString()}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Actions */}
-              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-5 pt-4 border-t border-slate-700/50 flex items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => onNavigateToTab?.('vendors-payables')}
-                  className="flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-700 text-slate-700 font-bold text-xs transition cursor-pointer text-center"
+                  className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-teal-500/20 hover:text-teal-300 text-slate-200 border border-slate-700 font-bold text-xs transition cursor-pointer text-center"
                 >
                   View Ledger
                 </button>
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(vendor)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
                   title="Edit Profile"
                 >
                   <Edit2 className="w-4 h-4" />
@@ -422,7 +418,7 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDeleteVendor(vendor.id, vendor.businessName)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -435,24 +431,24 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
 
       {/* Onboard / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-xl bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <Store className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     {editingVendor ? 'Edit Vendor Profile' : 'Onboard New Vendor / Contractor'}
                   </h3>
-                  <span className="text-xs text-slate-500">Record NTN, category, payment terms & banking details</span>
+                  <span className="text-xs text-slate-400">Record NTN, category, payment terms & banking details</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -461,8 +457,8 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
             <form onSubmit={handleSaveVendor} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Business / Trade Name <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Business / Trade Name <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -470,19 +466,19 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
                     value={formData.businessName}
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                     placeholder="e.g. Royal Decorators & Events"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Category</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Category</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 transition"
                   >
                     {VENDOR_CATEGORIES.filter((c) => c !== 'All').map((cat) => (
-                      <option key={cat} value={cat}>
+                      <option key={cat} value={cat} className="bg-slate-900 text-white">
                         {cat}
                       </option>
                     ))}
@@ -492,49 +488,49 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Contact Person</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Contact Person</label>
                   <input
                     type="text"
                     value={formData.contactPerson}
                     onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
                     placeholder="e.g. Haji Farooq"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Phone Number</label>
                   <input
                     type="text"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     placeholder="e.g. +92 300 1234567"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">NTN / FBR Tax ID</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">NTN / FBR Tax ID</label>
                   <input
                     type="text"
                     value={formData.ntnNumber}
                     onChange={(e) => setFormData({ ...formData, ntnNumber: e.target.value })}
                     placeholder="e.g. 1234567-8"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Agreed Payment Terms</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Agreed Payment Terms</label>
                   <select
                     value={formData.paymentTerms}
                     onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 transition"
                   >
                     {PAYMENT_TERMS_OPTIONS.map((t) => (
-                      <option key={t} value={t}>
+                      <option key={t} value={t} className="bg-slate-900 text-white">
                         {t}
                       </option>
                     ))}
@@ -543,32 +539,32 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Bank Account &amp; IBAN Details</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Bank Account &amp; IBAN Details</label>
                 <input
                   type="text"
                   value={formData.bankDetails}
                   onChange={(e) => setFormData({ ...formData, bankDetails: e.target.value })}
                   placeholder="e.g. Meezan Bank, Gulberg Branch, PK72MEZN00001234567890"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Physical Shop / Office Address</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Physical Shop / Office Address</label>
                 <textarea
                   rows={2}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="e.g. Shop #12, Wholesale Flower Market, Lahore"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -586,4 +582,3 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
     </div>
   );
 };
-

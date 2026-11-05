@@ -236,11 +236,7 @@ export const KitchenPantryInventory: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-2">
-              <Package className="w-3.5 h-3.5" />
-              <span>Phase 4 — Task 4.2: Kitchen Pantry & Raw Material Inventory</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Kitchen Pantry & Raw Ingredient Stock
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">

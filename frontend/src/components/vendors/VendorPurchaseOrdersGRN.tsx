@@ -75,9 +75,9 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
       setVendors(vendorsData);
 
       if (itemsData.length > 0) {
-        setPoItemName(itemsData[0].itemName);
-        setPoUnit(itemsData[0].unit);
-        setPoUnitCost(itemsData[0].unitCost);
+        setPoItemName(itemsData[0].itemName || itemsData[0].name || '');
+        setPoUnit(itemsData[0].unit || 'kg');
+        setPoUnitCost(itemsData[0].unitCost ?? itemsData[0].unitPrice ?? 0);
       }
       if (vendorsData.length > 0) {
         setPoSupplier(vendorsData[0].businessName);
@@ -98,8 +98,8 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
     setPoItemName(itemName);
     const item = pantryItems.find((p) => p.itemName === itemName);
     if (item) {
-      setPoUnit(item.unit);
-      setPoUnitCost(item.unitCost);
+      setPoUnit(item.unit || 'kg');
+      setPoUnitCost(item.unitCost ?? item.unitPrice ?? 0);
     }
   };
 
@@ -163,7 +163,7 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
       if (statusFilter !== 'All' && o.status !== statusFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesPO = o.poNumber.toLowerCase().includes(q);
+        const matchesPO = (o.poNumber || o.orderRef || '').toLowerCase().includes(q);
         const matchesSupplier = o.supplierName.toLowerCase().includes(q);
         const matchesItem = o.itemName.toLowerCase().includes(q);
         const matchesGRN = o.grnNumber?.toLowerCase().includes(q);
@@ -197,11 +197,7 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-500/20 border border-teal-400/40 text-teal-300 font-bold text-xs uppercase tracking-wider">
-              <PackageCheck className="w-4 h-4 text-teal-400" />
-              <span>Phase 6 • Task 6.3: Purchase Orders &amp; GRN</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Pantry Inventory Auto-Credit</span>
             </span>
@@ -228,78 +224,78 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total POs Issued</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">{stats.total} Orders</span>
-            <span className="text-[11px] text-teal-600 font-semibold mt-0.5 block">Procurement History</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total POs Issued</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">{stats.total} Orders</span>
+            <span className="text-[11px] text-teal-400 font-semibold mt-0.5 block">Procurement History</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
             <FileText className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Awaiting Delivery</span>
-            <span className="text-2xl font-black text-amber-600 font-mono mt-1 block">{stats.pending} In Transit</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Awaiting Delivery</span>
+            <span className="text-2xl font-black text-amber-400 font-mono mt-1 block">{stats.pending} In Transit</span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 block">Pending GRN Verification</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
             <Truck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">GRN Verified</span>
-            <span className="text-2xl font-black text-emerald-600 font-mono mt-1 block">{stats.received} Received</span>
-            <span className="text-[11px] text-emerald-600 font-semibold mt-0.5 block">Credited to Pantry Stock</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">GRN Verified</span>
+            <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">{stats.received} Received</span>
+            <span className="text-[11px] text-emerald-400 font-semibold mt-0.5 block">Credited to Pantry Stock</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
             <PackageCheck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Gross Procurement</span>
-            <span className="text-2xl font-black text-slate-900 font-mono mt-1 block">
-              Rs. {Math.round(stats.totalValue).toLocaleString()}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Gross Procurement</span>
+            <span className="text-2xl font-black text-white font-mono mt-1 block">
+              Rs. {Math.round(Number(stats.totalValue || 0)).toLocaleString()}
             </span>
             <span className="text-[11px] text-slate-400 font-semibold mt-0.5 block">Raw Materials Total</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
             <DollarSign className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search PO#, supplier, ingredient, or GRN#..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+              className="bg-slate-900 text-xs font-bold text-white focus:outline-none cursor-pointer"
             >
-              <option value="All">All Statuses</option>
-              <option value="Ordered">Ordered / In Transit</option>
-              <option value="Received">Received &amp; Stocked</option>
-              <option value="Pending">Pending Approval</option>
+              <option value="All" className="bg-slate-900 text-white">All Statuses</option>
+              <option value="Ordered" className="bg-slate-900 text-white">Ordered / In Transit</option>
+              <option value="Received" className="bg-slate-900 text-white">Received &amp; Stocked</option>
+              <option value="Pending" className="bg-slate-900 text-white">Pending Approval</option>
             </select>
           </div>
         </div>
@@ -307,14 +303,14 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
       {/* Orders List */}
       {loading ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
+        <div className="p-12 text-center bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50">
           <div className="w-10 h-10 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs text-slate-500 font-medium">Loading purchase orders and GRN ledger...</p>
+          <p className="text-xs text-slate-400 font-medium">Loading purchase orders and GRN ledger...</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
-          <PackageCheck className="w-10 h-10 text-slate-300" />
-          <span className="text-base font-bold text-slate-800">No purchase orders found</span>
+        <div className="p-12 text-center bg-slate-800/60 backdrop-blur-md rounded-3xl border border-dashed border-slate-700 flex flex-col items-center justify-center gap-2">
+          <PackageCheck className="w-10 h-10 text-slate-500" />
+          <span className="text-base font-bold text-white">No purchase orders found</span>
           <span className="text-xs text-slate-400">Click "Create Purchase Order" to requisition raw ingredients.</span>
         </div>
       ) : (
@@ -322,30 +318,30 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
           {filteredOrders.map((po) => (
             <div
               key={po.id}
-              className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+              className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-6 border border-slate-700/50 shadow-xs hover:border-slate-600 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-6"
             >
               <div className="space-y-2 lg:w-1/3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono font-extrabold text-sm text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">
+                  <span className="font-mono font-extrabold text-sm text-white bg-slate-900/80 border border-slate-700 px-3 py-1 rounded-xl">
                     {po.poNumber}
                   </span>
                   <span
-                    className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                    className={`px-3 py-1 rounded-xl text-xs font-bold border ${
                       po.status === 'Received'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                     }`}
                   >
                     {po.status === 'Received' ? 'GRN Verified' : 'In Transit'}
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-900">{po.itemName}</h3>
-                <div className="text-xs text-slate-500 space-y-0.5">
-                  <p>Supplier: <strong className="text-slate-800">{po.supplierName}</strong></p>
-                  {po.deliveryDate && <p>Expected: <strong className="text-slate-700">{po.deliveryDate}</strong></p>}
+                <h3 className="text-lg font-bold text-white">{po.itemName}</h3>
+                <div className="text-xs text-slate-400 space-y-0.5">
+                  <p>Supplier: <strong className="text-slate-200">{po.supplierName}</strong></p>
+                  {po.deliveryDate && <p>Expected: <strong className="text-slate-200">{po.deliveryDate}</strong></p>}
                   {po.grnNumber && (
-                    <p className="text-emerald-700 font-mono font-bold">
+                    <p className="text-emerald-400 font-mono font-bold">
                       GRN Slip: {po.grnNumber} (Verified by: {po.receivedBy || 'Staff'})
                     </p>
                   )}
@@ -353,23 +349,23 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
               </div>
 
               {/* Quantities & Rate */}
-              <div className="grid grid-cols-3 gap-3 text-center bg-slate-50 p-4 rounded-2xl border border-slate-100 lg:w-1/3">
+              <div className="grid grid-cols-3 gap-3 text-center bg-slate-900/60 p-4 rounded-2xl border border-slate-700/40 lg:w-1/3">
                 <div className="p-2">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase block">Ordered Qty</span>
-                  <span className="text-lg font-black text-slate-900 font-mono">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase block">Ordered Qty</span>
+                  <span className="text-lg font-black text-white font-mono">
                     {po.quantity} {po.unit}
                   </span>
                 </div>
-                <div className="p-2 border-x border-slate-200">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase block">Unit Cost</span>
-                  <span className="text-lg font-black text-slate-900 font-mono">
-                    Rs. {po.unitCost}
+                <div className="p-2 border-x border-slate-700">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase block">Unit Cost</span>
+                  <span className="text-lg font-black text-white font-mono">
+                    Rs. {Number(po.unitCost || 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="p-2">
-                  <span className="text-[11px] font-semibold text-teal-700 uppercase block">Total Value</span>
-                  <span className="text-lg font-black text-teal-800 font-mono">
-                    Rs. {Math.round(po.totalCost).toLocaleString()}
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase block">Total Value</span>
+                  <span className="text-lg font-black text-teal-300 font-mono">
+                    Rs. {Math.round(Number(po.totalCost || 0)).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -377,7 +373,7 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
               {/* Action Column */}
               <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end justify-between gap-3 lg:w-1/4">
                 <span className="text-xs text-slate-400 block text-right">
-                  Status: <strong>{po.status}</strong>
+                  Status: <strong className="text-white">{po.status}</strong>
                 </span>
 
                 <div className="flex items-center gap-2 w-full lg:w-auto">
@@ -385,14 +381,14 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
                     <button
                       type="button"
                       onClick={() => handleOpenGRNModal(po)}
-                      className="w-full lg:w-auto px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-slate-950 font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full lg:w-auto px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 active:scale-95 text-slate-950 font-extrabold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <ShieldCheck className="w-4 h-4" />
                       <span>Verify GRN Intake</span>
                     </button>
                   ) : (
-                    <span className="px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span className="px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span>Pantry Stock Credited</span>
                     </span>
                   )}
@@ -405,24 +401,24 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
       {/* Create PO Modal */}
       {isPOModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-xl bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <PackageCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                     Create Raw Material Purchase Order
                   </h3>
-                  <span className="text-xs text-slate-500">Requisition grocery, meats, dairy, or spice inventory</span>
+                  <span className="text-xs text-slate-400">Requisition grocery, meats, dairy, or spice inventory</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsPOModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -431,16 +427,16 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
             <form onSubmit={handleCreatePO} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Supplier / Vendor <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Supplier / Vendor <span className="text-rose-400">*</span>
                   </label>
                   <select
                     value={poSupplier}
                     onChange={(e) => setPoSupplier(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-teal-500 transition"
                   >
                     {vendors.map((v) => (
-                      <option key={v.id} value={v.businessName}>
+                      <option key={v.id} value={v.businessName} className="bg-slate-900 text-white">
                         {v.businessName} ({v.category})
                       </option>
                     ))}
@@ -448,28 +444,28 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Expected Delivery Date</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Expected Delivery Date</label>
                   <input
                     type="date"
                     value={poDeliveryDate}
                     onChange={(e) => setPoDeliveryDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Raw Material Item Name <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Raw Material Item Name <span className="text-rose-400">*</span>
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={poItemName}
                     onChange={(e) => handleItemSelect(e.target.value)}
-                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition"
+                    className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-teal-500 transition"
                   >
                     {pantryItems.map((item) => (
-                      <option key={item.id} value={item.itemName}>
+                      <option key={item.id} value={item.itemName} className="bg-slate-900 text-white">
                         {item.itemName} (Pantry: {item.currentStock} {item.unit})
                       </option>
                     ))}
@@ -479,61 +475,61 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Requisition Qty</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Requisition Qty</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={poQuantity}
                     onChange={(e) => setPoQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold font-mono text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-bold font-mono text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Unit (kg/tin/bag)</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Unit (kg/tin/bag)</label>
                   <input
                     type="text"
                     required
                     value={poUnit}
                     onChange={(e) => setPoUnit(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 font-mono"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white font-mono placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Est. Rate / Unit</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Est. Rate / Unit</label>
                   <input
                     type="number"
                     min="1"
                     value={poUnitCost}
                     onChange={(e) => setPoUnitCost(Math.max(1, parseFloat(e.target.value) || 1))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold font-mono text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-bold font-mono text-white"
                   />
                 </div>
               </div>
 
-              <div className="p-3.5 bg-teal-50 rounded-2xl border border-teal-200 flex items-center justify-between text-xs">
-                <span className="font-semibold text-teal-800">Total Purchase Order Estimate:</span>
-                <span className="text-base font-black text-teal-950 font-mono">
-                  Rs. {(poQuantity * poUnitCost).toLocaleString()}
+              <div className="p-3.5 bg-teal-500/10 rounded-2xl border border-teal-500/30 flex items-center justify-between text-xs">
+                <span className="font-semibold text-teal-300">Total Purchase Order Estimate:</span>
+                <span className="text-base font-black text-teal-300 font-mono">
+                  Rs. {Number((poQuantity * poUnitCost) || 0).toLocaleString()}
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Instructions / Spec Notes</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Instructions / Spec Notes</label>
                 <textarea
                   rows={2}
                   value={poNotes}
                   onChange={(e) => setPoNotes(e.target.value)}
                   placeholder="e.g. Mutton must be fresh, cut size 1.5 inches, deliver before 10:00 AM..."
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsPOModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -551,46 +547,46 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
       {/* GRN Verification Modal */}
       {isGRNModalOpen && activePOForGRN && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-emerald-50 text-emerald-950">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800/80 text-white">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold font-['Plus_Jakarta_Sans'] text-white">
                     Goods Received Note (GRN) Verification
                   </h3>
-                  <span className="text-xs text-emerald-700">Audit quality and credit physical inventory</span>
+                  <span className="text-xs text-slate-400">Audit quality and credit physical inventory</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsGRNModalOpen(false)}
-                className="p-2 rounded-xl text-emerald-800 hover:bg-emerald-200/60 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleConfirmGRN} className="p-6 space-y-4">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs grid grid-cols-2 gap-2">
+              <div className="p-3 bg-slate-800/60 rounded-2xl border border-slate-700 text-xs grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-slate-400 block">Purchase Order:</span>
-                  <strong className="text-slate-900 font-mono text-sm">{activePOForGRN.poNumber}</strong>
+                  <strong className="text-white font-mono text-sm">{activePOForGRN.poNumber}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Supplier:</span>
-                  <strong className="text-slate-900">{activePOForGRN.supplierName}</strong>
+                  <strong className="text-white">{activePOForGRN.supplierName}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Item:</span>
-                  <strong className="text-slate-900">{activePOForGRN.itemName}</strong>
+                  <strong className="text-white">{activePOForGRN.itemName}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Ordered Qty:</span>
-                  <strong className="text-slate-900 font-mono">
+                  <strong className="text-white font-mono">
                     {activePOForGRN.quantity} {activePOForGRN.unit}
                   </strong>
                 </div>
@@ -598,7 +594,7 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
                     GRN Number Reference
                   </label>
                   <input
@@ -606,12 +602,12 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
                     required
                     value={grnNumber}
                     onChange={(e) => setGrnNumber(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono font-bold text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-mono font-bold text-white placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
                     Actual Received Quantity ({activePOForGRN.unit})
                   </label>
                   <input
@@ -620,48 +616,48 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
                     required
                     value={grnReceivedQty}
                     onChange={(e) => setGrnReceivedQty(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold font-mono text-slate-900"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-bold font-mono text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Receiving Officer / Chef</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Receiving Officer / Chef</label>
                 <input
                   type="text"
                   required
                   value={grnReceiverName}
                   onChange={(e) => setGrnReceiverName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900"
+                  className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Quality Inspection Notes</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">Quality Inspection Notes</label>
                 <textarea
                   rows={2}
                   value={grnQualityNotes}
                   onChange={(e) => setGrnQualityNotes(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 transition resize-none"
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition resize-none"
                 />
               </div>
 
-              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900">
-                <span className="font-bold block mb-0.5">Automated Inventory Sync:</span>
+              <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 text-xs text-emerald-300">
+                <span className="font-bold block mb-0.5 text-emerald-200">Automated Inventory Sync:</span>
                 Confirming this GRN will automatically credit +{grnReceivedQty} {activePOForGRN.unit} directly into the kitchen commissary inventory ledger.
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsGRNModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md transition cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md transition cursor-pointer"
                 >
                   Confirm GRN &amp; Update Stock
                 </button>
@@ -673,4 +669,3 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
     </div>
   );
 };
-

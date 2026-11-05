@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {groupTitle}
         </div>
       )}
-      {items.map((item) => {
+      {items.filter((i) => i.id !== "waiter-tables").map((item) => {
         const Icon = item.icon;
         const isActive = activeModule === item.id;
 
@@ -41,8 +41,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             key={item.id}
             type="button"
+            data-route={item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/admin/settings' : undefined)}
             onClick={() => {
               onSelectModule(item.id);
+              const targetPath = item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/admin/settings' : undefined);
+              if (targetPath && window.location.pathname !== targetPath) {
+                window.history.pushState(null, '', targetPath);
+              }
               if (onCloseMobile) onCloseMobile();
             }}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left group select-none cursor-pointer ${

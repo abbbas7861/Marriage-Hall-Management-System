@@ -43,6 +43,7 @@ export interface PortalNavItem {
   icon: LucideIcon;
   badge?: string;
   description?: string;
+  path?: string;
 }
 
 export interface PortalNavGroup {
@@ -87,9 +88,9 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         items: [
           { id: 'admin-users', label: 'User Directory & Rights', icon: Users, badge: 'RBAC' },
           { id: 'admin-closings', label: 'Period Closings', icon: Clock },
-          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional' },
+          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
           { id: 'admin-audit', label: 'System Audit Logs', icon: History },
-          { id: 'settings', label: 'Venue Settings', icon: Settings },
+          { id: 'settings', label: 'Venue Settings', icon: Settings, path: '/admin/settings' },
         ],
       },
     ],
@@ -167,7 +168,6 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         items: [
           { id: 'waiter-kiosk', label: 'Floor Staff Tablet', icon: Tablet },
           { id: 'waiter-refills', label: 'Dish Refill Dispatcher', icon: Coffee, badge: 'Urgent' },
-          { id: 'waiter-tables', label: 'Table Readiness Turnover', icon: CheckCircle2 },
           { id: 'waiter-overtime', label: 'Overtime Extension Trigger', icon: Clock, badge: 'Emergency' },
         ],
       },

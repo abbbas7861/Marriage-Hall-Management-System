@@ -156,18 +156,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const dashboardTransactions = recentTransactions.length ? recentTransactions : summary.recentTransactions;
 
   const emptyXAxisTicks = ['[Q1 - Period 01]', '[Q2 - Period 02]', '[Q3 - Period 03]', '[Q4 - Period 04]'];
-  const emptyRevenuePoints = [
-    { period: '[Q1 - Period 01]' },
-    { period: '[Q2 - Period 02]' },
-    { period: '[Q3 - Period 03]' },
-    { period: '[Q4 - Period 04]' },
-  ];
 
   if (loading) {
     return (
-      <div className="flex h-96 w-full items-center justify-center rounded-xl border border-slate-200 bg-white shadow-xs">
-        <div className="flex items-center gap-3 text-slate-600">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-[#00685f]" />
+      <div className="flex h-96 w-full items-center justify-center rounded-2xl border border-slate-700/50 bg-slate-800/60 backdrop-blur-md shadow-xl">
+        <div className="flex items-center gap-3 text-slate-300">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
           <span className="text-sm font-medium">Loading dashboard data...</span>
         </div>
       </div>
@@ -175,43 +169,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }
 
   return (
-    <div className="flex flex-col w-full gap-6">
+    <div className="flex flex-col w-full gap-6 text-slate-100">
       {/* Executive Header Console */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-['Plus_Jakarta_Sans']">
               Executive Dashboard
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-teal-300 text-xs font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
               <span>SYSTEM SYNCHRONIZED</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-400">
             Overview of venue capacity, operations, and transaction flows
           </p>
         </div>
 
         {/* Quick Action Toolset */}
         <div className="flex items-center flex-wrap gap-2.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs shadow-xs">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs shadow-md">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 font-semibold">Period:</span>
-            <span className="font-mono text-slate-800">[-- / -- / ---- — -- / -- / ----]</span>
+            <span className="text-slate-400 font-semibold">Period:</span>
+            <span className="font-mono text-slate-200">[Fiscal Year 2026]</span>
           </div>
 
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold shadow-md transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-teal-700" />
+            <Download className="w-3.5 h-3.5 text-teal-400" />
             <span>Export Summary</span>
           </button>
 
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 text-white hover:bg-teal-800 text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs font-semibold shadow-lg shadow-teal-500/20 transition-all cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Filter Scope</span>
@@ -219,152 +213,147 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Top Row: 4 Summary Metric Containers with Sparklines (data={[]}) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* Top Row: 4 Summary Metric Containers with Sparklines */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         {/* KPI 1: Total Bookings */}
-        <div className="flex flex-col justify-between p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl relative overflow-hidden">
           <div className="flex items-start justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">
                 Total Bookings
               </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-white text-3xl sm:text-4xl font-bold font-mono tracking-tight font-['Plus_Jakarta_Sans']">
                   {summary.totalBookings || 0}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">SLOTS</span>
+                <span className="text-xs font-semibold text-slate-500">SLOTS</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-700">
-              <Calendar className="w-4 h-4" />
+            <div className="bg-slate-700/50 p-2 rounded-lg text-teal-400">
+              <Calendar className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 my-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 text-slate-500 font-mono text-[11px] border border-slate-100">
-              <TrendingUp className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 my-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/60 text-slate-400 font-mono text-[11px] border border-slate-700/50">
+              <TrendingUp className="w-3 h-3 text-teal-400" />
               <span>[+ --% vs prev period]</span>
             </span>
           </div>
 
-          {/* Tiny empty Sparkline chart at the bottom */}
-          <Sparkline data={emptySparklineData} color="#00685f" />
+          <Sparkline data={emptySparklineData} color="#14b8a6" />
         </div>
 
         {/* KPI 2: Hall Occupancy */}
-        <div className="flex flex-col justify-between p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl relative overflow-hidden">
           <div className="flex items-start justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">
                 Hall Occupancy
               </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-white text-3xl sm:text-4xl font-bold font-mono tracking-tight font-['Plus_Jakarta_Sans']">
                   {summary.hallOccupancy || 0}%
                 </span>
-                <span className="text-xs font-semibold text-slate-400">CAPACITY</span>
+                <span className="text-xs font-semibold text-slate-500">CAPACITY</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <CheckCircle2 className="w-4 h-4" />
+            <div className="bg-slate-700/50 p-2 rounded-lg text-sky-400">
+              <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 my-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 text-slate-500 font-mono text-[11px] border border-slate-100">
-              <Activity className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 my-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/60 text-slate-400 font-mono text-[11px] border border-slate-700/50">
+              <Activity className="w-3 h-3 text-sky-400" />
               <span>[--% Target Variance]</span>
             </span>
           </div>
 
-          {/* Tiny empty Sparkline chart at the bottom */}
-          <Sparkline data={emptySparklineData} color="#316bf3" />
+          <Sparkline data={emptySparklineData} color="#38bdf8" />
         </div>
 
         {/* KPI 3: Pending Payments */}
-        <div className="flex flex-col justify-between p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl relative overflow-hidden">
           <div className="flex items-start justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">
                 Pending Payments
               </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-white text-3xl sm:text-4xl font-bold font-mono tracking-tight font-['Plus_Jakarta_Sans']">
                   Rs. {Number(summary.pendingPayments || 0).toLocaleString('en-PK')}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">ACCRUED</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-              <Clock className="w-4 h-4" />
+            <div className="bg-slate-700/50 p-2 rounded-lg text-amber-400">
+              <Clock className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 my-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 text-slate-500 font-mono text-[11px] border border-slate-100">
-              <Receipt className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 my-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/60 text-slate-400 font-mono text-[11px] border border-slate-700/50">
+              <Receipt className="w-3 h-3 text-amber-400" />
               <span>[-- Invoices Outstanding]</span>
             </span>
           </div>
 
-          {/* Tiny empty Sparkline chart at the bottom */}
-          <Sparkline data={emptySparklineData} color="#d97706" />
+          <Sparkline data={emptySparklineData} color="#f59e0b" />
         </div>
 
         {/* KPI 4: Upcoming Events */}
-        <div className="flex flex-col justify-between p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl relative overflow-hidden">
           <div className="flex items-start justify-between">
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">
                 Upcoming Events
               </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-white text-3xl sm:text-4xl font-bold font-mono tracking-tight font-['Plus_Jakarta_Sans']">
                   {summary.upcomingEventsCount || 0}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">SCHEDULED</span>
+                <span className="text-xs font-semibold text-slate-500">SCHEDULED</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center text-teal-700">
-              <PartyPopper className="w-4 h-4" />
+            <div className="bg-slate-700/50 p-2 rounded-lg text-emerald-400">
+              <PartyPopper className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 my-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 text-slate-500 font-mono text-[11px] border border-slate-100">
-              <CalendarCheck className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 my-2">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900/60 text-slate-400 font-mono text-[11px] border border-slate-700/50">
+              <CalendarCheck className="w-3 h-3 text-emerald-400" />
               <span>[-- Next 7-Day Window]</span>
             </span>
           </div>
 
-          {/* Tiny empty Sparkline chart at the bottom */}
-          <Sparkline data={emptySparklineData} color="#00685f" />
+          <Sparkline data={emptySparklineData} color="#10b981" />
         </div>
       </div>
 
-      {/* Middle Row: Revenue Trends & Hall Occupancy with Recharts and data={[]} */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      {/* Middle Row: Revenue Trends & Hall Occupancy */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Revenue Trends Chart (8 Cols) */}
-        <div className="xl:col-span-8 flex flex-col rounded-xl bg-white p-5 border border-slate-200/80 shadow-xs">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-2 border-b border-slate-100">
+        <div className="xl:col-span-8 flex flex-col rounded-2xl bg-slate-800/60 backdrop-blur-md p-6 border border-slate-700/50 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-700/60">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 font-['Plus_Jakarta_Sans']">
+              <h2 className="text-lg font-bold text-slate-100 font-['Plus_Jakarta_Sans']">
                 Revenue Overview
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Monthly &amp; quarterly cash flow projection
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs">
+              <div className="inline-flex rounded-xl bg-slate-900 p-1 text-xs border border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setActiveHallFilter('all')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     activeHallFilter === 'all'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-slate-800 text-teal-300 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   [All Halls]
@@ -372,10 +361,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveHallFilter('main')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                     activeHallFilter === 'main'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-slate-800 text-teal-300 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   [Main Wing]
@@ -383,26 +372,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveHallFilter('annex')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                     activeHallFilter === 'annex'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-slate-800 text-teal-300 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   [Annex]
                 </button>
               </div>
 
-              <div className="h-4 w-px bg-slate-200"></div>
+              <div className="h-4 w-px bg-slate-700"></div>
 
-              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs">
+              <div className="inline-flex rounded-xl bg-slate-900 p-1 text-xs border border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => setActiveRevenueType('invoiced')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     activeRevenueType === 'invoiced'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-slate-800 text-teal-300 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   [Invoiced]
@@ -410,10 +399,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveRevenueType('collected')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                     activeRevenueType === 'collected'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-slate-800 text-teal-300 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   [Collected]
@@ -422,42 +411,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Chart Frame with empty array data={[]} rendering X & Y axes and watermark empty state */}
+          {/* Chart Frame */}
           <div className="relative w-full h-72 flex flex-col justify-between py-1">
             <ResponsiveContainer width="100%" height="100%">
-              {/* LineChart with empty data array data={[]} */}
               <LineChart
                 data={chartData}
                 margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                 <XAxis
                   dataKey="period"
                   ticks={chartData.length ? undefined : emptyXAxisTicks}
                   tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                  tickLine={{ stroke: '#cbd5e1' }}
+                  axisLine={{ stroke: '#475569' }}
+                  tickLine={{ stroke: '#475569' }}
                 />
                 <YAxis
                   ticks={[0, 25, 50, 75, 100]}
                   tickFormatter={(val) => `[${val}%]`}
                   domain={[0, 100]}
                   tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                  tickLine={{ stroke: '#cbd5e1' }}
+                  axisLine={{ stroke: '#475569' }}
+                  tickLine={{ stroke: '#475569' }}
                 />
-                {/* No data lines rendered since data is empty array */}
                 <Line
                   type="monotone"
                   dataKey="bookedRevenue"
-                  stroke="#00685f"
+                  stroke="#14b8a6"
                   strokeWidth={2}
                   dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="ancillaryCatering"
-                  stroke="#316bf3"
+                  stroke="#38bdf8"
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                   dot={false}
@@ -467,9 +454,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {!chartData.length && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none pl-12 pr-4 pb-8">
-                <div className="px-4 py-2 rounded-lg bg-white/95 border border-slate-200/90 shadow-xs flex items-center gap-2 backdrop-blur-xs">
+                <div className="px-4 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-lg flex items-center gap-2 backdrop-blur-sm">
                   <SlidersHorizontal className="w-4 h-4 text-slate-400" />
-                  <span className="text-xs font-medium text-slate-500 font-['Plus_Jakarta_Sans']">
+                  <span className="text-xs font-medium text-slate-400 font-['Plus_Jakarta_Sans']">
                     No data available for the selected period.
                   </span>
                 </div>
@@ -478,22 +465,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Legend Footer */}
-          <div className="flex items-center justify-center gap-6 pt-3 mt-1 border-t border-slate-100 flex-wrap">
+          <div className="flex items-center justify-center gap-6 pt-3 mt-1 border-t border-slate-700/60 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-sm bg-teal-700"></span>
-              <span className="text-xs text-slate-600 font-medium">
+              <span className="w-2.5 h-2.5 rounded-sm bg-teal-400"></span>
+              <span className="text-xs text-slate-300 font-medium">
                 [Booked Revenue Frame]
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-sm bg-blue-600"></span>
-              <span className="text-xs text-slate-600 font-medium">
+              <span className="w-2.5 h-2.5 rounded-sm bg-sky-400"></span>
+              <span className="text-xs text-slate-300 font-medium">
                 [Ancillary Catering Frame]
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-sm bg-slate-300"></span>
-              <span className="text-xs text-slate-600 font-medium">
+              <span className="w-2.5 h-2.5 rounded-sm bg-slate-500"></span>
+              <span className="text-xs text-slate-300 font-medium">
                 [Hall Rentals Baseline]
               </span>
             </div>
@@ -501,17 +488,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Hall Occupancy Rate (4 Cols) */}
-        <div className="xl:col-span-4 flex flex-col justify-between rounded-xl bg-white p-5 border border-slate-200/80 shadow-xs">
-          <div className="flex items-start justify-between pb-2 border-b border-slate-100">
+        <div className="xl:col-span-4 flex flex-col justify-between rounded-2xl bg-slate-800/60 backdrop-blur-md p-6 border border-slate-700/50 shadow-xl">
+          <div className="flex items-start justify-between pb-3 border-b border-slate-700/60">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 font-['Plus_Jakarta_Sans']">
+              <h2 className="text-lg font-bold text-slate-100 font-['Plus_Jakarta_Sans']">
                 Hall Occupancy Rate
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Utilization breakdown by venue hall
               </p>
             </div>
-            <button className="p-1 text-slate-400 hover:text-slate-700 transition-colors">
+            <button className="p-1 text-slate-400 hover:text-white transition-colors">
               <MoreVertical className="w-4 h-4" />
             </button>
           </div>
@@ -529,128 +516,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     paddingAngle={3}
                   >
                     {occupancyData.map((entry: any, index: number) => (
-                      <Cell key={`${entry.name}-${index}`} fill={entry.color || ['#00685f', '#316bf3', '#d97706', '#94a3b8', '#8b5cf6'][index % 5]} />
+                      <Cell key={`${entry.name}-${index}`} fill={entry.color || ['#14b8a6', '#38bdf8', '#f59e0b', '#94a3b8', '#a855f7'][index % 5]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => [`${value ?? 0} bookings`, 'Bookings']} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderRadius: '12px',
+                      border: '1px solid #334155',
+                      color: '#f8fafc',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: any) => [`${value ?? 0} bookings`, 'Bookings']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-500">
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-900/40 text-xs text-slate-400">
                 No occupancy data available.
               </div>
             )}
           </div>
 
-          {/* Donut Chart using Recharts PieChart with data={[]} */}
-          <div className="relative w-full py-4 flex flex-col items-center justify-center">
-            <div className="relative w-48 h-48 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={emptyOccupancyData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={0}
-                    dataKey="value"
-                  >
-                    {emptyOccupancyData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || '#00685f'} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Empty state donut ring wireframe placeholder */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <svg className="w-44 h-44 transform -rotate-90" viewBox="0 0 100 100">
-                  {/* Outer base track */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="none"
-                    stroke="#e2e8f0"
-                    strokeWidth="11"
-                    strokeDasharray="238.76"
-                  />
-                  {/* Subtle placeholder segment tracks */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="none"
-                    stroke="#00685f"
-                    strokeOpacity="0.25"
-                    strokeWidth="11"
-                    strokeDasharray="75 238.76"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    fill="none"
-                    stroke="#316bf3"
-                    strokeOpacity="0.25"
-                    strokeWidth="11"
-                    strokeDasharray="55 238.76"
-                    strokeDashoffset="-80"
-                  />
-                </svg>
-              </div>
-
-              {/* Center Donut Label */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2 pointer-events-none">
-                <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase font-mono">
-                  [DISTRIBUTION]
-                </span>
-                <span className="text-sm font-bold text-slate-800 font-mono">
-                  [--]
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">[-- VENUES]</span>
-              </div>
-            </div>
-
-            {/* Subtle empty state message */}
-            <div className="mt-2 text-center">
-              <span className="text-xs text-slate-400 italic font-['Plus_Jakarta_Sans']">
-                No data available for the selected period.
-              </span>
-            </div>
-          </div>
-
           {/* Legend Items */}
-          <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
+          <div className="flex flex-col gap-1.5 pt-3 border-t border-slate-700/60">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 text-xs">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-700"></span>
-                <span className="text-slate-800 font-medium">Grand Crystal Ballroom</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+                <span className="text-slate-200 font-medium">Grand Crystal Ballroom</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
 
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 text-xs">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <span className="text-slate-800 font-medium">Royal Emerald Hall</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                <span className="text-slate-200 font-medium">Royal Emerald Hall</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
 
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 text-xs">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
-                <span className="text-slate-800 font-medium">Sapphire Banquet</span>
-              </div>
-              <span className="font-mono text-slate-400">[--%]</span>
-            </div>
-
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                <span className="text-slate-800 font-medium">Imperial Courtyard Lawn</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span className="text-slate-200 font-medium">Sapphire Banquet</span>
               </div>
               <span className="font-mono text-slate-400">[--%]</span>
             </div>
@@ -658,18 +567,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Bottom Row: UpcomingEventsList and RecentTransactionsList with empty data arrays data={[]} */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      {/* Bottom Row: UpcomingEventsList and RecentTransactionsList */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-6">
           <UpcomingEventsList
-            events={upcomingEvents}
+            events={dashboardEvents}
             onViewCalendar={() => onNavigateToModule?.('calendar')}
             onCreateBooking={onOpenCreateBooking}
           />
         </div>
         <div className="xl:col-span-6">
           <RecentTransactionsList
-            transactions={recentTransactions}
+            transactions={dashboardTransactions}
             onViewInvoices={() => onNavigateToModule?.('payments')}
             onRecordPayment={() => onNavigateToModule?.('payments')}
           />
@@ -677,25 +586,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Operational Footer Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between p-3.5 rounded-xl bg-slate-100/80 border border-slate-200/70 gap-2">
-        <div className="flex items-center gap-2.5 text-xs text-slate-600 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800 gap-2">
+        <div className="flex items-center gap-2.5 text-xs text-slate-400 flex-wrap">
           <div className="flex items-center gap-1.5">
-            <Server className="w-3.5 h-3.5 text-teal-700" />
+            <Server className="w-3.5 h-3.5 text-teal-400" />
             <span>
               Venue Master Nodes:{' '}
-              <span className="font-semibold text-slate-900">[Active Sync]</span>
+              <span className="font-semibold text-slate-200">[Active Sync]</span>
             </span>
           </div>
-          <span className="text-slate-400">•</span>
-          <span className="text-slate-500">
+          <span className="text-slate-600">•</span>
+          <span className="text-slate-400">
             Data Feed Ref:{' '}
-            <span className="font-mono text-slate-700">[MHMS-CORE-CLUSTER-09]</span>
+            <span className="font-mono text-slate-300">[MHMS-CORE-CLUSTER-09]</span>
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-teal-600 animate-ping"></span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-800 font-mono">
+          <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-300 font-mono">
             [Live Stream Ready]
           </span>
         </div>

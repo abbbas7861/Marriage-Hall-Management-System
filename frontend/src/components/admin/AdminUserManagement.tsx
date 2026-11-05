@@ -35,27 +35,27 @@ interface StaffUser {
 const ROLE_LABELS: Record<UserRole, { label: string; badge: string; desc: string }> = {
   admin: {
     label: 'Admin / Owner',
-    badge: 'bg-amber-100 text-amber-800 border-amber-300',
+    badge: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
     desc: 'Full unrestricted superuser control over all 6 portals and settings',
   },
   manager: {
     label: 'Event Manager',
-    badge: 'bg-sky-100 text-sky-800 border-sky-300',
+    badge: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
     desc: 'Manages floor operations, duty rosters, decor, and service readiness',
   },
   kitchen: {
     label: 'Kitchen & Chef Staff',
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
     desc: 'Kitchen display screen, recipe formulas, and stock requisitions',
   },
   waiter: {
     label: 'Waiter / Floor Staff',
-    badge: 'bg-violet-100 text-violet-800 border-violet-300',
+    badge: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
     desc: 'Floor tablet kiosk, urgent dish refills, and table turnover',
   },
   accountant: {
     label: 'Accountant',
-    badge: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    badge: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
     desc: 'Full General Ledger, accounts receivable/payable, and financial closings',
   },
 };
@@ -214,17 +214,17 @@ export const AdminUserManagement: React.FC = () => {
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Shield className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 User Directory &amp; RBAC Control
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Add employees, assign roles (Managers, Kitchen, Waiters, Accountants), and set monthly salaries.
               </p>
             </div>
@@ -234,7 +234,7 @@ export const AdminUserManagement: React.FC = () => {
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs font-bold shadow-lg shadow-teal-500/20 transition-all cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add New Staff Account</span>
@@ -242,7 +242,7 @@ export const AdminUserManagement: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-800/60 backdrop-blur-md rounded-xl border border-slate-700/50 shadow-md">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -250,22 +250,22 @@ export const AdminUserManagement: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by username, name, or phone..."
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-teal-700"
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-slate-500">Filter Role:</span>
-          <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs">
+          <span className="text-xs font-semibold text-slate-400">Filter Role:</span>
+          <div className="inline-flex rounded-lg bg-slate-900 border border-slate-700/60 p-0.5 text-xs">
             {['All', 'admin', 'manager', 'kitchen', 'waiter', 'accountant'].map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRoleFilter(r)}
-                className={`px-2.5 py-1 rounded-md capitalize font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-md capitalize font-medium transition-all cursor-pointer ${
                   roleFilter === r
-                    ? 'bg-white text-slate-900 shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-slate-800 text-white shadow-xs font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {r === 'All' ? 'All Roles' : r}
@@ -276,20 +276,20 @@ export const AdminUserManagement: React.FC = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600">
-            <thead className="bg-slate-50/80 text-slate-700 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 font-mono">
+          <table className="w-full text-left text-xs text-slate-300">
+            <thead className="bg-slate-900/80 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-700/60 font-mono">
               <tr>
-                <th className="py-3 px-4">User Details</th>
-                <th className="py-3 px-4">Role &amp; Portal Rights</th>
-                <th className="py-3 px-4">Contact Info</th>
-                <th className="py-3 px-4 text-right">Monthly Salary</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4 whitespace-nowrap">User Details</th>
+                <th className="py-3 px-4 whitespace-nowrap">Role &amp; Portal Rights</th>
+                <th className="py-3 px-4 whitespace-nowrap">Contact Info</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Monthly Salary</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">Status</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-700/40">
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
@@ -300,14 +300,14 @@ export const AdminUserManagement: React.FC = () => {
                 filteredUsers.map((u) => {
                   const roleConfig = ROLE_LABELS[u.role] || ROLE_LABELS.manager;
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs uppercase">
+                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-200 text-xs uppercase">
                             {u.username.slice(0, 2)}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-900">{u.fullName || u.username}</span>
+                            <span className="font-bold text-white">{u.fullName || u.username}</span>
                             <span className="text-[11px] text-slate-400 font-mono">@{u.username}</span>
                           </div>
                         </div>
@@ -323,17 +323,17 @@ export const AdminUserManagement: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 font-mono text-[11px]">
-                        <div>{u.email || '—'}</div>
+                        <div className="text-slate-200">{u.email || '—'}</div>
                         <div className="text-slate-400">{u.phone || '—'}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 text-xs">
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-white text-xs">
                         PKR {Number(u.salary || 0).toLocaleString('en-PK')}
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 text-[10px] font-semibold border border-teal-200">
-                          <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 text-[10px] font-semibold border border-teal-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
                           <span>Active</span>
                         </span>
                       </td>
@@ -343,7 +343,7 @@ export const AdminUserManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openEditModal(u)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-400 hover:bg-slate-700/50 transition-colors cursor-pointer"
                             title="Edit User Rights & Salary"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -351,7 +351,7 @@ export const AdminUserManagement: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDelete(u)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                             title="Terminate Account"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -369,15 +369,15 @@ export const AdminUserManagement: React.FC = () => {
 
       {/* Add / Edit User Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl border border-slate-700">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">
+                  <h3 className="font-bold text-base text-white">
                     {editingUser ? `Edit Rights: @${editingUser.username}` : 'Provision New Staff User'}
                   </h3>
                   <p className="text-xs text-slate-400">Configure role access, credentials, and monthly wage</p>
@@ -386,14 +386,14 @@ export const AdminUserManagement: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{formError}</span>
               </div>
@@ -402,7 +402,7 @@ export const AdminUserManagement: React.FC = () => {
             <form onSubmit={handleSave} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Username *
                   </label>
                   <input
@@ -412,12 +412,12 @@ export const AdminUserManagement: React.FC = () => {
                     placeholder="e.g. chef_ahmad"
                     required
                     disabled={!!editingUser}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700 disabled:opacity-50"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500 disabled:opacity-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     {editingUser ? 'New Password (Leave blank to keep)' : 'Initial Password *'}
                   </label>
                   <input
@@ -426,86 +426,86 @@ export const AdminUserManagement: React.FC = () => {
                     onChange={(e) => setFormPassword(e.target.value)}
                     placeholder="••••••••"
                     required={!editingUser}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Full Name</label>
                   <input
                     type="text"
                     value={formFullName}
                     onChange={(e) => setFormFullName(e.target.value)}
                     placeholder="e.g. Ahmad Raza"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assigned Role &amp; Portal *</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Assigned Role &amp; Portal *</label>
                   <select
                     value={formRole}
                     onChange={(e) => setFormRole(e.target.value as UserRole)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-teal-700 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-semibold focus:outline-none focus:border-teal-500 cursor-pointer"
                   >
-                    <option value="manager">Event Manager (Floor Ops)</option>
-                    <option value="kitchen">Kitchen Staff &amp; Chef</option>
-                    <option value="waiter">Waiter / Floor Staff Kiosk</option>
-                    <option value="accountant">Accountant (General Ledger)</option>
-                    <option value="admin">Admin / Owner (Full Access)</option>
+                    <option value="manager" className="bg-slate-900 text-white">Event Manager (Floor Ops)</option>
+                    <option value="kitchen" className="bg-slate-900 text-white">Kitchen Staff &amp; Chef</option>
+                    <option value="waiter" className="bg-slate-900 text-white">Waiter / Floor Staff Kiosk</option>
+                    <option value="accountant" className="bg-slate-900 text-white">Accountant (General Ledger)</option>
+                    <option value="admin" className="bg-slate-900 text-white">Admin / Owner (Full Access)</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Contact Phone</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Contact Phone</label>
                   <input
                     type="text"
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
                     placeholder="0300-1234567"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Monthly Salary (PKR)</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Monthly Salary (PKR)</label>
                   <input
                     type="number"
                     value={formSalary}
                     onChange={(e) => setFormSalary(e.target.value)}
                     placeholder="45000"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700 font-mono"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
+                <label className="block font-semibold text-slate-300 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                   placeholder="employee@banquet.com"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold transition-all cursor-pointer disabled:opacity-50"
                 >
                   {actionLoading ? 'Saving...' : editingUser ? 'Update Account' : 'Provision User'}
                 </button>
@@ -517,4 +517,3 @@ export const AdminUserManagement: React.FC = () => {
     </div>
   );
 };
-

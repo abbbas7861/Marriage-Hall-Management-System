@@ -41,7 +41,6 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
   initialCreateData,
   initialMode = 'table',
 }) => {
-  // STRICT DATA RULE: DO NOT hardcode any dummy data. All data must start as an empty array.
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'create'>(initialMode);
@@ -151,30 +150,30 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
     switch (status) {
       case 'Confirmed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span>Confirmed</span>
           </span>
         );
       case 'Pending':
       case 'Under Review':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             <span>Pending</span>
           </span>
         );
       case 'Cancelled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
             <span>Cancelled</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
             <span>[--]</span>
           </span>
         );
@@ -185,28 +184,28 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
     switch (paymentStatus) {
       case 'Paid':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-teal-50 text-teal-800 border border-teal-200/60">
-            <CheckCircle2 className="w-3 h-3 text-teal-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium bg-teal-500/20 text-teal-300 border border-teal-500/30">
+            <CheckCircle2 className="w-3 h-3 text-teal-400" />
             <span>Paid</span>
           </span>
         );
       case 'Partial':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200/60">
-            <Clock className="w-3 h-3 text-amber-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <Clock className="w-3 h-3 text-amber-400" />
             <span>Partial</span>
           </span>
         );
       case 'Unpaid':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 text-rose-800 border border-rose-200/60">
-            <XCircle className="w-3 h-3 text-rose-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-medium bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            <XCircle className="w-3 h-3 text-rose-400" />
             <span>Unpaid</span>
           </span>
         );
       default:
         return (
-          <span className="font-mono text-xs text-slate-400">
+          <span className="font-mono text-xs text-slate-500">
             [--]
           </span>
         );
@@ -249,20 +248,20 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
   }
 
   return (
-    <div className="flex flex-col w-full gap-5">
+    <div className="flex flex-col w-full gap-6 text-slate-100">
       {/* Top Section (Header & Actions) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/70">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-800">
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-['Plus_Jakarta_Sans']">
               Bookings &amp; Reservations
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200/60 text-teal-800 text-[11px] font-mono font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-teal-300 text-xs font-mono font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
               MODULE ACTIVE
             </span>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-400">
             Manage hall availability, customer contracts, and event schedules.
           </p>
         </div>
@@ -272,7 +271,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
           <button
             type="button"
             onClick={() => setViewMode('create')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#005049] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-teal-500/20 transition-all cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Create New Booking</span>
@@ -282,13 +281,13 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
 
       {/* Filter Bar Panel */}
       {loading && (
-        <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-xs">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#00685f]" />
+        <div className="flex items-center justify-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/60 backdrop-blur-md p-4 text-sm text-slate-300 shadow-xl">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-teal-400" />
           <span>Loading bookings...</span>
         </div>
       )}
 
-      <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs">
+      <div className="p-4 sm:p-5 rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 flex-1">
             {/* Search Input */}
@@ -299,27 +298,27 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search bookings by reference, customer..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition-all"
               />
             </div>
 
             {/* Date Range Picker */}
-            <div className="relative w-full flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+            <div className="relative w-full flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5">
               <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 title="Start Date"
-                className="w-18 bg-transparent text-xs text-slate-700 focus:outline-none"
+                className="w-18 bg-transparent text-xs text-slate-200 focus:outline-none"
               />
-              <span className="text-slate-300 text-xs">-</span>
+              <span className="text-slate-500 text-xs">-</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 title="End Date"
-                className="w-18 bg-transparent text-xs text-slate-700 focus:outline-none"
+                className="w-18 bg-transparent text-xs text-slate-200 focus:outline-none"
               />
             </div>
 
@@ -330,7 +329,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                 <select
                   value={selectedHall}
                   onChange={(e) => setSelectedHall(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer font-medium"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal-500 transition-all cursor-pointer font-medium"
                 >
                   <option value="All Halls">Select Hall: All Halls</option>
                   {hallsList.map((h) => (
@@ -349,7 +348,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
                 >
                   <option value="All Statuses">Select Status: All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -365,7 +364,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700/60 border border-slate-700 text-xs font-semibold transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Filters</span>
@@ -375,11 +374,11 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
       </div>
 
       {/* Main Section: Comprehensive Data Table */}
-      <div className="w-full bg-white rounded-xl shadow-xs border border-slate-200/80 overflow-hidden flex flex-col">
+      <div className="w-full bg-slate-800/60 backdrop-blur-md rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden flex flex-col">
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/90 text-slate-500 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
+              <tr className="bg-slate-900/80 text-slate-400 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-700/60">
                 <th scope="col" className="py-3 px-4">Booking ID</th>
                 <th scope="col" className="py-3 px-4">Customer Name</th>
                 <th scope="col" className="py-3 px-4">Event Type</th>
@@ -391,20 +390,20 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
+            <tbody className="divide-y divide-slate-700/40 text-slate-200 text-xs">
               {!loading && filteredBookings.length === 0 ? (
-                /* Large, professional empty state in the middle of the table */
+                /* Empty state */
                 <tr>
                   <td colSpan={8} className="py-20 px-6 text-center">
                     <div className="max-w-md mx-auto flex flex-col items-center justify-center gap-3.5">
-                      <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00685f] shadow-xs">
+                      <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shadow-sm">
                         <CalendarDays className="w-8 h-8 stroke-[1.6]" />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                        <h3 className="text-base font-bold text-white font-['Plus_Jakarta_Sans']">
                           No bookings found. Create your first booking to get started.
                         </h3>
-                        <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+                        <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
                           Your reservations ledger is currently empty. Add venue reservations to track schedules, banquet tranches, and customer deposits.
                         </p>
                       </div>
@@ -413,14 +412,14 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                         <button
                           type="button"
                           onClick={() => setViewMode('create')}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#005049] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white text-xs font-semibold shadow-lg shadow-teal-500/20 transition-all cursor-pointer active:scale-95"
                         >
                           <Plus className="w-4 h-4 stroke-[2.5]" />
                           <span>Create New Booking</span>
                         </button>
                       </div>
 
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[11px] font-mono mt-1">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-400 text-[11px] font-mono mt-1">
                         <span>data: []</span>
                         <span>•</span>
                         <span>[Strict Empty Mode Active]</span>
@@ -432,19 +431,19 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                 filteredBookings.map((booking) => (
                   <tr
                     key={booking.id}
-                    className="hover:bg-slate-50/80 transition-colors border-b border-slate-100"
+                    className="hover:bg-slate-800/50 transition-colors border-b border-slate-700/40"
                   >
                     {/* Booking ID */}
-                    <td className="py-3.5 px-4 font-mono font-medium text-slate-900">
-                      <span className="px-2 py-0.5 rounded bg-teal-50 border border-teal-200/60 text-teal-800 text-xs font-semibold">
+                    <td className="py-3.5 px-4 font-mono font-medium text-slate-200">
+                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-teal-300 text-xs font-semibold">
                         [{booking.bookingRef}]
                       </span>
                     </td>
 
                     {/* Customer Name */}
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-white">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                        <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-teal-400">
                           {booking.customerName.charAt(0)}
                         </div>
                         <div className="flex flex-col">
@@ -457,27 +456,27 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                     </td>
 
                     {/* Event Type */}
-                    <td className="py-3.5 px-4 text-slate-700">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs font-medium">
+                    <td className="py-3.5 px-4 text-slate-300">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-slate-900 border border-slate-700/60 text-slate-300 text-xs font-medium">
                         [{booking.eventType}]
                       </span>
                     </td>
 
                     {/* Hall / Venue */}
-                    <td className="py-3.5 px-4 font-medium text-slate-800">
+                    <td className="py-3.5 px-4 font-medium text-slate-200">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-teal-700" />
+                        <Building2 className="w-3.5 h-3.5 text-teal-400" />
                         <span>{booking.hallName}</span>
                       </div>
                     </td>
 
-                    {/* Event Date & Time (12-Hour AM/PM Format) */}
+                    {/* Event Date & Time */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
-                        <span className="font-mono text-slate-800 font-semibold text-xs">
+                        <span className="font-mono text-slate-200 font-semibold text-xs">
                           {booking.date}
                         </span>
-                        <span className="text-[11px] text-teal-800 font-mono font-medium mt-0.5">
+                        <span className="text-[11px] text-teal-300 font-mono font-medium mt-0.5">
                           {formatTo12Hour(booking.time || booking.slot)}
                         </span>
                       </div>
@@ -493,23 +492,23 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                       {getPaymentBadge(booking.paymentStatus)}
                     </td>
 
-                    {/* Actions (Contract, View, Edit, Delete) */}
+                    {/* Actions */}
                     <td className="py-3.5 px-4 text-right">
-                      <div className="inline-flex items-center gap-1 justify-end">
+                      <div className="inline-flex items-center gap-1.5 justify-end">
                         <button
                           type="button"
                           onClick={() => setContractBooking(booking)}
                           title="Generate Branded Contract PDF"
-                          className="px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
                         >
-                          <FileQuestion className="w-3 h-3 text-amber-600" />
+                          <FileQuestion className="w-3 h-3 text-amber-400" />
                           <span>PDF</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setViewBooking(booking)}
                           title="View Details"
-                          className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-teal-700 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-slate-700/60 text-slate-400 hover:text-teal-300 transition-colors cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -517,7 +516,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                           type="button"
                           onClick={() => handleOpenEdit(booking)}
                           title="Edit Booking"
-                          className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-slate-700/60 text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -525,7 +524,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                           type="button"
                           onClick={() => handleDeleteBooking(booking.id)}
                           title="Delete Booking"
-                          className="p-1.5 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -539,92 +538,74 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
         </div>
 
         {/* Footer info strip */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-slate-50 border-t border-slate-200 text-slate-500 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 bg-slate-900 border-t border-slate-700/60 text-slate-400 text-xs">
           <div className="flex items-center gap-4">
-            <span className="font-medium text-slate-600">
-              Showing <span className="font-mono">{filteredBookings.length > 0 ? 1 : 0}</span> -{' '}
-              <span className="font-mono">{filteredBookings.length}</span> of{' '}
-              <span className="font-mono">{filteredBookings.length}</span> total bookings
+            <span className="font-medium text-slate-300">
+              Showing <span className="font-mono text-white">{filteredBookings.length > 0 ? 1 : 0}</span> -{' '}
+              <span className="font-mono text-white">{filteredBookings.length}</span> of{' '}
+              <span className="font-mono text-white">{filteredBookings.length}</span> total bookings
             </span>
           </div>
-          <div className="text-[11px] text-slate-400 font-mono">
+          <div className="text-[11px] text-slate-500 font-mono">
             Status: {filteredBookings.length === 0 ? '[Awaiting Ingest / New Entry]' : '[Synchronized]'}
           </div>
         </div>
       </div>
 
-      {!loading && filteredBookings.length === 0 && (
-        <div className="w-full rounded-xl border border-slate-200 bg-white p-6 text-center shadow-xs">
-          <div className="mx-auto flex max-w-md flex-col items-center justify-center gap-3.5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50 text-[#00685f] shadow-xs">
-              <CalendarDays className="h-8 w-8 stroke-[1.6]" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
-                No bookings found. Create your first booking to get started.
-              </h3>
-              <p className="max-w-sm text-xs leading-relaxed text-slate-500">
-                Your reservations ledger is currently empty. Add venue reservations to track schedules, banquet tranches, and customer deposits.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* View Details Dialog */}
       {viewBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 max-h-[90vh] overflow-y-auto text-slate-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
               <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-teal-700" />
-                <h3 className="text-sm font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
+                <CalendarDays className="w-4 h-4 text-teal-400" />
+                <h3 className="text-sm font-bold text-white font-['Plus_Jakarta_Sans']">
                   Booking Details [{viewBooking.bookingRef}]
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setViewBooking(null)}
-                className="p-1 rounded text-slate-400 hover:text-slate-700"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 flex flex-col gap-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Customer:</span>
-                <span className="font-semibold text-slate-800">{viewBooking.customerName}</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Customer:</span>
+                <span className="font-semibold text-slate-200">{viewBooking.customerName}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Event Type:</span>
-                <span className="font-medium text-slate-800">{viewBooking.eventType}</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Event Type:</span>
+                <span className="font-medium text-slate-200">{viewBooking.eventType}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Hall:</span>
-                <span className="font-medium text-slate-800">{viewBooking.hallName}</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Hall:</span>
+                <span className="font-medium text-slate-200">{viewBooking.hallName}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Date &amp; Time:</span>
-                <span className="font-mono text-slate-800">{viewBooking.date} • {formatTo12Hour(viewBooking.time || viewBooking.slot)}</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Date &amp; Time:</span>
+                <span className="font-mono text-slate-200">{viewBooking.date} • {formatTo12Hour(viewBooking.time || viewBooking.slot)}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Status:</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Status:</span>
                 <span>{getStatusBadge(viewBooking.status)}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500">Payment Status:</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-800">
+                <span className="text-slate-400">Payment Status:</span>
                 <span>{getPaymentBadge(viewBooking.paymentStatus)}</span>
               </div>
               {viewBooking.amount && (
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-500">Agreed Amount:</span>
-                  <span className="font-bold font-mono text-slate-900">Rs. {(viewBooking.amount || 0).toLocaleString('en-PK')}</span>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-slate-400">Agreed Amount:</span>
+                  <span className="font-bold font-mono text-teal-300">Rs. {(viewBooking.amount || 0).toLocaleString('en-PK')}</span>
                 </div>
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="px-5 py-3.5 border-t border-slate-800 bg-slate-900 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => {
@@ -632,14 +613,14 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
                   setViewBooking(null);
                   setContractBooking(b);
                 }}
-                className="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold"
+                className="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold"
               >
                 Print Contract PDF
               </button>
               <button
                 type="button"
                 onClick={() => setViewBooking(null)}
-                className="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold"
+                className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700"
               >
                 Close
               </button>
@@ -655,7 +636,6 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
           onClose={() => setContractBooking(null)}
         />
       )}
-
     </div>
   );
 };

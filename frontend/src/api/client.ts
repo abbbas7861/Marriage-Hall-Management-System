@@ -544,12 +544,14 @@ export interface PantryStockItem {
   id: string;
   itemCode: string;
   name: string;
+  itemName?: string;
   category: string;
   unit: string;
   currentStock: number;
   minThreshold: number;
   reorderQuantity: number;
   unitPrice: number;
+  unitCost?: number;
   preferredSupplier: string;
   supplierContact?: string;
   storageLocation: string;
@@ -562,21 +564,28 @@ export interface PantryStockItem {
 export interface PantryPurchaseOrder {
   id: string;
   orderRef: string;
-  itemId: number;
+  poNumber?: string;
+  itemId?: number;
   itemName: string;
   quantity: number;
   unit: string;
   unitPrice: number;
+  unitCost?: number;
   totalCost: number;
   supplierName: string;
   supplierContact?: string;
-  urgency: 'Normal' | 'Urgent' | 'Critical Emergency';
-  status: 'Draft' | 'Ordered' | 'Received & Stocked' | 'Cancelled';
-  orderedBy: string;
+  urgency?: 'Normal' | 'Urgent' | 'Critical Emergency';
+  status: 'Draft' | 'Ordered' | 'Received & Stocked' | 'Cancelled' | 'Received' | 'Pending';
+  orderedBy?: string;
   orderedAt?: string;
+  deliveryDate?: string;
+  grnNumber?: string;
+  receivedBy?: string;
   receivedAt?: string | null;
   notes?: string;
 }
+
+export type PantryPurchaseOrderItem = PantryPurchaseOrder;
 
 export const pantryApi = {
   async listItems(params?: { category?: string; search?: string }): Promise<PantryStockItem[]> {
@@ -585,7 +594,11 @@ export const pantryApi = {
     if (params?.search) query.set('search', params.search);
     const qs = query.toString();
     const data = await request<PantryStockItem[]>(`pantry-items${qs ? `?${qs}` : ''}`);
-    return normalizeList(data);
+    return normalizeList(data).map((item) => ({
+      ...item,
+      itemName: item.itemName || item.name,
+      unitCost: item.unitCost !== undefined ? item.unitCost : item.unitPrice,
+    }));
   },
 
   async createItem(payload: Partial<PantryStockItem>): Promise<PantryStockItem> {
@@ -632,7 +645,56 @@ export const pantryApi = {
     if (params?.status && params.status !== 'All') query.set('status', params.status);
     const qs = query.toString();
     const data = await request<PantryPurchaseOrder[]>(`pantry-orders${qs ? `?${qs}` : ''}`);
-    return normalizeList(data);
+    return normalizeList(data).map((order) => ({
+      ...order,
+      poNumber: order.poNumber || order.orderRef,
+      unitCost: order.unitCost !== undefined ? order.unitCost : order.unitPrice,
+    }));
+  },
+
+  listPOs(params?: { status?: string }): Promise<PantryPurchaseOrder[]> {
+    return pantryApi.listOrders(params);
+  },
+
+  listStock(params?: { category?: string; search?: string }): Promise<PantryStockItem[]> {
+    return pantryApi.listItems(params);
+  },
+
+  async createPO(payload: any): Promise<PantryPurchaseOrder> {
+    const body: any = {
+      item_name: payload.itemName || payload.name,
+      supplier_name: payload.supplierName,
+      quantity: payload.quantity,
+      unit: payload.unit,
+      unit_price: payload.unitCost !== undefined ? payload.unitCost : payload.unitPrice,
+      total_cost: payload.totalCost !== undefined ? payload.totalCost : (payload.quantity * (payload.unitCost || payload.unitPrice || 0)),
+      status: payload.status || 'Ordered',
+      notes: payload.notes || '',
+      ordered_by: payload.orderedBy || 'Vendor Purchasing',
+      urgency: payload.urgency || 'Normal',
+    };
+    if (payload.deliveryDate) {
+      body.notes = `${body.notes} [Delivery: ${payload.deliveryDate}]`.trim();
+    }
+    const data = await request<PantryPurchaseOrder>('pantry-orders', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    const normalized = normalizeId(data);
+    return {
+      ...normalized,
+      poNumber: normalized.poNumber || normalized.orderRef,
+      unitCost: normalized.unitCost !== undefined ? normalized.unitCost : normalized.unitPrice,
+    };
+  },
+
+  async receivePO(orderId: string, payload?: any): Promise<PantryPurchaseOrder> {
+    const data = await pantryApi.markOrderReceived(orderId, payload?.receivedBy);
+    return {
+      ...data,
+      poNumber: data.poNumber || data.orderRef,
+      unitCost: data.unitCost !== undefined ? data.unitCost : data.unitPrice,
+    };
   },
 
   async markOrderReceived(orderId: string, receivedBy?: string): Promise<PantryPurchaseOrder> {

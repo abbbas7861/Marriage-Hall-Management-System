@@ -319,11 +319,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30 mb-2">
-              <Calculator className="w-3.5 h-3.5" />
-              <span>Phase 4 — Task 4.4: Raw Material Formula Calculator</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Raw Ingredient Formula & Grocery Requisition Engine
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">

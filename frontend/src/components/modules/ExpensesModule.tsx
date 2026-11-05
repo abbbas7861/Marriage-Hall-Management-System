@@ -55,16 +55,16 @@ export const ExpensesModule: React.FC = () => {
     loadExpenses();
   }, []);
 
-  const totalOutflow = expenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+  const totalOutflow = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const utilitiesOutflow = expenses
-    .filter((e) => e.category.toLowerCase().includes('utilities') || e.category.toLowerCase().includes('fuel'))
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    .filter((e) => (e.category || '').toLowerCase().includes('utilities') || (e.category || '').toLowerCase().includes('fuel'))
+    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const decorOutflow = expenses
-    .filter((e) => e.category.toLowerCase().includes('decor') || e.category.toLowerCase().includes('stage'))
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    .filter((e) => (e.category || '').toLowerCase().includes('decor') || (e.category || '').toLowerCase().includes('stage'))
+    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
   const staffOutflow = expenses
-    .filter((e) => e.category.toLowerCase().includes('staff') || e.category.toLowerCase().includes('salary'))
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    .filter((e) => (e.category || '').toLowerCase().includes('staff') || (e.category || '').toLowerCase().includes('salary'))
+    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +108,7 @@ export const ExpensesModule: React.FC = () => {
       accessorKey: 'expenseRef',
       sortable: true,
       render: (item) => (
-        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
           [{item.expenseRef}]
         </span>
       ),
@@ -118,7 +118,7 @@ export const ExpensesModule: React.FC = () => {
       accessorKey: 'category',
       sortable: true,
       render: (item) => (
-        <span className="font-semibold text-slate-900 text-xs">
+        <span className="font-semibold text-white text-xs">
           {item.category}
         </span>
       ),
@@ -127,28 +127,28 @@ export const ExpensesModule: React.FC = () => {
       header: 'Payee / Vendor',
       accessorKey: 'vendor',
       render: (item) => (
-        <span className="text-xs text-slate-800 font-medium">{item.vendor}</span>
+        <span className="text-xs text-slate-300 font-medium">{item.vendor}</span>
       ),
     },
     {
       header: 'Payment Mode',
       accessorKey: 'paymentMethod',
       render: (item) => (
-        <span className="text-xs text-slate-600 font-mono">{item.paymentMethod || 'Cash'}</span>
+        <span className="text-xs text-slate-400 font-mono">{item.paymentMethod || 'Cash'}</span>
       ),
     },
     {
       header: 'Approved By',
       accessorKey: 'approvedBy',
       render: (item) => (
-        <span className="text-xs text-teal-700 font-mono font-semibold">{item.approvedBy}</span>
+        <span className="text-xs text-teal-400 font-mono font-semibold">{item.approvedBy}</span>
       ),
     },
     {
       header: 'Disbursement Date',
       accessorKey: 'date',
       render: (item) => (
-        <span className="text-xs text-slate-500 font-mono">{item.date}</span>
+        <span className="text-xs text-slate-400 font-mono">{item.date}</span>
       ),
     },
     {
@@ -157,7 +157,7 @@ export const ExpensesModule: React.FC = () => {
       sortable: true,
       align: 'right',
       render: (item) => (
-        <span className="font-mono text-xs font-bold text-rose-600">
+        <span className="font-mono text-xs font-bold text-rose-400">
           PKR {(Number(item.amount) || 0).toLocaleString('en-PK')}
         </span>
       ),
@@ -175,12 +175,12 @@ export const ExpensesModule: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-700/50">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
             Operational Expenses &amp; Claim Approvals
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Audit operational venue costs: staff overtime wages, utility surges, generator fuel, floral decor sourcing, and laundry.
           </p>
         </div>
@@ -188,7 +188,7 @@ export const ExpensesModule: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs transition-all w-fit cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-extrabold shadow-md transition-all w-fit cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
           <span>File Expense Claim</span>
@@ -197,34 +197,34 @@ export const ExpensesModule: React.FC = () => {
 
       {/* 4 Summary Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
+        <div className="p-4 rounded-xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xs">
           <span className="text-[11px] text-slate-400 font-semibold uppercase font-mono">Total Disbursed</span>
-          <div className="text-xl font-bold font-mono text-slate-900 mt-1">
-            PKR {totalOutflow.toLocaleString('en-PK')}
+          <div className="text-xl font-bold font-mono text-white mt-1">
+            PKR {Number(totalOutflow || 0).toLocaleString('en-PK')}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5 block">{expenses.length} claims settled</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
+        <div className="p-4 rounded-xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xs">
           <span className="text-[11px] text-slate-400 font-semibold uppercase font-mono">Utilities &amp; Fuel</span>
-          <div className="text-xl font-bold font-mono text-amber-600 mt-1">
-            PKR {utilitiesOutflow.toLocaleString('en-PK')}
+          <div className="text-xl font-bold font-mono text-amber-400 mt-1">
+            PKR {Number(utilitiesOutflow || 0).toLocaleString('en-PK')}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5 block">Power, HVAC &amp; Generator</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
+        <div className="p-4 rounded-xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xs">
           <span className="text-[11px] text-slate-400 font-semibold uppercase font-mono">Stage &amp; Decor</span>
-          <div className="text-xl font-bold font-mono text-sky-600 mt-1">
-            PKR {decorOutflow.toLocaleString('en-PK')}
+          <div className="text-xl font-bold font-mono text-sky-400 mt-1">
+            PKR {Number(decorOutflow || 0).toLocaleString('en-PK')}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5 block">Floral &amp; Audio/Visual setup</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
+        <div className="p-4 rounded-xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 shadow-xs">
           <span className="text-[11px] text-slate-400 font-semibold uppercase font-mono">Staff &amp; Overtime</span>
-          <div className="text-xl font-bold font-mono text-indigo-600 mt-1">
-            PKR {staffOutflow.toLocaleString('en-PK')}
+          <div className="text-xl font-bold font-mono text-indigo-400 mt-1">
+            PKR {Number(staffOutflow || 0).toLocaleString('en-PK')}
           </div>
           <span className="text-[10px] text-slate-400 mt-0.5 block">Cleaning &amp; Floor Helpers</span>
         </div>
@@ -243,7 +243,7 @@ export const ExpensesModule: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="px-3.5 py-2 rounded-lg bg-teal-700 text-white text-xs font-semibold hover:bg-teal-800 transition-colors"
+            className="px-3.5 py-2 rounded-lg bg-teal-500 text-slate-950 font-bold text-xs hover:bg-teal-400 transition-colors"
           >
             Record Venue Expense
           </button>
@@ -253,29 +253,29 @@ export const ExpensesModule: React.FC = () => {
 
       {/* Record Expense Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl border border-slate-700">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <Receipt className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Record Operational Expense</h3>
+                  <h3 className="font-bold text-base text-white">Record Operational Expense</h3>
                   <p className="text-xs text-slate-400">File a venue cost claim and disburse payment</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{formError}</span>
               </div>
@@ -283,27 +283,27 @@ export const ExpensesModule: React.FC = () => {
 
             <form onSubmit={handleSaveExpense} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-300 mb-1">
                   Expense Category *
                 </label>
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-teal-700 cursor-pointer"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium focus:outline-none focus:border-teal-500 cursor-pointer"
                 >
-                  <option value="Utilities (Electricity / Generator Fuel)">Utilities (Electricity / Generator Fuel)</option>
-                  <option value="Stage Decor & Floral Sourcing">Stage Decor &amp; Floral Sourcing</option>
-                  <option value="Sound, Lighting & DJ Rigging">Sound, Lighting &amp; DJ Rigging</option>
-                  <option value="Kitchen Gas & Raw Spices">Kitchen Gas &amp; Raw Spices</option>
-                  <option value="Staff Overtime & Floor Labor">Staff Overtime &amp; Floor Labor</option>
-                  <option value="Laundry & Table Cloth Sanitization">Laundry &amp; Table Cloth Sanitization</option>
-                  <option value="Facility Repairs & Maintenance">Facility Repairs &amp; Maintenance</option>
+                  <option value="Utilities (Electricity / Generator Fuel)" className="bg-slate-900 text-white">Utilities (Electricity / Generator Fuel)</option>
+                  <option value="Stage Decor & Floral Sourcing" className="bg-slate-900 text-white">Stage Decor &amp; Floral Sourcing</option>
+                  <option value="Sound, Lighting & DJ Rigging" className="bg-slate-900 text-white">Sound, Lighting &amp; DJ Rigging</option>
+                  <option value="Kitchen Gas & Raw Spices" className="bg-slate-900 text-white">Kitchen Gas &amp; Raw Spices</option>
+                  <option value="Staff Overtime & Floor Labor" className="bg-slate-900 text-white">Staff Overtime &amp; Floor Labor</option>
+                  <option value="Laundry & Table Cloth Sanitization" className="bg-slate-900 text-white">Laundry &amp; Table Cloth Sanitization</option>
+                  <option value="Facility Repairs & Maintenance" className="bg-slate-900 text-white">Facility Repairs &amp; Maintenance</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Payee / Vendor Name *
                   </label>
                   <input
@@ -312,12 +312,12 @@ export const ExpensesModule: React.FC = () => {
                     onChange={(e) => setFormVendor(e.target.value)}
                     placeholder="e.g. Shell Petrol Pump / Floral City"
                     required
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Amount (PKR) *
                   </label>
                   <input
@@ -326,64 +326,64 @@ export const ExpensesModule: React.FC = () => {
                     onChange={(e) => setFormAmount(e.target.value)}
                     placeholder="25000"
                     required
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Payment Channel
                   </label>
                   <select
                     value={formPaymentMethod}
                     onChange={(e) => setFormPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-medium focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium focus:outline-none focus:border-teal-500"
                   >
-                    <option value="Cash">Cash Voucher</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Company Cheque</option>
-                    <option value="Online / Raast">Online / Raast</option>
+                    <option value="Cash" className="bg-slate-900 text-white">Cash Voucher</option>
+                    <option value="Bank Transfer" className="bg-slate-900 text-white">Bank Transfer</option>
+                    <option value="Cheque" className="bg-slate-900 text-white">Company Cheque</option>
+                    <option value="Online / Raast" className="bg-slate-900 text-white">Online / Raast</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-300 mb-1">
                     Disbursement Date
                   </label>
                   <input
                     type="date"
                     value={formDate}
                     onChange={(e) => setFormDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-teal-700"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-300 mb-1">
                   Approved By Authority
                 </label>
                 <input
                   type="text"
                   value={formApprovedBy}
                   onChange={(e) => setFormApprovedBy(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-teal-700"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-teal-500"
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-bold transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-950 font-extrabold transition-colors cursor-pointer"
                 >
                   Confirm Disbursement
                 </button>

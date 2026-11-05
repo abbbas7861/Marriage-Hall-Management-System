@@ -168,11 +168,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                <Tablet className="w-3.5 h-3.5" />
-                <span>Phase 5 — Task 5.1: Floor Staff & Table Kiosk</span>
-              </span>
-
+              
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>LIVE SERVICE ACTIVE</span>

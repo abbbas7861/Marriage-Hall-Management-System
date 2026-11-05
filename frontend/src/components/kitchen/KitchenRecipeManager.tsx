@@ -324,11 +324,7 @@ export const KitchenRecipeManager: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-2">
-              <UtensilsCrossed className="w-3.5 h-3.5" />
-              <span>Phase 4 — Task 4.3: Menu Recipes & Per-Head Costing</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Catering Packages & Dish Recipe Costing
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">

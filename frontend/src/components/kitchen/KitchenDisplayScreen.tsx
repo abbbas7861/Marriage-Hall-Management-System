@@ -249,11 +249,7 @@ export const KitchenDisplayScreen: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-2">
-              <ChefHat className="w-3.5 h-3.5" />
-              <span>Phase 4 — Task 4.1: Kitchen Display Screen (KDS)</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
               <span>Kitchen Display Screen (KDS)</span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-bold uppercase tracking-wider animate-pulse">
                 <Flame className="w-3.5 h-3.5" />
