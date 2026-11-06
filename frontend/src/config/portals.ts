@@ -33,6 +33,7 @@ import {
   BarChart3,
   Scale,
   Settings,
+  Sliders,
   LucideIcon,
 } from 'lucide-react';
 import { PortalType, NavModuleId } from '../types';
@@ -90,7 +91,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'admin-closings', label: 'Period Closings', icon: Clock },
           { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
           { id: 'admin-audit', label: 'System Audit Logs', icon: History },
-          { id: 'settings', label: 'Venue Settings', icon: Settings, path: '/admin/settings' },
+        ],
+      },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
       },
     ],
@@ -122,6 +128,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'feedback', label: 'Customer Reviews', icon: CheckCircle2 },
         ],
       },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
+        ],
+      },
     ],
   },
 
@@ -150,6 +162,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'kitchen-reorder', label: 'Reorder Requisitions', icon: AlertTriangle },
         ],
       },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
+        ],
+      },
     ],
   },
 
@@ -169,6 +187,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'waiter-kiosk', label: 'Floor Staff Tablet', icon: Tablet },
           { id: 'waiter-refills', label: 'Dish Refill Dispatcher', icon: Coffee, badge: 'Urgent' },
           { id: 'waiter-overtime', label: 'Overtime Extension Trigger', icon: Clock, badge: 'Emergency' },
+        ],
+      },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
       },
     ],
@@ -198,6 +222,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'vendors-deliveries', label: 'Delivery Schedule', icon: Truck },
         ],
       },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
+        ],
+      },
     ],
   },
 
@@ -225,6 +255,12 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         items: [
           { id: 'finance-expenses', label: 'Expense Journal', icon: Wallet },
           { id: 'finance-statements', label: 'P&L & Balance Sheet', icon: FileText },
+        ],
+      },
+      {
+        groupTitle: 'Preferences',
+        items: [
+          { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
       },
     ],

@@ -328,9 +328,9 @@ export const FinanceGeneralLedger: React.FC<FinanceGeneralLedgerProps> = ({
       </div>
 
       {/* General Ledger Table */}
-      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-full text-left border-collapse">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs">
+        <div className="w-full overflow-x-auto pb-4">
+          <table className="w-full min-w-[1100px] text-left border-collapse">
             <thead>
               <tr className="bg-slate-900/80 border-b border-slate-700/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="py-4 px-6 whitespace-nowrap">Date &amp; Ref ID</th>
@@ -433,7 +433,7 @@ export const FinanceGeneralLedger: React.FC<FinanceGeneralLedgerProps> = ({
                 <p className="text-slate-200 font-medium">{selectedEntry.notes || selectedEntry.category}</p>
               </div>
 
-              <table className="w-full text-left border-collapse font-mono">
+              <table className="w-full min-w-[1100px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-700 text-slate-400 font-semibold font-sans">
                     <th className="py-2 whitespace-nowrap">Account Title</th>

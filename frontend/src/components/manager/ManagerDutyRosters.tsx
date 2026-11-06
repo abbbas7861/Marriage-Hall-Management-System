@@ -248,17 +248,15 @@ export const ManagerDutyRosters: React.FC<ManagerDutyRostersProps> = ({ initialB
       )}
 
       {/* Header & Event Selector */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase tracking-wider">
-              Workforce Ops
-            </span>
-          </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
+      <div className="flex flex-col gap-4 mb-6">
+        <div>
+          <span className="inline-flex px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[11px] font-bold uppercase tracking-wider mb-2">
+            Workforce Ops
+          </span>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
             Team Coordination &amp; Duty Rosters
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+          <p className="text-sm text-slate-400 mt-1">
             Allocate service crews, track real-time shift attendance, and dispatch emergency personnel replacements.
           </p>
         </div>

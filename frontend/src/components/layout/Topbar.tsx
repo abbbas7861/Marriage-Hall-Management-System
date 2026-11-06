@@ -11,7 +11,7 @@ import {
   Sliders,
   Lock,
 } from 'lucide-react';
-import { AuthUser, PortalType } from '../../types';
+import { AuthUser, PortalType, NavModuleId } from '../../types';
 import { PORTAL_CONFIGS } from '../../config/portals';
 
 interface TopbarProps {
@@ -22,6 +22,7 @@ interface TopbarProps {
   onSelectTabletView?: () => void;
   currentUser?: AuthUser | null;
   onLogout?: () => void;
+  onSelectModule?: (id: NavModuleId) => void;
   activePortal: PortalType;
   onSelectPortal: (portal: PortalType) => void;
   allowedPortals: PortalType[];
@@ -35,6 +36,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onSelectTabletView,
   currentUser,
   onLogout,
+  onSelectModule,
   activePortal,
   onSelectPortal,
   allowedPortals,
@@ -189,6 +191,19 @@ export const Topbar: React.FC<TopbarProps> = ({
                   <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 font-bold uppercase text-[10px]">
                     {currentUser?.role || 'Admin'}
                   </span>
+                </div>
+                <div
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    onSelectModule?.('settings');
+                    if (window.location.pathname !== '/settings') {
+                      window.history.pushState(null, '', '/settings');
+                    }
+                  }}
+                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-800 hover:text-white cursor-pointer transition-colors"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-teal-400" />
+                  <span>My Preferences</span>
                 </div>
                 <div className="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-800 hover:text-white cursor-pointer transition-colors">
                   <Shield className="w-3.5 h-3.5 text-teal-400" />

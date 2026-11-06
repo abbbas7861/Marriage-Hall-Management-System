@@ -1,3 +1,4 @@
+import { ThemeProvider } from '../../context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -95,7 +96,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
   const [activePortal, setActivePortal] = useState<PortalType>(() => {
     if (typeof window !== 'undefined') {
       const p = window.location.pathname;
-      if (p === '/admin/fbr' || p === '/fbr' || p === '/admin/settings' || p === '/settings') {
+      if (p === '/admin/fbr' || p === '/fbr') {
         return 'admin';
       }
     }
@@ -130,7 +131,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         setActivePortal('admin');
         setActiveModule('admin-fbr');
       } else if (path === '/admin/settings' || path === '/settings') {
-        setActivePortal('admin');
         setActiveModule('settings');
       }
     };
@@ -349,7 +349,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1120] text-slate-100 flex flex-col antialiased selection:bg-teal-900/50 selection:text-teal-200 font-['Plus_Jakarta_Sans',sans-serif]">
+    <ThemeProvider>
+      <div className="min-h-screen bg-[#0b1120] text-slate-100 flex flex-col antialiased selection:bg-teal-900/50 selection:text-teal-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Sidebar with Navigation Links Dynamically Contextualized to Active Portal */}
       <Sidebar
         activePortal={activePortal}
@@ -369,6 +370,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
           searchValue={globalSearch}
           onSearchChange={setGlobalSearch}
           activeModule={activeModule}
+          onSelectModule={setActiveModule}
           onSelectTabletView={() => {
             setActivePortal('waiter');
             setActiveModule('waiter-kiosk');
@@ -386,5 +388,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ currentUser, onLogout })
         </main>
       </div>
     </div>
+    </ThemeProvider>
   );
 };

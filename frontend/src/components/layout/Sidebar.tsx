@@ -41,10 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             key={item.id}
             type="button"
-            data-route={item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/admin/settings' : undefined)}
+            data-route={item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/settings' : undefined)}
             onClick={() => {
               onSelectModule(item.id);
-              const targetPath = item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/admin/settings' : undefined);
+              const targetPath = item.path || (item.id === 'admin-fbr' ? '/admin/fbr' : item.id === 'settings' ? '/settings' : undefined);
               if (targetPath && window.location.pathname !== targetPath) {
                 window.history.pushState(null, '', targetPath);
               }

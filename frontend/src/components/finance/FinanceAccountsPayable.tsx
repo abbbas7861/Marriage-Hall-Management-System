@@ -277,9 +277,9 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
       </div>
 
       {/* Payables Table */}
-      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full min-w-full text-left border-collapse">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-xs">
+        <div className="w-full overflow-x-auto pb-4">
+          <table className="w-full min-w-[1100px] text-left border-collapse">
             <thead>
               <tr className="bg-slate-900/80 border-b border-slate-700/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="py-4 px-6 whitespace-nowrap">Vendor Name &amp; ID</th>

@@ -235,7 +235,7 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
               transition={{ duration: 0.35, delay: idx * 0.05 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
               onClick={() => onNavigateToModule?.(kpi.actionModule)}
-              className="relative overflow-hidden rounded-2xl bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700/50 p-6 shadow-xl backdrop-blur-md transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+              className="relative overflow-hidden w-full rounded-2xl bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700/50 p-6 shadow-xl backdrop-blur-md transition-all duration-300 cursor-pointer group flex flex-col justify-between"
             >
               <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${kpi.accentGlow} rounded-full blur-2xl pointer-events-none`} />
 
