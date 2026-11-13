@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import HallTableStatus
@@ -6,6 +7,13 @@ from .models import HallTableStatus
 class HallTableMonitoringTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='venueadmin', password='pass123', email='venue@test.com')
+        self.client.force_authenticate(user=self.user)
+
+    def test_unauthenticated_blocked(self):
+        anon_client = APIClient()
+        res = anon_client.get('/api/v1/halls/')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_hall_table_initialization_and_toggle(self):
         # 1. Initialize tables for an event

@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import KitchenOrderTicket
@@ -6,6 +7,8 @@ from .models import KitchenOrderTicket
 class KitchenDisplayScreenTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='cateringadmin', password='pass123', email='catering@test.com')
+        self.client.force_authenticate(user=self.user)
 
     def test_kds_ticket_lifecycle(self):
         # 1. Create Refill Order Ticket

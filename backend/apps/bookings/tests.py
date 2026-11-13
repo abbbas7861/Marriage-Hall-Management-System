@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from apps.venues.models import Hall
@@ -13,6 +14,8 @@ from datetime import date, timedelta
 class MHMSEnterpriseAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='bookingadmin', password='pass123', email='booking@test.com')
+        self.client.force_authenticate(user=self.user)
         self.hall = Hall.objects.create(
             code="HL-99",
             name="Imperial Grand Ballroom",

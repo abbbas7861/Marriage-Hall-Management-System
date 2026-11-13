@@ -10,6 +10,8 @@ from apps.core.models import UserProfile
 class CoreDashboardAndReportsTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='coreadmin', password='pass123', email='core@test.com')
+        self.client.force_authenticate(user=self.user)
         self.hall = Hall.objects.create(
             code="HL-01",
             name="Grand Ballroom",

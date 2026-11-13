@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { MainLayout } from './components/layout/MainLayout';
-import { LoginScreen } from './components/auth/LoginScreen';
-import { AdminRegisterScreen } from './components/auth/AdminRegisterScreen';
-import { authApi } from './api/client';
-import { AuthUser } from './types';
-import { Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { MainLayout } from "./components/layout/MainLayout";
+import { LoginScreen } from "./components/auth/LoginScreen";
+import { AdminRegisterScreen } from "./components/auth/AdminRegisterScreen";
+import { authApi } from "./api/client";
+import { AuthUser } from "./types";
+import { Sparkles } from "lucide-react";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('mhms_auth_token'));
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("mhms_auth_token"),
+  );
   const [hasAdmin, setHasAdmin] = useState<boolean>(true);
-  const [authView, setAuthView] = useState<'login' | 'register-admin'>('login');
+  const [authView, setAuthView] = useState<"login" | "register-admin">("login");
   const [loading, setLoading] = useState<boolean>(true);
 
   // Initialize auth state
@@ -21,11 +23,13 @@ export default function App() {
       setLoading(true);
       try {
         // 1. Check if an admin exists
-        const adminCheck = await authApi.hasAdmin().catch(() => ({ hasAdmin: true }));
+        const adminCheck = await authApi
+          .hasAdmin()
+          .catch(() => ({ hasAdmin: true }));
         if (isMounted) setHasAdmin(adminCheck.hasAdmin);
 
         // 2. If token exists, verify with backend /me endpoint
-        const storedToken = localStorage.getItem('mhms_auth_token');
+        const storedToken = localStorage.getItem("mhms_auth_token");
         if (storedToken) {
           try {
             const user = await authApi.getMe();
@@ -34,22 +38,22 @@ export default function App() {
               setToken(storedToken);
             }
           } catch (err) {
-            console.warn('Session expired or invalid token:', err);
-            localStorage.removeItem('mhms_auth_token');
-            localStorage.removeItem('mhms_user');
+            console.warn("Session expired or invalid token:", err);
+            localStorage.removeItem("mhms_auth_token");
+            localStorage.removeItem("mhms_user");
             if (isMounted) {
               setCurrentUser(null);
               setToken(null);
               if (!adminCheck.hasAdmin) {
-                setAuthView('register-admin');
+                setAuthView("register-admin");
               }
             }
           }
         } else if (!adminCheck.hasAdmin) {
-          if (isMounted) setAuthView('register-admin');
+          if (isMounted) setAuthView("register-admin");
         }
       } catch (err) {
-        console.error('Auth initialization error:', err);
+        console.error("Auth initialization error:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -72,11 +76,11 @@ export default function App() {
     try {
       await authApi.logout();
     } catch (err) {
-      console.warn('Logout error:', err);
+      console.warn("Logout error:", err);
     } finally {
       setCurrentUser(null);
       setToken(null);
-      setAuthView('login');
+      setAuthView("login");
     }
   };
 
@@ -89,8 +93,12 @@ export default function App() {
           </div>
         </div>
         <div className="mt-5 text-center">
-          <h2 className="text-base font-bold text-white tracking-wide">Marriage Hall Management System</h2>
-          <p className="text-xs text-slate-400 mt-1">Initializing Secure Operations Console...</p>
+          <h2 className="text-base font-bold text-white tracking-wide">
+            Marriage Hall Management System
+          </h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Initializing Secure Operations Console...
+          </p>
         </div>
       </div>
     );
@@ -98,11 +106,13 @@ export default function App() {
 
   // Not authenticated
   if (!token || !currentUser) {
-    if (authView === 'register-admin') {
+    if (authView === "register-admin") {
       return (
         <AdminRegisterScreen
-          onRegisterSuccess={(user, newToken) => handleLoginSuccess(user, newToken)}
-          onBackToLogin={() => setAuthView('login')}
+          onRegisterSuccess={(user, newToken) =>
+            handleLoginSuccess(user, newToken)
+          }
+          onBackToLogin={() => setAuthView("login")}
         />
       );
     }
@@ -111,7 +121,7 @@ export default function App() {
       <LoginScreen
         hasAdmin={hasAdmin}
         onLoginSuccess={(user, newToken) => handleLoginSuccess(user, newToken)}
-        onGoToRegisterAdmin={() => setAuthView('register-admin')}
+        onGoToRegisterAdmin={() => setAuthView("register-admin")}
       />
     );
   }

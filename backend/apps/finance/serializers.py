@@ -80,7 +80,7 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
             user_role="Finance",
             action="Created",
             module="Finance",
-            details=f"Processed payment {txn.txn_ref} of ${txn.amount} ({txn.channel}) for booking {booking_ref or 'Direct'}",
+            details=f"Processed payment {txn.txn_ref} of Rs. {txn.amount:,.0f} ({txn.channel}) for booking {booking_ref or 'Direct'}",
             ip_address="127.0.0.1"
         )
 

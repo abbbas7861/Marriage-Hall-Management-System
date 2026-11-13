@@ -38,7 +38,7 @@ class SystemSetting(models.Model):
     api_client_secret = models.CharField(max_length=255, blank=True, default='')
 
     # Invoicing & Billing
-    currency_symbol = models.CharField(max_length=20, default='$', blank=True)
+    currency_symbol = models.CharField(max_length=20, default='Rs.', blank=True)
     default_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     invoice_prefix = models.CharField(max_length=20, default='INV-', blank=True)
     terms_and_conditions = models.TextField(blank=True, default='')

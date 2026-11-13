@@ -31,7 +31,7 @@ class SystemSettingSerializer(serializers.ModelSerializer):
     fbrIntegrator = serializers.CharField(source='fbr_integrator', required=False)
     fbrPosId = serializers.CharField(source='fbr_pos_id', required=False, allow_blank=True)
     apiClientId = serializers.CharField(source='api_client_id', required=False, allow_blank=True)
-    apiClientSecret = serializers.CharField(source='api_client_secret', required=False, allow_blank=True)
+    apiClientSecret = serializers.CharField(source='api_client_secret', required=False, allow_blank=True, write_only=True)
     currencySymbol = serializers.CharField(source='currency_symbol', required=False, allow_blank=True)
     defaultTaxRate = serializers.FloatField(source='default_tax_rate', required=False)
     invoicePrefix = serializers.CharField(source='invoice_prefix', required=False, allow_blank=True)

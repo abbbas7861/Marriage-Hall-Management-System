@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Layers,
   ArrowRight,
+  Flame,
 } from 'lucide-react';
 import { Booking, OperationalStatus } from '../../types';
 import { bookingsApi } from '../../api/client';
@@ -510,6 +511,15 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                 {/* Quick Action Navigation Hub */}
                 <div className="pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToTab?.('manager-kitchen-refills', booking)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                      <span>Kitchen Orders &amp; Refills</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => onNavigateToTab?.('manager-roster', booking)}

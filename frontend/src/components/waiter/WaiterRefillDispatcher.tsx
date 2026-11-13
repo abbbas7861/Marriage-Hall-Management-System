@@ -21,7 +21,7 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-react';
-import { Booking } from '../../types';
+import { Booking, AuthUser } from '../../types';
 import {
   bookingsApi,
   kdsApi,
@@ -123,13 +123,21 @@ const STANDARD_BUFFET_DISHES: BuffetDishItem[] = [
 
 interface WaiterRefillDispatcherProps {
   onNavigateToTab?: (tabId: string) => void;
+  callerRole?: 'Manager' | 'Waiter';
+  currentUser?: AuthUser | null;
+  initialBooking?: Booking | null;
 }
 
 export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
   onNavigateToTab,
+  callerRole = 'Waiter',
+  currentUser,
+  initialBooking,
 }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [selectedBookingRef, setSelectedBookingRef] = useState<string>('');
+  const [selectedBookingRef, setSelectedBookingRef] = useState<string>(
+    initialBooking?.bookingRef || ''
+  );
   const [tickets, setTickets] = useState<KitchenOrderTicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
@@ -158,7 +166,8 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
       setTickets(ticketsData);
 
       if (!selectedBookingRef && bookingsData.length > 0) {
-        setSelectedBookingRef(bookingsData[0].bookingRef);
+        const found = initialBooking?.bookingRef && bookingsData.find(b => b.bookingRef === initialBooking.bookingRef);
+        setSelectedBookingRef(found ? found.bookingRef : bookingsData[0].bookingRef);
       }
     } catch (err) {
       console.error('Failed to load waiter refill data:', err);
@@ -166,6 +175,12 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
       if (!isPolling) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialBooking?.bookingRef) {
+      setSelectedBookingRef(initialBooking.bookingRef);
+    }
+  }, [initialBooking?.bookingRef]);
 
   useEffect(() => {
     loadData();
@@ -214,6 +229,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
     }
 
     try {
+      const callerName = currentUser?.fullName || (callerRole === 'Manager' ? 'Floor Manager' : 'Lead Floor Steward');
       const created = await kdsApi.create({
         eventRef: selectedBooking.bookingRef,
         hallName: selectedBooking.hallName,
@@ -222,8 +238,8 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
         portionSize: dish.defaultPortion,
         priority: priority,
         station: dish.station,
-        requestedBy: 'Lead Floor Waiter',
-        notes: `Urgent floor refill requested for ${dish.station}`,
+        requestedBy: `${callerName} (${callerRole})`,
+        notes: `${callerRole === 'Manager' ? 'Manager priority refill call' : 'Urgent floor refill requested'} for ${dish.station}`,
       });
 
       setTickets((prev) => [created, ...prev]);
@@ -251,6 +267,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
     e.preventDefault();
     if (!selectedBooking) return;
     try {
+      const callerName = currentUser?.fullName || (callerRole === 'Manager' ? 'Floor Manager' : 'Floor Steward');
       const created = await kdsApi.create({
         eventRef: selectedBooking.bookingRef,
         hallName: selectedBooking.hallName,
@@ -259,8 +276,8 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
         portionSize: customForm.portionSize,
         priority: customForm.priority,
         station: customForm.station,
-        requestedBy: 'Floor Steward',
-        notes: customForm.notes,
+        requestedBy: `${callerName} (${callerRole})`,
+        notes: customForm.notes || (callerRole === 'Manager' ? 'Special manager floor order' : 'Floor custom request'),
       });
 
       setTickets((prev) => [created, ...prev]);
@@ -313,37 +330,61 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2.5 flex-wrap">
-
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
-                <span>1-TAP DISPATCH READY</span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                callerRole === 'Manager'
+                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300'
+                  : 'bg-rose-500/20 border border-rose-500/40 text-rose-300'
+              } shadow-sm`}>
+                <span className={`w-2 h-2 rounded-full ${callerRole === 'Manager' ? 'bg-amber-400' : 'bg-rose-400'} animate-ping`} />
+                <span>{callerRole === 'Manager' ? 'MANAGER FLOOR COMMAND READY' : '1-TAP DISPATCH READY'}</span>
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-50 tracking-tight flex items-center gap-3">
-              <span>Instant Buffet Dish Refill Dispatcher</span>
+              <span>{callerRole === 'Manager' ? 'Floor Manager Kitchen Orders & Buffet Refills' : 'Instant Buffet Dish Refill Dispatcher'}</span>
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Tap any buffet dish to alert the kitchen immediately with an audible KDS chime. Monitor culinary preparation in real-time and confirm floor delivery.
+              {callerRole === 'Manager'
+                ? 'Floor Manager Dispatch Console: Immediately call kitchen refills or special table orders when food is running low during live events.'
+                : 'Tap any buffet dish to alert the kitchen immediately with an audible KDS chime. Monitor culinary preparation in real-time and confirm floor delivery.'}
             </p>
           </div>
 
           {/* Sleek Action Buttons Header */}
           <div className="flex items-center gap-3 flex-wrap shrink-0">
-            <button
-              onClick={() => onNavigateToTab?.('waiter-tables')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
-            >
-              <span>Back to Table Map</span>
-            </button>
+            {callerRole === 'Manager' ? (
+              <button
+                onClick={() => onNavigateToTab?.('manager-overview')}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
+              >
+                <span>← Back to Overview</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigateToTab?.('waiter-tables')}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
+              >
+                <span>Back to Table Map</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => onNavigateToTab?.('waiter-overtime')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-lg shadow-amber-500/10"
-            >
-              <Clock className="w-4 h-4 text-amber-400" />
-              <span>Overtime Request</span>
-            </button>
+            {callerRole === 'Manager' ? (
+              <button
+                onClick={() => onNavigateToTab?.('manager-roster')}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
+              >
+                <Users className="w-4 h-4 text-emerald-400" />
+                <span>Duty Rosters</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigateToTab?.('waiter-overtime')}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl font-bold text-xs sm:text-sm transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-lg shadow-amber-500/10"
+              >
+                <Clock className="w-4 h-4 text-amber-400" />
+                <span>Overtime Request</span>
+              </button>
+            )}
 
             <button
               onClick={() => setIsCustomModalOpen(true)}

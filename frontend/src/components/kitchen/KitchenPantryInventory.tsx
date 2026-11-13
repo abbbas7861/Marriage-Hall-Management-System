@@ -26,7 +26,13 @@ import {
   PantryPurchaseOrder,
 } from '../../api/client';
 
-export const KitchenPantryInventory: React.FC = () => {
+interface KitchenPantryInventoryProps {
+  initialView?: 'inventory' | 'orders';
+}
+
+export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
+  initialView = 'inventory',
+}) => {
   const [items, setItems] = useState<PantryStockItem[]>([]);
   const [orders, setOrders] = useState<PantryPurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +41,13 @@ export const KitchenPantryInventory: React.FC = () => {
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeView, setActiveView] = useState<'inventory' | 'orders'>('inventory');
+  const [activeView, setActiveView] = useState<'inventory' | 'orders'>(initialView);
+
+  useEffect(() => {
+    if (initialView) {
+      setActiveView(initialView);
+    }
+  }, [initialView]);
 
   // Supplier Order Modal
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -236,30 +248,36 @@ export const KitchenPantryInventory: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Kitchen Pantry & Raw Ingredient Stock
+            <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight">
+              {activeView === 'orders'
+                ? 'Reorder Requisitions & Supplier Orders'
+                : 'Kitchen Pantry & Raw Ingredient Stock'}
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
-              Live tracking of raw meat, basmati rice, cooking oil, ghee, dairy, and spices with automated safety threshold warnings and 1-click supplier purchase orders.
+            <p className="!text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
+              {activeView === 'orders'
+                ? 'Track pipeline grocery purchase orders, create emergency requisitions for low ingredients, and record stock replenishment.'
+                : 'Live tracking of raw meat, basmati rice, cooking oil, ghee, dairy, and spices with automated safety threshold warnings.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button
+              type="button"
               onClick={() => setActiveView(activeView === 'inventory' ? 'orders' : 'inventory')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl !bg-slate-800 hover:bg-slate-700 !text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
             >
               <Truck className="w-4 h-4 text-sky-400" />
               <span>
                 {activeView === 'inventory'
-                  ? `View Supplier Orders (${orders.length})`
-                  : 'Back to Stock Grid'}
+                  ? `Switch to Requisitions (${orders.length})`
+                  : 'Switch to Stock Grid'}
               </span>
             </button>
 
             <button
+              type="button"
               onClick={() => setNewItemModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 !text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Add New Ingredient</span>
@@ -269,42 +287,42 @@ export const KitchenPantryInventory: React.FC = () => {
 
         {/* Aggregate KPI Ribbon */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
+            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
               <span>Tracked Ingredients</span>
               <Package className="w-3.5 h-3.5 text-sky-400" />
             </div>
-            <p className="text-xl font-bold text-white">{items.length} Items</p>
-            <span className="text-[11px] text-slate-500">Active Pantry Catalog</span>
+            <p className="text-xl font-bold !text-white">{items.length} Items</p>
+            <span className="text-[11px] !text-slate-400">Active Pantry Catalog</span>
           </div>
 
-          <div className="bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
+            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
               <span>Low Stock Alerts</span>
               <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
             </div>
             <p className="text-xl font-bold text-rose-400">{lowStockItems.length} Items</p>
-            <span className="text-[11px] text-rose-300/80 font-medium">Below Minimum Threshold</span>
+            <span className="text-[11px] text-rose-300 font-medium">Below Safety Threshold</span>
           </div>
 
-          <div className="bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
+            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
               <span>Orders in Pipeline</span>
               <Truck className="w-3.5 h-3.5 text-amber-400" />
             </div>
             <p className="text-xl font-bold text-amber-400">{activeOrdersCount} Pending</p>
-            <span className="text-[11px] text-slate-500">Awaiting Supplier Delivery</span>
+            <span className="text-[11px] !text-slate-400">Awaiting Supplier Delivery</span>
           </div>
 
-          <div className="bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
+            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
               <span>Total Stock Value</span>
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <p className="text-xl font-bold text-emerald-400">
               Rs. {totalPantryValue.toLocaleString()}
             </p>
-            <span className="text-[11px] text-slate-500">Asset Cost Basis</span>
+            <span className="text-[11px] !text-slate-400">Asset Cost Basis</span>
           </div>
         </div>
       </div>

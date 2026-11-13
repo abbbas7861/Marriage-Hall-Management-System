@@ -70,17 +70,51 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Log audit entry
         try:
             from apps.core.models import AuditLogEntry
+            user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Manager'
+            user_role = (request.user.profile.role.capitalize() if getattr(request.user, 'profile', None) else ('Admin' if request.user.is_superuser else 'Manager')) if (request.user and request.user.is_authenticated) else 'Manager'
+            ip_addr = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
+            if ',' in ip_addr:
+                ip_addr = ip_addr.split(',')[0].strip()
+
             AuditLogEntry.objects.create(
-                user=request.user.username if request.user and request.user.is_authenticated else 'Manager',
-                action=f"Changed operational status for {booking.booking_ref} from '{old_status}' to '{new_status}'",
+                log_id=f"LOG-{random.randint(1000, 9999)}",
+                user_name=user_name,
+                user_role=user_role,
+                action="Updated",
                 module="Event Management",
-                ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+                details=f"Changed operational status for {booking.booking_ref} from '{old_status}' to '{new_status}'",
+                ip_address=ip_addr
             )
         except Exception:
             pass
 
         serializer = self.get_serializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
+            return Response(
+                {'error': 'Only Admins and Managers are authorized to cancel or remove bookings.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        booking = self.get_object()
+        b_ref = booking.booking_ref
+        c_name = booking.customer_name
+        h_name = booking.hall_name
+        b_date = booking.date
+        res = super().destroy(request, *args, **kwargs)
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.get_full_name() or request.user.username,
+            user_role=role.capitalize() if role else "Admin",
+            action="Deleted",
+            module="Bookings",
+            details=f"Removed booking {b_ref} for {c_name} ({h_name}) on {b_date}",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+        return res
 
     @action(detail=False, methods=['get', 'post'], url_path='check_availability')
     def check_availability(self, request):
@@ -166,7 +200,7 @@ class ExtraTimeRequestViewSet(viewsets.ModelViewSet):
             user_role="Admin",
             action="Approved",
             module="Overtime",
-            details=f"Approved extra time for {req.booking_ref} (+{req.requested_hours} hrs, ${charges})",
+            details=f"Approved extra time for {req.booking_ref} (+{req.requested_hours} hrs, Rs. {charges:,.0f})",
             ip_address="127.0.0.1"
         )
 

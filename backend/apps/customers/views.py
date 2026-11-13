@@ -1,4 +1,5 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Customer, FeedbackReview
 from .serializers import CustomerSerializer, FeedbackReviewSerializer
@@ -11,6 +12,16 @@ class CustomerViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'phone', 'email', 'cnic', 'customer_id']
     ordering_fields = ['name', 'lifetime_value', 'total_bookings', 'created_at']
     ordering = ['-created_at']
+
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
+            return Response(
+                {'error': 'Only Admins and Managers are authorized to delete customer records.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class FeedbackReviewViewSet(viewsets.ModelViewSet):

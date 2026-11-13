@@ -28,6 +28,24 @@ class AuditLogEntryViewSet(viewsets.ModelViewSet):
     ordering_fields = ['timestamp', 'action', 'module']
     ordering = ['-timestamp']
 
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {'error': 'Audit log records are immutable and cannot be deleted.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    def update(self, request, *args, **kwargs):
+        return Response(
+            {'error': 'Audit log records are immutable and cannot be modified.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response(
+            {'error': 'Audit log records are immutable and cannot be modified.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     @action(detail=False, methods=['get'])
     def export(self, request):
         fmt = request.query_params.get('format', 'csv').lower()
@@ -58,6 +76,14 @@ class SystemSettingView(APIView):
         return Response(serializer.data)
 
     def put(self, request):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
+            return Response(
+                {'error': 'Admin or Manager permissions required to modify system settings.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         setting = SystemSetting.get_settings()
         serializer = SystemSettingSerializer(setting, data=request.data, partial=True)
         if serializer.is_valid():

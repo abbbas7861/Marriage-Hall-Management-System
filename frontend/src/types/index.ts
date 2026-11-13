@@ -38,6 +38,7 @@ export type NavModuleId =
   | 'admin-audit'
   // Manager Portal Tabs
   | 'manager-overview'
+  | 'manager-kitchen-refills'
   | 'manager-decor'
   | 'manager-roster'
   | 'manager-readiness'

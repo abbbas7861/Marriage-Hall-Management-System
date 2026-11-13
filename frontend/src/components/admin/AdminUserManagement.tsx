@@ -222,10 +222,10 @@ export const AdminUserManagement: React.FC = () => {
             </span>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                User Directory &amp; RBAC Control
+                Staff Directory &amp; Role Management
               </h1>
               <p className="text-xs text-slate-400 mt-0.5">
-                Add employees, assign roles (Managers, Kitchen, Waiters, Accountants), and set monthly salaries.
+                Add new staff members, assign portal roles (Manager, Kitchen, Waiter, Accountant, Admin), update salaries, or remove accounts.
               </p>
             </div>
           </div>

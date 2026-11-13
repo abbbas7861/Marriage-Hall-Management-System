@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Search,
   Bell,
@@ -10,9 +10,9 @@ import {
   LogOut,
   Sliders,
   Lock,
-} from 'lucide-react';
-import { AuthUser, PortalType, NavModuleId } from '../../types';
-import { PORTAL_CONFIGS } from '../../config/portals';
+} from "lucide-react";
+import { AuthUser, PortalType, NavModuleId } from "../../types";
+import { PORTAL_CONFIGS } from "../../config/portals";
 
 interface TopbarProps {
   onToggleMobileMenu: () => void;
@@ -47,14 +47,21 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   const userInitials = currentUser?.fullName
     ? currentUser.fullName
-        .split(' ')
+        .split(" ")
         .map((n) => n[0])
-        .join('')
+        .join("")
         .slice(0, 2)
         .toUpperCase()
-    : 'AD';
+    : "AD";
 
-  const portalKeys: PortalType[] = ['admin', 'manager', 'kitchen', 'waiter', 'vendors', 'finance'];
+  const portalKeys: PortalType[] = [
+    "admin",
+    "manager",
+    "kitchen",
+    "waiter",
+    "vendors",
+    "finance",
+  ];
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between px-3 sm:px-4 lg:px-6 shadow-xs dark:shadow-md">
@@ -82,7 +89,11 @@ export const Topbar: React.FC<TopbarProps> = ({
                 type="button"
                 disabled={!isAllowed}
                 onClick={() => isAllowed && onSelectPortal(pKey)}
-                title={isAllowed ? `${config.name}: ${config.description}` : 'Access restricted by Administrator'}
+                title={
+                  isAllowed
+                    ? `${config.name}: ${config.description}`
+                    : "Access restricted by Administrator"
+                }
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all select-none cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200 dark:border-slate-700'
@@ -93,7 +104,9 @@ export const Topbar: React.FC<TopbarProps> = ({
               >
                 <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-amber-500 dark:text-amber-400' : 'text-slate-400'}`} />
                 <span className="hidden md:inline">{config.shortName}</span>
-                {!isAllowed && <Lock className="w-2.5 h-2.5 text-slate-500 shrink-0" />}
+                {!isAllowed && (
+                  <Lock className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                )}
               </button>
             );
           })}
@@ -114,7 +127,6 @@ export const Topbar: React.FC<TopbarProps> = ({
 
       {/* Right side: Superuser Indicator, Notifications & Operations Console */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
-
         {/* Notifications */}
         <div className="relative">
           <button
@@ -195,9 +207,9 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <div
                   onClick={() => {
                     setIsProfileOpen(false);
-                    onSelectModule?.('settings');
-                    if (window.location.pathname !== '/settings') {
-                      window.history.pushState(null, '', '/settings');
+                    onSelectModule?.("settings");
+                    if (window.location.pathname !== "/settings") {
+                      window.history.pushState(null, "", "/settings");
                     }
                   }}
                   className="flex items-center gap-2 p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"

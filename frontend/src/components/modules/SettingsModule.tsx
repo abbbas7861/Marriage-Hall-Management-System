@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   KeyRound,
   HelpCircle,
@@ -14,19 +14,19 @@ import {
   Sparkles,
   Sun,
   Moon,
-} from 'lucide-react';
-import { useTheme, THEME_OPTIONS, AppTheme } from '../../context/ThemeContext';
+} from "lucide-react";
+import { useTheme, THEME_OPTIONS, AppTheme } from "../../context/ThemeContext";
 
-type SettingsTab = 'security' | 'appearance' | 'support';
+type SettingsTab = "security" | "appearance" | "support";
 
 export const SettingsModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('security');
+  const [activeTab, setActiveTab] = useState<SettingsTab>("security");
   const { theme, setTheme } = useTheme();
 
   // Security & Password Fields
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
@@ -42,21 +42,21 @@ export const SettingsModule: React.FC = () => {
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
-      showToast('Please enter your current password.');
+      showToast("Please enter your current password.");
       return;
     }
     if (newPassword.length < 6) {
-      showToast('New password must be at least 6 characters.');
+      showToast("New password must be at least 6 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      showToast('New passwords do not match.');
+      showToast("New passwords do not match.");
       return;
     }
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    showToast('Password updated successfully.');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    showToast("Password updated successfully.");
   };
 
   const handleSelectTheme = (themeId: AppTheme, themeName: string) => {
@@ -86,7 +86,8 @@ export const SettingsModule: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Manage your appearance theme, authentication credentials, system version details, and technical support.
+            Manage your appearance theme, authentication credentials, system
+            version details, and technical support.
           </p>
         </div>
       </div>
@@ -98,42 +99,48 @@ export const SettingsModule: React.FC = () => {
           {/* Tab 1: Security */}
           <button
             type="button"
-            onClick={() => setActiveTab('security')}
+            onClick={() => setActiveTab("security")}
             className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap cursor-pointer ${
-              activeTab === 'security'
-                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              activeTab === "security"
+                ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <KeyRound className={`w-4 h-4 ${activeTab === 'security' ? 'text-white' : 'text-rose-400'}`} />
+            <KeyRound
+              className={`w-4 h-4 ${activeTab === "security" ? "text-white" : "text-rose-400"}`}
+            />
             <span>Security</span>
           </button>
 
           {/* Tab 2: Appearance (Theme Selector) */}
           <button
             type="button"
-            onClick={() => setActiveTab('appearance')}
+            onClick={() => setActiveTab("appearance")}
             className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap cursor-pointer ${
-              activeTab === 'appearance'
-                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              activeTab === "appearance"
+                ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <Palette className={`w-4 h-4 ${activeTab === 'appearance' ? 'text-white' : 'text-amber-400'}`} />
+            <Palette
+              className={`w-4 h-4 ${activeTab === "appearance" ? "text-white" : "text-amber-400"}`}
+            />
             <span>Appearance</span>
           </button>
 
           {/* Tab 3: Support */}
           <button
             type="button"
-            onClick={() => setActiveTab('support')}
+            onClick={() => setActiveTab("support")}
             className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left whitespace-nowrap cursor-pointer ${
-              activeTab === 'support'
-                ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              activeTab === "support"
+                ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <HelpCircle className={`w-4 h-4 ${activeTab === 'support' ? 'text-white' : 'text-purple-400'}`} />
+            <HelpCircle
+              className={`w-4 h-4 ${activeTab === "support" ? "text-white" : "text-purple-400"}`}
+            />
             <span>Support</span>
           </button>
         </div>
@@ -141,7 +148,7 @@ export const SettingsModule: React.FC = () => {
         {/* Tab Content Cards */}
         <div className="flex-1 w-full">
           {/* TAB 1: SECURITY & PASSWORD */}
-          {activeTab === 'security' && (
+          {activeTab === "security" && (
             <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden animate-in fade-in duration-150">
               <div className="p-5 border-b border-slate-700/60 bg-slate-900/80">
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -149,11 +156,15 @@ export const SettingsModule: React.FC = () => {
                   <span>Security &amp; Password</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Update your authentication credentials and manage session password security.
+                  Update your authentication credentials and manage session
+                  password security.
                 </p>
               </div>
 
-              <form onSubmit={handleUpdatePassword} className="p-6 space-y-5 max-w-xl">
+              <form
+                onSubmit={handleUpdatePassword}
+                className="p-6 space-y-5 max-w-xl"
+              >
                 {/* Current Password */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -161,7 +172,7 @@ export const SettingsModule: React.FC = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type={showCurrentPass ? 'text' : 'password'}
+                      type={showCurrentPass ? "text" : "password"}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="••••••••"
@@ -173,7 +184,11 @@ export const SettingsModule: React.FC = () => {
                       onClick={() => setShowCurrentPass(!showCurrentPass)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
                     >
-                      {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showCurrentPass ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -185,7 +200,7 @@ export const SettingsModule: React.FC = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type={showNewPass ? 'text' : 'password'}
+                      type={showNewPass ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
@@ -197,10 +212,16 @@ export const SettingsModule: React.FC = () => {
                       onClick={() => setShowNewPass(!showNewPass)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
                     >
-                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showNewPass ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Must be at least 6 characters long.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Must be at least 6 characters long.
+                  </p>
                 </div>
 
                 {/* Confirm New Password */}
@@ -210,7 +231,7 @@ export const SettingsModule: React.FC = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type={showConfirmPass ? 'text' : 'password'}
+                      type={showConfirmPass ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
@@ -222,7 +243,11 @@ export const SettingsModule: React.FC = () => {
                       onClick={() => setShowConfirmPass(!showConfirmPass)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
                     >
-                      {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPass ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -241,7 +266,7 @@ export const SettingsModule: React.FC = () => {
           )}
 
           {/* TAB 2: APPEARANCE (THEME SELECTOR) */}
-          {activeTab === 'appearance' && (
+          {activeTab === "appearance" && (
             <div className="space-y-6 animate-in fade-in duration-150">
               <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
                 <div className="p-5 border-b border-slate-700/60 bg-slate-900/80 flex items-center justify-between">
@@ -251,12 +276,15 @@ export const SettingsModule: React.FC = () => {
                       <span>Theme &amp; Visual Styling</span>
                     </h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Personalize the color palette, background depth, and accent gradients across the ERP suite.
+                      Personalize the color palette, background depth, and
+                      accent gradients across the ERP suite.
                     </p>
                   </div>
                   <span className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-teal-500/10 text-teal-300 border border-teal-500/30 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Active: {THEME_OPTIONS.find((t) => t.id === theme)?.name}</span>
+                    <span>
+                      Active: {THEME_OPTIONS.find((t) => t.id === theme)?.name}
+                    </span>
                   </span>
                 </div>
 
@@ -271,8 +299,8 @@ export const SettingsModule: React.FC = () => {
                           onClick={() => handleSelectTheme(opt.id, opt.name)}
                           className={`relative rounded-2xl p-5 border transition-all duration-200 cursor-pointer group flex flex-col justify-between ${
                             isSelected
-                              ? 'bg-slate-900/90 border-teal-500 ring-2 ring-teal-500/40 shadow-xl shadow-teal-500/10'
-                              : 'bg-slate-900/40 border-slate-700/60 hover:border-slate-600 hover:bg-slate-900/70'
+                              ? "bg-slate-900/90 border-teal-500 ring-2 ring-teal-500/40 shadow-xl shadow-teal-500/10"
+                              : "bg-slate-900/40 border-slate-700/60 hover:border-slate-600 hover:bg-slate-900/70"
                           }`}
                         >
                           {/* Selected Checkmark Badge */}
@@ -288,7 +316,9 @@ export const SettingsModule: React.FC = () => {
                               className="w-full h-28 rounded-xl p-3 border mb-4 flex flex-col justify-between overflow-hidden shadow-inner transition-transform group-hover:scale-[1.01]"
                               style={{
                                 backgroundColor: opt.previewBg,
-                                borderColor: isSelected ? opt.accentColor : 'rgba(100, 116, 139, 0.3)',
+                                borderColor: isSelected
+                                  ? opt.accentColor
+                                  : "rgba(100, 116, 139, 0.3)",
                               }}
                             >
                               {/* Mock Topbar & Header */}
@@ -301,7 +331,9 @@ export const SettingsModule: React.FC = () => {
                                   <div
                                     className="h-2 w-16 rounded-full"
                                     style={{
-                                      backgroundColor: opt.isDark ? '#e2e8f0' : '#0f172a',
+                                      backgroundColor: opt.isDark
+                                        ? "#e2e8f0"
+                                        : "#0f172a",
                                       opacity: 0.8,
                                     }}
                                   />
@@ -310,10 +342,10 @@ export const SettingsModule: React.FC = () => {
                                   className="px-2 py-0.5 rounded text-[8px] font-bold"
                                   style={{
                                     backgroundColor: opt.accentColor,
-                                    color: '#ffffff',
+                                    color: "#ffffff",
                                   }}
                                 >
-                                  {opt.isDark ? 'Dark' : 'Light'}
+                                  {opt.isDark ? "Dark" : "Light"}
                                 </div>
                               </div>
 
@@ -322,20 +354,24 @@ export const SettingsModule: React.FC = () => {
                                 className="p-2 rounded-lg border flex items-center justify-between"
                                 style={{
                                   backgroundColor: opt.previewCard,
-                                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                                  borderColor: "rgba(255, 255, 255, 0.1)",
                                 }}
                               >
                                 <div className="space-y-1">
                                   <div
                                     className="h-2 w-20 rounded"
                                     style={{
-                                      backgroundColor: opt.isDark ? '#cbd5e1' : '#334155',
+                                      backgroundColor: opt.isDark
+                                        ? "#cbd5e1"
+                                        : "#334155",
                                     }}
                                   />
                                   <div
                                     className="h-1.5 w-12 rounded"
                                     style={{
-                                      backgroundColor: opt.isDark ? '#64748b' : '#94a3b8',
+                                      backgroundColor: opt.isDark
+                                        ? "#64748b"
+                                        : "#94a3b8",
                                     }}
                                   />
                                 </div>
@@ -370,16 +406,18 @@ export const SettingsModule: React.FC = () => {
                           {/* Action Button */}
                           <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
                             <span className="text-[11px] font-mono text-slate-400">
-                              Accent: <span style={{ color: opt.accentColor }}>●</span> {opt.accentColor}
+                              Accent:{" "}
+                              <span style={{ color: opt.accentColor }}>●</span>{" "}
+                              {opt.accentColor}
                             </span>
                             <span
                               className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${
                                 isSelected
-                                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
-                                  : 'text-slate-400 group-hover:text-white'
+                                  ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
+                                  : "text-slate-400 group-hover:text-white"
                               }`}
                             >
-                              {isSelected ? 'Active Theme' : 'Apply Theme'}
+                              {isSelected ? "Active Theme" : "Apply Theme"}
                             </span>
                           </div>
                         </div>
@@ -392,7 +430,7 @@ export const SettingsModule: React.FC = () => {
           )}
 
           {/* TAB 3: SUPPORT & SYSTEM INFO */}
-          {activeTab === 'support' && (
+          {activeTab === "support" && (
             <div className="space-y-6 animate-in fade-in duration-150">
               {/* System Version & Spec Card */}
               <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
@@ -415,7 +453,9 @@ export const SettingsModule: React.FC = () => {
                       <div className="text-base font-bold text-white mt-1">
                         Marriage Hall ERP Suite
                       </div>
-                      <span className="text-[11px] text-teal-400 mt-1 block">Release 2026.3 LTS</span>
+                      <span className="text-[11px] text-teal-400 mt-1 block">
+                        Release 2026.3 LTS
+                      </span>
                     </div>
 
                     <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60">
@@ -426,7 +466,9 @@ export const SettingsModule: React.FC = () => {
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span>Connected &amp; Online</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 mt-1 block">Django REST Framework v3.15</span>
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        Django REST Framework v3.15
+                      </span>
                     </div>
 
                     <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60">
@@ -436,7 +478,9 @@ export const SettingsModule: React.FC = () => {
                       <div className="text-base font-bold text-white mt-1">
                         ACID SQLite / Production
                       </div>
-                      <span className="text-[11px] text-slate-400 mt-1 block">Zero-latency embedded backend</span>
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        Zero-latency embedded backend
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -450,9 +494,13 @@ export const SettingsModule: React.FC = () => {
                     <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-3">
                       <Mail className="w-5 h-5" />
                     </div>
-                    <h3 className="text-base font-bold text-white">Contact Enterprise Support</h3>
+                    <h3 className="text-base font-bold text-white">
+                      Contact Enterprise Support
+                    </h3>
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Need assistance with live hall operations, fiscal integration, or custom feature requests? Our dedicated engineering team is on standby 24/7.
+                      Need assistance with live hall operations, fiscal
+                      integration, or custom feature requests? Our dedicated
+                      engineering team is on standby 24/7.
                     </p>
                   </div>
 
@@ -473,16 +521,22 @@ export const SettingsModule: React.FC = () => {
                     <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-3">
                       <BookOpen className="w-5 h-5" />
                     </div>
-                    <h3 className="text-base font-bold text-white">System Documentation</h3>
+                    <h3 className="text-base font-bold text-white">
+                      System Documentation
+                    </h3>
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                      Browse user guides, floor staff tablet operating procedures, recipe formula calibration manuals, and accounting workflows.
+                      Browse user guides, floor staff tablet operating
+                      procedures, recipe formula calibration manuals, and
+                      accounting workflows.
                     </p>
                   </div>
 
                   <div className="mt-6">
                     <button
                       type="button"
-                      onClick={() => showToast('Opening enterprise documentation portal...')}
+                      onClick={() =>
+                        showToast("Opening enterprise documentation portal...")
+                      }
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all cursor-pointer shadow-md"
                     >
                       <ExternalLink className="w-4 h-4 text-purple-400" />

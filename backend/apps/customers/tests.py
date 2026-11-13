@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import Customer, FeedbackReview
@@ -6,6 +7,8 @@ from .models import Customer, FeedbackReview
 class CustomerAndFeedbackTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='custadmin', password='pass123', email='cust@test.com')
+        self.client.force_authenticate(user=self.user)
 
     def test_customer_crud(self):
         # Create

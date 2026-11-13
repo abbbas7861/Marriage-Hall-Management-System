@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import InventoryItem
@@ -6,6 +7,8 @@ from .models import InventoryItem
 class InventoryIssueReturnTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='inventoryadmin', password='pass123', email='inventory@test.com')
+        self.client.force_authenticate(user=self.user)
         self.item = InventoryItem.objects.create(
             item_code="CH-100",
             item_name="Banquet Chairs",

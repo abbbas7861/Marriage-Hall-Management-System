@@ -2,14 +2,31 @@
 
 @layer base {
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     color: var(--color-text-main, #f8fafc);
     background-color: var(--color-bg-app, #0b1120);
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family:
+      "Plus Jakarta Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
   }
 }
 
@@ -76,7 +93,12 @@
 }
 
 [data-theme="ocean"] aside {
-  background-image: linear-gradient(to bottom, #081129, #0d1a3c, #060c1e) !important;
+  background-image: linear-gradient(
+    to bottom,
+    #081129,
+    #0d1a3c,
+    #060c1e
+  ) !important;
   border-color: rgba(37, 60, 110, 0.6) !important;
 }
 
@@ -165,7 +187,12 @@
 }
 
 [data-theme="royal"] aside {
-  background-image: linear-gradient(to bottom, #100b29, #170f3b, #0b071c) !important;
+  background-image: linear-gradient(
+    to bottom,
+    #100b29,
+    #170f3b,
+    #0b071c
+  ) !important;
   border-color: rgba(75, 55, 125, 0.6) !important;
 }
 
@@ -332,7 +359,9 @@
 [data-theme="light"] .bg-slate-800 {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
 [data-theme="light"] .bg-slate-900,

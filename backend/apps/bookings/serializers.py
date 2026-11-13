@@ -200,7 +200,7 @@ class BookingSerializer(serializers.ModelSerializer):
             user_role="Admin",
             action="Updated",
             module="Bookings",
-            details=f"Updated booking {booking.booking_ref} ({booking.customer_name}, status: {booking.status}, amount: ${amount})",
+            details=f"Updated booking {booking.booking_ref} ({booking.customer_name}, status: {booking.status}, amount: Rs. {amount:,.0f})",
             ip_address="127.0.0.1"
         )
 

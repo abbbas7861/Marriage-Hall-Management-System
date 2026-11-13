@@ -23,6 +23,16 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
     ordering_fields = ['full_name', 'role', 'status']
     ordering = ['full_name']
 
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
+            return Response(
+                {'error': 'Only Admins and Managers are authorized to delete staff records.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
 
 class VendorPartnerViewSet(viewsets.ModelViewSet):
     queryset = VendorPartner.objects.all()
@@ -32,6 +42,16 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
     search_fields = ['business_name', 'vendor_id', 'contact_person', 'phone_number', 'ntn_number']
     ordering_fields = ['business_name', 'category', 'balance_due', 'rating']
     ordering = ['business_name']
+
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
+            return Response(
+                {'error': 'Only Admins and Managers are authorized to delete vendor records.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='record-payment')
     def record_payment(self, request, pk=None):

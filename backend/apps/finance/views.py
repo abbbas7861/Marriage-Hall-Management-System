@@ -22,6 +22,29 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
     ordering_fields = ['date', 'total_amount', 'paid_amount', 'remaining_balance']
     ordering = ['-date']
 
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role == 'admin'):
+            return Response(
+                {'error': 'Only Administrators are authorized to void or delete invoice records.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        inv = self.get_object()
+        inv_id = inv.invoice_id
+        c_name = inv.customer_name
+        res = super().destroy(request, *args, **kwargs)
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.get_full_name() or request.user.username,
+            user_role="Admin",
+            action="Deleted",
+            module="Finance",
+            details=f"Voided/Deleted invoice {inv_id} ({c_name})",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+        return res
+
     @action(detail=True, methods=['post'], url_path='record-collection')
     def record_collection(self, request, pk=None):
         invoice = self.get_object()
@@ -52,14 +75,17 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
             booking_ref=invoice.booking_id
         )
 
+        user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Accountant'
+        user_role = (request.user.profile.role.capitalize() if getattr(request.user, 'profile', None) else ('Admin' if request.user.is_superuser else 'Finance')) if (request.user and request.user.is_authenticated) else 'Finance'
+
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
-            user_name="Accountant",
-            user_role="Finance",
+            user_name=user_name,
+            user_role=user_role,
             action="Payment Received",
             module="Finance",
             details=f"Collected Rs. {amount:,.0f} for invoice {invoice.invoice_id} ({invoice.customer_name}) via {channel}. Ref: {ref}",
-            ip_address="127.0.0.1"
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
         )
 
         return Response({
@@ -78,6 +104,29 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'amount']
     ordering = ['-created_at']
 
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role == 'admin'):
+            return Response(
+                {'error': 'Only Administrators are authorized to delete payment transactions.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        txn = self.get_object()
+        txn_ref = txn.txn_ref
+        amount = txn.amount
+        res = super().destroy(request, *args, **kwargs)
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.get_full_name() or request.user.username,
+            user_role="Admin",
+            action="Deleted",
+            module="Finance",
+            details=f"Deleted payment transaction {txn_ref} of Rs. {amount:,.0f}",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+        return res
+
 
 class ExpenseRecordViewSet(viewsets.ModelViewSet):
     queryset = ExpenseRecord.objects.all()
@@ -87,6 +136,16 @@ class ExpenseRecordViewSet(viewsets.ModelViewSet):
     search_fields = ['expense_ref', 'vendor', 'category', 'approved_by']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
+
+    def destroy(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        if not (request.user.is_superuser or role == 'admin'):
+            return Response(
+                {'error': 'Only Administrators are authorized to delete expense vouchers.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
 
 class SecurityDepositSettlementViewSet(viewsets.ModelViewSet):

@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import date
@@ -9,6 +10,8 @@ from apps.finance.models import ExpenseRecord, PaymentTransaction
 class WorkforceAndVendorsAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='workforceadmin', password='pass123', email='workforce@test.com')
+        self.client.force_authenticate(user=self.user)
         self.vendor = VendorPartner.objects.create(
             vendor_id="VEN-7001",
             business_name="Al-Madina Meat Suppliers",

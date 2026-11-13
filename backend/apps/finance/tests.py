@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from apps.bookings.models import Booking
@@ -7,6 +8,8 @@ from apps.finance.models import InvoiceRecord, PaymentTransaction
 class FinanceSynchronizationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_superuser(username='financeadmin', password='pass123', email='finance@test.com')
+        self.client.force_authenticate(user=self.user)
         self.booking = Booking.objects.create(
             booking_ref="BK-22222",
             customer_name="Usman",

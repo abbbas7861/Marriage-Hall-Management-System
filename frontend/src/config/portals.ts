@@ -34,6 +34,7 @@ import {
   Scale,
   Settings,
   Sliders,
+  Flame,
   LucideIcon,
 } from 'lucide-react';
 import { PortalType, NavModuleId } from '../types';
@@ -87,7 +88,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
       {
         groupTitle: 'Control & Closings',
         items: [
-          { id: 'admin-users', label: 'User Directory & Rights', icon: Users, badge: 'RBAC' },
+          { id: 'admin-users', label: 'Staff & Role Management', icon: Users, badge: 'Roles' },
           { id: 'admin-closings', label: 'Period Closings', icon: Clock },
           { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
           { id: 'admin-audit', label: 'System Audit Logs', icon: History },
@@ -116,6 +117,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         groupTitle: 'Floor Command',
         items: [
           { id: 'manager-overview', label: 'Events Control Center', icon: CalendarDays },
+          { id: 'manager-kitchen-refills', label: 'Kitchen Buffet Refills', icon: Flame, badge: 'Live', path: '/manager/kitchen-refills' },
           { id: 'manager-decor', label: 'Asset & Decor Requisitions', icon: Layers },
           { id: 'manager-readiness', label: 'Service Readiness & Curfew', icon: ClipboardCheck },
         ],

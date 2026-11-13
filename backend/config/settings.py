@@ -7,9 +7,9 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-dy4pb4d(n0ppw6k0$9+&)6%c@0g0^kx!wk_!vd95qhe(zkd*ti'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dy4pb4d(n0ppw6k0$9+&)6%c@0g0^kx!wk_!vd95qhe(zkd*ti')
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -113,6 +113,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
