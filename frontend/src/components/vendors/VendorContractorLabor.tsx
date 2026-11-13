@@ -202,10 +202,10 @@ export const VendorContractorLabor: React.FC<VendorContractorLaborProps> = ({
               <span>Shift Attendance &amp; Headcount</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Outside Labor &amp; Contractor Management
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Track external staffing contractors per event: male count, female count, shift rates, overtime hours, and automated wage bill posting to event expense ledger.
           </p>
         </div>

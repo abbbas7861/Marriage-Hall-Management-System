@@ -142,10 +142,10 @@ export const FinanceProfitLossTax: React.FC<FinanceProfitLossTaxProps> = ({
               <span>Audited GAAP Format</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Profit &amp; Loss (P&amp;L) &amp; FBR Tax Compliance
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Comprehensive revenue deductions: COGS, direct kitchen commissary supplies, contractor shifts, operating overhead, and sales tax filings.
           </p>
         </div>

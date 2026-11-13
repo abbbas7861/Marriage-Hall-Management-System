@@ -175,10 +175,10 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight flex items-center gap-3">
               <span>Live Hall & Table Floor Monitoring</span>
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">
+            <p className="!text-slate-300 text-xs sm:text-sm mt-1">
               High-contrast tablet view for floor captains and stewards to monitor table occupancy, food serving progression, and rapid busser turnover.
             </p>
           </div>
@@ -214,12 +214,12 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
         {/* Linked Active Event Selector Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800 text-xs">
           {/* Active Event Dropdown */}
-          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-slate-400 block mb-1">Active Banquet Event:</span>
+          <div className="!bg-slate-800 p-3 rounded-xl border border-slate-700/60">
+            <span className="!text-slate-300 block mb-1">Active Banquet Event:</span>
             <select
               value={selectedBookingRef}
               onChange={(e) => setSelectedBookingRef(e.target.value)}
-              className="w-full bg-transparent font-bold text-white focus:outline-none cursor-pointer truncate"
+              className="w-full bg-transparent font-bold !text-white focus:outline-none cursor-pointer truncate"
             >
               {bookings.map((b) => (
                 <option key={b.bookingRef} value={b.bookingRef} className="bg-slate-900 text-white">
@@ -230,17 +230,17 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
           </div>
 
           {/* Banquet Hall */}
-          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-slate-400 block mb-1">Assigned Hall:</span>
-            <span className="font-bold text-white text-sm flex items-center gap-1.5 truncate">
+          <div className="!bg-slate-800 p-3 rounded-xl border border-slate-700/60">
+            <span className="!text-slate-300 block mb-1">Assigned Hall:</span>
+            <span className="font-bold !text-white text-sm flex items-center gap-1.5 truncate">
               <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
               {selectedBooking?.hallName || 'Grand Crystal Ballroom'}
             </span>
           </div>
 
           {/* Timing Window */}
-          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-slate-400 block mb-1">Contract Slot & Timing:</span>
+          <div className="!bg-slate-800 p-3 rounded-xl border border-slate-700/60">
+            <span className="!text-slate-300 block mb-1">Contract Slot & Timing:</span>
             <span className="font-bold text-amber-300 font-mono text-xs flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               {eventTimeFormatted}
@@ -248,8 +248,8 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
           </div>
 
           {/* Expected Guests */}
-          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60">
-            <span className="text-slate-400 block mb-1">Expected Guests:</span>
+          <div className="!bg-slate-800 p-3 rounded-xl border border-slate-700/60">
+            <span className="!text-slate-300 block mb-1">Expected Guests:</span>
             <span className="font-bold text-emerald-400 text-sm flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               {selectedBooking?.guestCount || 500} Confirmed Seats

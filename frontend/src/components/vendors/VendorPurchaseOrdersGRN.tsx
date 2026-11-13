@@ -202,10 +202,10 @@ export const VendorPurchaseOrdersGRN: React.FC<VendorPurchaseOrdersGRNProps> = (
               <span>Pantry Inventory Auto-Credit</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Purchase Orders &amp; Goods Received Notes (GRN)
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Create supplier raw material requisitions, track scheduled commissary deliveries, verify quality intake, and automatically update kitchen pantry stock.
           </p>
         </div>

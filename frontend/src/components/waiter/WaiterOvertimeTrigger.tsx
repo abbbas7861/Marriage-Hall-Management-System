@@ -218,10 +218,10 @@ export const WaiterOvertimeTrigger: React.FC<WaiterOvertimeTriggerProps> = ({
               <span>EMERGENCY OVERTIME TRIGGER</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Floor Staff Overtime Extension Hub
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Lead Floor Captain & Waiter dispatch interface for instant hall extension requests, turnover buffers, and direct manager approvals.
           </p>
         </div>

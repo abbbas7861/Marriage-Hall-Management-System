@@ -709,13 +709,13 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
         {/* Right Column: Financial Reconciliation Summary & Settlement Disbursal (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Net Calculation Summary Card */}
-          <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden !text-white" style={{ color: '#ffffff' }}>
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-white font-bold text-base">
+              <div className="flex items-center gap-2 !text-white font-bold text-base">
                 <Receipt className="w-5 h-5 text-emerald-400" />
-                <span>Settlement Reconciliation</span>
+                <span className="!text-white">Settlement Reconciliation</span>
               </div>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs font-mono !text-slate-300">
                 {currentSettlement?.settlementRef || 'DEP-NEW'}
               </span>
             </div>
@@ -723,13 +723,13 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
             {/* Step-by-step tally table */}
             <div className="space-y-3.5 py-4 text-sm border-b border-slate-800">
               <div className="flex items-center justify-between">
-                <span className="text-slate-300">Base Deposit Received</span>
-                <span className="font-semibold text-white">
+                <span style={{ color: '#cbd5e1' }}>Base Deposit Received</span>
+                <span className="font-semibold" style={{ color: '#ffffff' }}>
                   + Rs. {depositHeld.toLocaleString()}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-rose-400">
+              <div className="flex items-center justify-between" style={{ color: '#fb7185' }}>
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                   Property / Decor Damage
@@ -739,7 +739,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-amber-400">
+              <div className="flex items-center justify-between" style={{ color: '#fbbf24' }}>
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   Overtime ({overtimeHours} hrs @ {overtimeRatePerHour.toLocaleString()})
@@ -749,7 +749,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-purple-400">
+              <div className="flex items-center justify-between" style={{ color: '#c084fc' }}>
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
                   Other Surcharges / Fuel
@@ -759,7 +759,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between font-medium text-xs text-slate-400">
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between font-medium text-xs" style={{ color: '#94a3b8' }}>
                 <span>Total Deductions Applied:</span>
                 <span className="text-rose-400 font-bold">
                   Rs. {totalDeductions.toLocaleString()}
@@ -768,28 +768,34 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
             </div>
 
             {/* Net Amount Callout */}
-            <div className="my-5 p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 text-center">
-              <span className="text-xs uppercase tracking-wider text-slate-400 block mb-1 font-semibold">
-                {balanceDeficit > 0 ? 'Excess Payable by Client' : 'Net Refund Disbursable'}
-              </span>
-              <p
-                className={`text-3xl font-extrabold tracking-tight ${
-                  balanceDeficit > 0 ? 'text-rose-400' : 'text-emerald-400'
-                }`}
-              >
-                Rs. {balanceDeficit > 0 ? balanceDeficit.toLocaleString() : netRefundAmount.toLocaleString()}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                {balanceDeficit > 0
-                  ? '⚠️ Total damages exceeded initial deposit. Client must pay the deficit amount.'
-                  : '✅ Returnable to customer against signature and official cash voucher.'}
-              </p>
-            </div>
+                      {/* Net Amount Callout - HARDCODED DARK THEME */}
+          <div 
+            className="my-5 p-4 rounded-xl border text-center" 
+            style={{ backgroundColor: '#1e293b', borderColor: '#334155' }}
+          >
+            <span 
+              className="text-xs uppercase tracking-wider block mb-1 font-semibold" 
+              style={{ color: '#cbd5e1' }}
+            >
+              {balanceDeficit > 0 ? 'Excess Payable by Client' : 'Net Refund Disbursable'}
+            </span>
+            <p
+              className="text-3xl font-extrabold tracking-tight"
+              style={{ color: balanceDeficit > 0 ? '#fb7185' : '#34d399' }}
+            >
+              Rs. {balanceDeficit > 0 ? balanceDeficit.toLocaleString() : netRefundAmount.toLocaleString()}
+            </p>
+            <p className="text-[11px] mt-1" style={{ color: '#cbd5e1' }}>
+              {balanceDeficit > 0
+                ? '⚠️ Total damages exceeded initial deposit. Client must pay the deficit amount.'
+                : '✅ Returnable to customer against signature and official cash voucher.'}
+            </p>
+          </div>
 
             {/* Disbursal details form */}
             <div className="space-y-4 pt-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold mb-1" style={{ color: '#e2e8f0' }}>
                   Disbursal Channel
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -802,8 +808,9 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                       className={`px-3 py-2 rounded-xl text-xs font-semibold border transition text-center ${
                         refundChannel === channel
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
-                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                          : 'border-slate-700 hover:bg-slate-700'
                       }`}
+                      style={refundChannel !== channel ? { backgroundColor: '#1e293b', color: '#94a3b8', borderColor: '#334155' } : {}}
                     >
                       {channel}
                     </button>
@@ -812,7 +819,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold mb-1" style={{ color: '#e2e8f0' }}>
                   Payment Reference / Cheque # / Trx ID
                 </label>
                 <input
@@ -821,12 +828,13 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                   onChange={(e) => setRefundReference(e.target.value)}
                   disabled={currentSettlement?.status === 'Settled'}
                   placeholder="e.g. Cash Voucher #4092 or HBL-99214"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  className="w-full rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  style={{ backgroundColor: '#1e293b', color: '#ffffff', borderColor: '#334155', border: '1px solid #334155' }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold mb-1" style={{ color: '#e2e8f0' }}>
                   Operations Manager Signoff
                 </label>
                 <div className="relative">
@@ -836,7 +844,8 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                     value={settledBy}
                     onChange={(e) => setSettledBy(e.target.value)}
                     disabled={currentSettlement?.status === 'Settled'}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                    className="w-full rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                    style={{ backgroundColor: '#1e293b', color: '#ffffff', borderColor: '#334155', border: '1px solid #334155' }}
                   />
                 </div>
               </div>
@@ -850,7 +859,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                   disabled={currentSettlement?.status === 'Settled'}
                   className="mt-1 rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-emerald-500"
                 />
-                <label htmlFor="clientSig" className="text-xs text-slate-400 leading-relaxed">
+                <label htmlFor="clientSig" className="text-xs leading-relaxed" style={{ color: '#cbd5e1' }}>
                   Host representative has inspected returned property, acknowledged damage appraisal, and accepted net refund settlement.
                 </label>
               </div>
@@ -871,13 +880,14 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                   </span>
                 </button>
 
-                <button
+                                <button
                   type="button"
                   onClick={() => setIsVoucherModalOpen(true)}
                   disabled={!selectedBooking}
-                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-slate-700 transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold border transition flex items-center justify-center gap-2"
+                  style={{ backgroundColor: '#1e293b', color: '#e2e8f0', borderColor: '#334155' }}
                 >
-                  <Printer className="w-4 h-4 text-sky-400" />
+                  <Printer className="w-4 h-4" style={{ color: '#38bdf8' }} />
                   <span>Generate Printable Client Voucher</span>
                 </button>
               </div>

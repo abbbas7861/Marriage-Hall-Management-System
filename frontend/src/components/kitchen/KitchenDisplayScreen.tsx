@@ -249,14 +249,14 @@ export const KitchenDisplayScreen: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight flex items-center gap-3">
               <span>Kitchen Display Screen (KDS)</span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-bold uppercase tracking-wider animate-pulse">
                 <Flame className="w-3.5 h-3.5" />
                 LIVE QUEUE
               </span>
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+            <p className="!text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
               High-contrast touch board receiving instant dish refill orders from floor stewards. Color-coded prep states ensure hot buffet replenishment without delay.
             </p>
           </div>
@@ -323,12 +323,12 @@ export const KitchenDisplayScreen: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-5 border-t border-slate-800 text-xs">
           <div className="flex flex-wrap items-center gap-3">
             {/* Hall selector */}
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-1.5 !bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
               <Building2 className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={selectedHallFilter}
                 onChange={(e) => setSelectedHallFilter(e.target.value)}
-                className="bg-transparent text-white font-medium focus:outline-none cursor-pointer"
+                className="bg-transparent !text-white font-medium focus:outline-none cursor-pointer"
               >
                 <option value="All" className="bg-slate-900 text-white">All Halls / Venues</option>
                 <option value="Grand Crystal Ballroom" className="bg-slate-900 text-white">Grand Crystal Ballroom</option>
@@ -339,12 +339,12 @@ export const KitchenDisplayScreen: React.FC = () => {
             </div>
 
             {/* Station selector */}
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-1.5 !bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
               <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={selectedStationFilter}
                 onChange={(e) => setSelectedStationFilter(e.target.value)}
-                className="bg-transparent text-white font-medium focus:outline-none cursor-pointer"
+                className="bg-transparent !text-white font-medium focus:outline-none cursor-pointer"
               >
                 <option value="All" className="bg-slate-900 text-white">All Kitchen Stations</option>
                 <option value="Hot Buffet Line 1" className="bg-slate-900 text-white">Hot Buffet Line 1</option>
@@ -358,15 +358,15 @@ export const KitchenDisplayScreen: React.FC = () => {
           </div>
 
           {/* Quick counts summary */}
-          <div className="flex items-center gap-3 text-slate-400">
+          <div className="flex items-center gap-3 !text-slate-300">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <strong className="text-white">{laneRequested.length}</strong> New Refills
+              <strong className="!text-white">{laneRequested.length}</strong> New Refills
             </span>
             <span className="text-slate-600">•</span>
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <strong className="text-white">{laneInPrep.length}</strong> In Prep
+              <strong className="!text-white">{laneInPrep.length}</strong> In Prep
             </span>
             <span className="text-slate-600">•</span>
             <span className="flex items-center gap-1">

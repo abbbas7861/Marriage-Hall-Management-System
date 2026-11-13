@@ -166,23 +166,23 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-700/50 p-6 sm:p-8 shadow-2xl shadow-black/40 backdrop-blur-xl text-slate-100"
+        className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-700/50 p-6 sm:p-8 shadow-sm dark:shadow-2xl dark:shadow-black/40 text-slate-900 dark:text-slate-100"
       >
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-teal-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 left-1/4 w-80 h-80 bg-gradient-to-tr from-sky-500/10 via-teal-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-teal-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl pointer-events-none dark:block hidden" />
+        <div className="absolute -bottom-10 left-1/4 w-80 h-80 bg-gradient-to-tr from-sky-500/10 via-teal-500/5 to-transparent rounded-full blur-3xl pointer-events-none dark:block hidden" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                 <span>Live Telemetry Active</span>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-50 mt-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mt-1">
               Admin Executive Overview
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
               Omniscient venue orchestration, real-time occupancy distribution, and financial health trajectories.
             </p>
           </div>
@@ -195,7 +195,7 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                 whileTap={{ scale: 0.97 }}
                 type="button"
                 onClick={onOpenCreateBooking}
-                className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg shadow-teal-500/25 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold shadow-md shadow-teal-500/25 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 stroke-[2.5]" />
                 <span>New Booking Intake</span>
@@ -205,19 +205,19 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
             <button
               type="button"
               onClick={() => onNavigateToModule?.('admin-users')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 !text-slate-800 dark:!text-slate-200 text-xs sm:text-sm font-semibold transition-all shadow-xs cursor-pointer"
             >
-              <Users className="w-4 h-4 text-amber-400" />
-              <span>User Directory</span>
+              <Users className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+              <span className="!text-slate-800 dark:!text-slate-200">User Directory</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigateToModule?.('finance-overview')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 hover:border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold transition-all hover:scale-105 cursor-pointer backdrop-blur-md shadow-md"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 !text-slate-800 dark:!text-slate-200 text-xs sm:text-sm font-semibold transition-all shadow-xs cursor-pointer"
             >
-              <Scale className="w-4 h-4 text-teal-400" />
-              <span>Financial Statements</span>
+              <Scale className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="!text-slate-800 dark:!text-slate-200">Financial Statements</span>
             </button>
           </div>
         </div>
@@ -235,9 +235,9 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
               transition={{ duration: 0.35, delay: idx * 0.05 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
               onClick={() => onNavigateToModule?.(kpi.actionModule)}
-              className="relative overflow-hidden w-full rounded-2xl bg-slate-800/60 hover:bg-slate-800/80 border border-slate-700/50 p-6 shadow-xl backdrop-blur-md transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+              className="relative overflow-hidden w-full rounded-2xl bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/50 p-5 shadow-sm dark:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col justify-between"
             >
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${kpi.accentGlow} rounded-full blur-2xl pointer-events-none`} />
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${kpi.accentGlow} rounded-full blur-2xl pointer-events-none dark:block hidden`} />
 
               <div>
                 <div className="flex items-start justify-between gap-3">
@@ -245,20 +245,20 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                     {kpi.title}
                   </span>
                   <div
-                    className="w-10 h-10 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center shrink-0 text-teal-400 group-hover:scale-110 shadow-lg transition-transform duration-300"
+                    className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/25 dark:bg-slate-800 dark:border-slate-700/60 flex items-center justify-center shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-110 shadow-xs dark:shadow-lg transition-transform duration-300"
                   >
                     <Icon className="w-5 h-5" />
                   </div>
                 </div>
 
-                <div className="text-white text-2xl font-bold mt-2 font-mono truncate tracking-tight" title={String(kpi.value)}>
+                <div className="!text-slate-900 dark:text-white text-2xl sm:text-3xl font-bold mt-2 font-mono truncate tracking-tight" title={String(kpi.value)}>
                   {kpi.value}
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between text-sm text-slate-500">
-                <span className="truncate">{kpi.subtext}</span>
-                <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-xs !text-slate-600 dark:!text-slate-400">
+                <span className="truncate !text-slate-600 dark:!text-slate-400">{kpi.subtext}</span>
+                <ArrowUpRight className="w-3.5 h-3.5 !text-slate-600 dark:!text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
               </div>
             </motion.div>
           );
@@ -272,31 +272,31 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="lg:col-span-2 rounded-2xl bg-slate-800/40 border border-slate-700/50 shadow-xl shadow-black/20 p-6 sm:p-8 backdrop-blur-md flex flex-col justify-between"
+          className="lg:col-span-2 rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/50 shadow-sm dark:shadow-xl dark:shadow-black/20 p-6 sm:p-8 flex flex-col justify-between"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-700/50 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-700/50 mb-6">
             <div>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
                   <TrendingUp className="w-4 h-4" />
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-50 tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">
                   Sales Velocity &amp; Revenue Trajectory
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-1 pl-10.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 pl-10.5">
                 Multi-period venue rental revenue vs. catering &amp; ancillary services
               </p>
             </div>
 
-            <div className="inline-flex rounded-xl bg-slate-900/80 border border-slate-700/60 p-1 text-xs font-semibold self-start sm:self-auto">
+            <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 p-1 text-xs font-semibold self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setActiveFilter('year')}
                 className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeFilter === 'year'
                     ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 shadow-md font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Fiscal Year
@@ -307,7 +307,7 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                 className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                   activeFilter === 'quarter'
                     ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 shadow-md font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Quarters
@@ -329,11 +329,11 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                       <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
-                  <XAxis dataKey="period" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" opacity={0.2} vertical={false} />
+                  <XAxis dataKey="period" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis
                     tickFormatter={(val) => `PKR ${(val / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    tick={{ fontSize: 11, fill: '#64748b' }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -370,8 +370,8 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center rounded-xl bg-slate-900/40 border border-slate-700/40 text-slate-400 text-xs">
-                <TrendingUp className="w-10 h-10 mb-2 text-slate-600" />
+              <div className="w-full h-full flex flex-col items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 text-xs">
+                <TrendingUp className="w-10 h-10 mb-2 text-slate-400 dark:text-slate-600" />
                 <span className="font-medium">No historic revenue logs recorded for this fiscal timeframe.</span>
               </div>
             )}
@@ -383,18 +383,18 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.25 }}
-          className="rounded-2xl bg-slate-800/40 border border-slate-700/50 shadow-xl shadow-black/20 p-6 sm:p-8 backdrop-blur-md flex flex-col justify-between"
+          className="rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/50 shadow-sm dark:shadow-xl dark:shadow-black/20 p-6 sm:p-8 flex flex-col justify-between"
         >
-          <div className="pb-5 border-b border-slate-700/50 mb-4">
+          <div className="pb-5 border-b border-slate-200 dark:border-slate-700/50 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                 <Layers className="w-4 h-4" />
               </div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-50 tracking-tight">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">
                 Multi-Hall Occupancy
               </h2>
             </div>
-            <p className="text-xs text-slate-400 mt-1 pl-10.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 pl-10.5">
               Booking share volume distribution across halls
             </p>
           </div>
@@ -430,13 +430,13 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                   />
                   <Legend
                     iconType="circle"
-                    wrapperStyle={{ fontSize: '11px', paddingTop: '14px', color: '#cbd5e1' }}
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '14px', color: '#64748b' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center rounded-xl bg-slate-900/40 border border-slate-700/40 text-slate-400 text-xs">
-                <Building2 className="w-10 h-10 mb-2 text-slate-600" />
+              <div className="w-full h-full flex flex-col items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/40 text-slate-500 dark:text-slate-400 text-xs">
+                <Building2 className="w-10 h-10 mb-2 text-slate-400 dark:text-slate-600" />
                 <span className="font-medium">No hall bookings logged yet.</span>
               </div>
             )}
@@ -445,7 +445,7 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateToModule?.('admin-halls')}
-            className="w-full mt-4 py-3 rounded-xl bg-slate-900/60 hover:bg-slate-700/50 border border-slate-700/60 text-xs font-bold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01]"
+            className="w-full mt-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-300 dark:border-slate-700/60 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs dark:shadow-md hover:scale-[1.01]"
           >
             <span>Manage Hall Capacities</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -458,30 +458,30 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.3 }}
-        className="rounded-2xl bg-slate-800/40 border border-slate-700/50 shadow-xl shadow-black/20 p-6 sm:p-8 backdrop-blur-md"
+        className="rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 shadow-sm dark:shadow-xl dark:shadow-black/20 p-6 sm:p-8 backdrop-blur-md"
       >
-        <div className="flex items-center justify-between pb-4 border-b border-slate-700/50 mb-6">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50 mb-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
               <Sparkles className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-200">
               Admin Master Suite Launchpad
             </h3>
           </div>
-          <span className="text-xs font-mono px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-slate-400">
+          <span className="text-xs font-mono px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-400">
             Owner Access Granted
           </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { id: 'admin-halls', label: 'Halls Registry', icon: Building2, desc: 'Tiers & Slots', color: 'text-emerald-400' },
-            { id: 'admin-bookings', label: 'Bookings Master', icon: CalendarDays, desc: 'Contracts & PDF', color: 'text-sky-400' },
-            { id: 'admin-users', label: 'Users & Rights', icon: Users, desc: 'Salaries & RBAC', color: 'text-amber-400' },
-            { id: 'admin-closings', label: 'Period Closings', icon: Clock, desc: 'Day / Month Lock', color: 'text-rose-400' },
-            { id: 'admin-fbr', label: 'FBR Invoicing', icon: Receipt, desc: 'Digital Tax QR', color: 'text-violet-400' },
-            { id: 'finance-overview', label: 'General Ledger', icon: Scale, desc: 'A/R, A/P & P&L', color: 'text-teal-400' },
+            { id: 'admin-halls', label: 'Halls Registry', icon: Building2, desc: 'Tiers & Slots', color: 'text-emerald-500 dark:text-emerald-400' },
+            { id: 'admin-bookings', label: 'Bookings Master', icon: CalendarDays, desc: 'Contracts & PDF', color: 'text-sky-500 dark:text-sky-400' },
+            { id: 'admin-users', label: 'Users & Rights', icon: Users, desc: 'Salaries & RBAC', color: 'text-amber-500 dark:text-amber-400' },
+            { id: 'admin-closings', label: 'Period Closings', icon: Clock, desc: 'Day / Month Lock', color: 'text-rose-500 dark:text-rose-400' },
+            { id: 'admin-fbr', label: 'FBR Invoicing', icon: Receipt, desc: 'Digital Tax QR', color: 'text-violet-500 dark:text-violet-400' },
+            { id: 'finance-overview', label: 'General Ledger', icon: Scale, desc: 'A/R, A/P & P&L', color: 'text-teal-500 dark:text-teal-400' },
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -489,15 +489,15 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onNavigateToModule?.(item.id)}
-                className="flex flex-col items-start p-4 rounded-xl bg-slate-900/60 hover:bg-slate-700/40 border border-slate-700/50 hover:border-teal-500/50 transition-all text-left cursor-pointer group hover:scale-[1.02] shadow-sm"
+                className="flex flex-col items-start p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-700/40 border border-slate-200 dark:border-slate-700/50 hover:border-teal-500/50 transition-all text-left cursor-pointer group hover:scale-[1.02] shadow-xs"
               >
-                <div className={`w-9 h-9 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform mb-3 shadow-inner`}>
+                <div className={`w-9 h-9 rounded-lg bg-teal-50 dark:bg-slate-800/80 border border-teal-100 dark:border-slate-700 flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform mb-3 shadow-inner`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-teal-300 leading-tight">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-300 leading-tight">
                   {item.label}
                 </span>
-                <span className="text-[11px] text-slate-400 mt-1">{item.desc}</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{item.desc}</span>
               </button>
             );
           })}

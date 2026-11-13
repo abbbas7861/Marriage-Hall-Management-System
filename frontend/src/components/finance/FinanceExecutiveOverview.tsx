@@ -141,10 +141,10 @@ export const FinanceExecutiveOverview: React.FC<FinanceExecutiveOverviewProps> =
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-indigo-500/15 via-teal-500/10 to-transparent rounded-full blur-3xl -z-10" />
 
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-extrabold tracking-tight font-[\'Plus_Jakarta_Sans\'] text-white">
+          <h1 className="text-2xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Executive Financial &amp; Cash Flow Center
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Real-time liquidity monitor, daily banquet receipts, vendor disbursement commitments, and double-entry general ledger summary.
           </p>
         </div>

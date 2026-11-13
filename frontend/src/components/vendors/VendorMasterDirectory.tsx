@@ -205,10 +205,10 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
               <span>Verified Directory</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Vendor &amp; Supplier Master Directory
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Comprehensive catalog of verified event vendors, poultry/meat butchers, floral decorators, stage technicians, and labor contractors.
           </p>
         </div>

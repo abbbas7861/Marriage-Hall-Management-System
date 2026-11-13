@@ -167,10 +167,10 @@ export const FinanceReceivablesCollector: React.FC<FinanceReceivablesCollectorPr
               <span>Live Invoice Reconciliation</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Accounts Receivable (A/R) &amp; Collections
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Monitor client billing balances, advance payments, and record instant collections with automatic receipt generation.
           </p>
         </div>

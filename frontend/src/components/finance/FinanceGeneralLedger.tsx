@@ -223,10 +223,10 @@ export const FinanceGeneralLedger: React.FC<FinanceGeneralLedgerProps> = ({
               <span>Double-Entry Compliant</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             General Ledger (GL) &amp; Journal Records
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Audit-ready chronological transaction journal: customer deposits, vendor payouts, contractor wages, and running liquidity balance.
           </p>
         </div>

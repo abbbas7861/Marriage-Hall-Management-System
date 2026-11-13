@@ -177,10 +177,10 @@ export const FinanceAccountsPayable: React.FC<FinanceAccountsPayableProps> = ({
               <span>Tax Withholding &amp; Vouchers</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Accounts Payable (A/P) &amp; Vendor Disbursements
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Track commitments to raw material suppliers, outside labor, and stage decorators with withholding tax deductions and payment vouchers.
           </p>
         </div>

@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Brand & Portal Header */}
-          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0 bg-slate-900/40 backdrop-blur-md">
+          <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0 bg-transparent">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white shrink-0 shadow-lg shadow-teal-950/50 ring-1 ring-white/20">
                 <PortalIcon className="w-5 h-5 text-white" />
@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="font-bold text-sm text-white tracking-tight truncate font-['Plus_Jakarta_Sans']">
                     {currentPortalConfig.shortName}
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                 </div>
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest truncate">
                   {currentPortalConfig.name}

@@ -189,10 +189,10 @@ export const VendorTradePayables: React.FC<VendorTradePayablesProps> = ({
               <span>Disbursement &amp; Expense Sync</span>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-['Plus_Jakarta_Sans'] !text-white">
             Vendor Financial Trades &amp; Accounts Payable (A/P)
           </h1>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm !text-slate-300">
             Track vendor purchase billing, outstanding commitments, and disburse payments via Cash, Bank Transfer, or Cheque with immediate sync into general expenses.
           </p>
         </div>

@@ -496,12 +496,12 @@ export const HallsModule: React.FC = () => {
 
                   {/* Hall Name & Location in Banner */}
                   <div className="relative z-10">
-                    <h3 className="text-lg font-bold text-white tracking-tight font-['Plus_Jakarta_Sans'] group-hover:text-teal-300 transition-colors drop-shadow-sm">
+                    <h3 className="text-lg font-bold !text-white drop-shadow-md tracking-tight font-['Plus_Jakarta_Sans'] group-hover:text-teal-300 transition-colors drop-shadow-sm">
                       {hall.name}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5">
+                    <div className="flex items-center gap-1.5 text-xs  !text-white opacity-90 drop-shadow-md mt-0.5">
                       <MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                      <span>{hall.locationFloor}</span>
+                      <span className="!text-white font-medium">{hall.locationFloor}</span>
                     </div>
                   </div>
                 </div>
