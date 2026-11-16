@@ -26,7 +26,12 @@ import {
 } from '../types';
 
 const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string) || 'http://127.0.0.1:8000/api/v1';
+  (import.meta.env.VITE_API_BASE_URL as string) ||
+  (typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1'
+    ? '/api/v1'
+    : 'http://127.0.0.1:8000/api/v1');
 
 function normalizePath(endpoint: string): string {
   const [path, query] = endpoint.split('?');

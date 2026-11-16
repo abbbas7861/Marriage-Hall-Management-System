@@ -22,12 +22,20 @@ dist/
 dist-ssr/
 *.local
 
-# Environment variables
+# Environment variables & secrets
 .env
-frontend/.env
+*.env
+.env.*
+.env.local
 backend/.env
+backend/.env.*
+backend/*.env
+frontend/.env
+frontend/.env.*
+frontend/*.env
 !.env.example
 !frontend/.env.example
+!backend/.env.example
 
 # Logs & temp
 *.log
@@ -44,3 +52,5 @@ lerna-debug.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+03135509853   sohail asghar
