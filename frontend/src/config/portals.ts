@@ -83,6 +83,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'admin-halls', label: 'Halls Registry', icon: Building2 },
           { id: 'admin-bookings', label: 'Bookings Ledger', icon: CalendarDays },
           { id: 'calendar', label: 'Master Calendar', icon: CalendarCheck },
+          { id: 'menu', label: 'Catering & Menu Packages', icon: UtensilsCrossed },
         ],
       },
       {
@@ -105,14 +106,24 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
 
   manager: {
     id: 'manager',
-    name: 'Event Manager',
+    name: 'Manager Suite',
     shortName: 'Manager',
     icon: Briefcase,
     themeColor: 'from-sky-500 to-sky-700',
     accentBg: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-    description: 'Floor Operations, Decor Verification & Staff Shift Rosters',
-    defaultModule: 'manager-overview',
+    description: 'Executive Venue Operations, Floor Command & Staff Shift Rosters',
+    defaultModule: 'admin-overview',
     navGroups: [
+      {
+        groupTitle: 'Executive Operations',
+        items: [
+          { id: 'admin-overview', label: 'Executive Dashboard', icon: LayoutDashboard },
+          { id: 'admin-halls', label: 'Halls Registry', icon: Building2 },
+          { id: 'admin-bookings', label: 'Bookings Ledger', icon: CalendarDays },
+          { id: 'calendar', label: 'Master Calendar', icon: CalendarCheck },
+          { id: 'menu', label: 'Catering & Menu Packages', icon: UtensilsCrossed },
+        ],
+      },
       {
         groupTitle: 'Floor Command',
         items: [
@@ -120,6 +131,15 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
           { id: 'manager-kitchen-refills', label: 'Kitchen Buffet Refills', icon: Flame, badge: 'Live', path: '/manager/kitchen-refills' },
           { id: 'manager-decor', label: 'Asset & Decor Requisitions', icon: Layers },
           { id: 'manager-readiness', label: 'Service Readiness & Curfew', icon: ClipboardCheck },
+        ],
+      },
+      {
+        groupTitle: 'Control & Closings',
+        items: [
+          { id: 'admin-users', label: 'Staff & Role Management', icon: Users, badge: 'Roles' },
+          { id: 'admin-closings', label: 'Period Closings', icon: Clock },
+          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
+          { id: 'admin-audit', label: 'System Audit Logs', icon: History },
         ],
       },
       {

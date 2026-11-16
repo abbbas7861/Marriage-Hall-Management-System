@@ -558,17 +558,8 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                         </td>
                         <td className="py-3 px-4">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadge}`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadge}`}
                           >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                staff.status === 'Active'
-                                  ? 'bg-emerald-500'
-                                  : staff.status === 'On Leave'
-                                  ? 'bg-amber-500'
-                                  : 'bg-slate-400'
-                              }`}
-                            />
                             <span>{staff.status}</span>
                           </span>
                         </td>

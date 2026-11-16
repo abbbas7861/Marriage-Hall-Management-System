@@ -45,6 +45,9 @@ class Booking(models.Model):
     operational_status = models.CharField(max_length=50, choices=OPERATIONAL_STATUS_CHOICES, default='Setup in Progress')
     assigned_manager = models.CharField(max_length=150, blank=True, default='Manager')
     security_deposit = models.DecimalField(max_digits=12, decimal_places=2, default=50000)
+    custom_menu_items = models.JSONField(default=list, blank=True)
+    extra_services = models.JSONField(default=list, blank=True)
+    damages_record = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

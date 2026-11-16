@@ -83,7 +83,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       return ["admin", "manager", "kitchen", "waiter", "vendors", "finance"];
     }
     if (currentUser.role === "manager") {
-      return ["manager", "vendors"];
+      return ["manager", "kitchen", "waiter", "vendors", "finance"];
     }
     if (currentUser.role === "kitchen") {
       return ["kitchen"];
@@ -184,12 +184,15 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         return (
           <BookingsModule
             key={
-              bookingPreload
+              managerBookingContext
+                ? `edit-${managerBookingContext.id}`
+                : bookingPreload
                 ? `preload-${bookingPreload.hallName || ""}-${bookingPreload.date || ""}-${bookingPreload.startTime || ""}`
                 : "bookings-table"
             }
             initialCreateData={bookingPreload}
-            initialMode={bookingPreload ? "create" : "table"}
+            initialBooking={managerBookingContext}
+            initialMode={managerBookingContext ? "create" : bookingPreload ? "create" : "table"}
           />
         );
 
@@ -223,7 +226,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         return <AuditLogsModule />;
 
       case "admin-users":
-        return <AdminUserManagement />;
+        return <AdminUserManagement currentUser={currentUser} />;
 
       case "admin-closings":
         return <AdminPeriodicClosings />;
@@ -419,6 +422,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onCloseMobile={() => setIsMobileMenuOpen(false)}
           onSelectPortal={handleSelectPortal}
           allowedPortals={allowedPortals}
+          currentUser={currentUser}
         />
 
         {/* Main Column */}

@@ -156,7 +156,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-violet-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-violet-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-violet-200 animate-pulse" />
+          <Sparkles className="w-5 h-5 text-violet-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
@@ -170,7 +170,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
             <div className="flex items-center gap-2 flex-wrap mb-2">
               
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span>LIVE SERVICE ACTIVE</span>
               </span>
             </div>
@@ -203,7 +203,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
 
             {/* Live Ticking Time Card */}
             <div className="flex items-center gap-2 bg-slate-800/90 px-3.5 py-2 rounded-xl border border-slate-700">
-              <Clock className="w-4 h-4 text-sky-400 animate-pulse" />
+              <Clock className="w-4 h-4 text-sky-400" />
               <span className="font-mono text-sm font-bold text-white">
                 {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
               </span>
@@ -290,7 +290,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
               <span className="font-bold text-white text-sm block mt-0.5">Buffet Dinner Service</span>
               <span className="text-[11px] text-amber-300/80">Active refill watch</span>
             </div>
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
           </div>
 
           {/* Milestone 3 */}
@@ -418,7 +418,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
               },
               'Needs Clearing': {
                 bg: 'bg-rose-500/10 border-rose-500/50 text-rose-300',
-                pill: 'bg-rose-500 text-white animate-pulse',
+                pill: 'bg-rose-500 text-white',
                 icon: AlertTriangle,
                 label: 'Needs Busser',
               },

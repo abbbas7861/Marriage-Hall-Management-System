@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import datetime, timedelta
+from django.utils import timezone
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -90,6 +91,142 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='add-extra-service')
+    def add_extra_service(self, request, pk=None):
+        booking = self.get_object()
+        title = request.data.get('title', '').strip()
+        price = float(request.data.get('price', 0))
+        category = request.data.get('category', 'Extra Service')
+        notes = request.data.get('notes', '')
+
+        if not title:
+            return Response({'error': 'Service title is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if price <= 0:
+            return Response({'error': 'Price must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Manager'
+
+        service_entry = {
+            'id': f"SRV-{random.randint(10000, 99999)}",
+            'title': title,
+            'price': price,
+            'category': category,
+            'notes': notes,
+            'added_by': user_name,
+            'timestamp': timezone.now().strftime('%Y-%m-%d %I:%M %p')
+        }
+
+        services = list(booking.extra_services or [])
+        services.append(service_entry)
+        booking.extra_services = services
+        booking.amount = float(booking.amount) + price
+        booking.save()
+
+        # Update Invoice
+        inv = InvoiceRecord.objects.filter(booking_id=booking.booking_ref).first()
+        if inv:
+            inv.total_amount = float(inv.total_amount) + price
+            inv.remaining_balance = float(inv.remaining_balance) + price
+            if inv.remaining_balance > 0 and float(inv.paid_amount) > 0:
+                inv.payment_status = 'Partial'
+            elif inv.remaining_balance <= 0:
+                inv.payment_status = 'Paid'
+            else:
+                inv.payment_status = 'Unpaid'
+            inv.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=user_name,
+            user_role="Manager",
+            action="Added Live Service",
+            module="Event Operations",
+            details=f"Added live service '{title}' (Rs. {price:,.0f}) to {booking.booking_ref} bill",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+
+        return Response({
+            'message': f"Added '{title}' (Rs. {price:,.0f}) to final client bill.",
+            'booking': BookingSerializer(booking).data,
+            'service': service_entry
+        })
+
+    @action(detail=True, methods=['post'], url_path='record-damage')
+    def record_damage(self, request, pk=None):
+        booking = self.get_object()
+        item = request.data.get('item', '').strip()
+        amount = float(request.data.get('amount', 0))
+        deduction_type = request.data.get('deductionType', 'invoice')
+        notes = request.data.get('notes', '')
+
+        if not item:
+            return Response({'error': 'Damaged item description is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if amount <= 0:
+            return Response({'error': 'Damage penalty amount must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Manager'
+
+        damage_entry = {
+            'id': f"DMG-{random.randint(10000, 99999)}",
+            'item': item,
+            'amount': amount,
+            'deduction_type': deduction_type,
+            'notes': notes,
+            'recorded_by': user_name,
+            'timestamp': timezone.now().strftime('%Y-%m-%d %I:%M %p')
+        }
+
+        damages = list(booking.damages_record or [])
+        damages.append(damage_entry)
+        booking.damages_record = damages
+
+        if deduction_type == 'invoice':
+            booking.amount = float(booking.amount) + amount
+            booking.save()
+
+            inv = InvoiceRecord.objects.filter(booking_id=booking.booking_ref).first()
+            if inv:
+                inv.total_amount = float(inv.total_amount) + amount
+                inv.remaining_balance = float(inv.remaining_balance) + amount
+                inv.save()
+        else:
+            booking.save()
+            from apps.finance.models import SecurityDepositSettlement
+            settlement, created = SecurityDepositSettlement.objects.get_or_create(
+                booking_ref=booking.booking_ref,
+                defaults={
+                    'settlement_ref': f"SETTLE-{booking.booking_ref.replace('BK-', '')}",
+                    'customer_name': booking.customer_name,
+                    'hall_name': booking.hall_name,
+                    'event_date': booking.date,
+                    'deposit_held': booking.security_deposit or 50000,
+                    'damage_deductions': amount,
+                    'damage_notes': f"{item}: Rs. {amount:,.0f}. {notes}",
+                    'net_refund_amount': max(0.0, float(booking.security_deposit or 50000) - amount)
+                }
+            )
+            if not created:
+                settlement.damage_deductions = float(settlement.damage_deductions) + amount
+                settlement.damage_notes = f"{settlement.damage_notes}\n{item}: Rs. {amount:,.0f}. {notes}".strip()
+                settlement.net_refund_amount = max(0.0, float(settlement.deposit_held) - float(settlement.damage_deductions))
+                settlement.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=user_name,
+            user_role="Manager",
+            action="Damage Recorded",
+            module="Event Operations",
+            details=f"Recorded damage penalty for '{item}' (Rs. {amount:,.0f}) on {booking.booking_ref} ({deduction_type})",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+
+        return Response({
+            'message': f"Damage penalty for '{item}' (Rs. {amount:,.0f}) successfully recorded ({'Added to Final Invoice' if deduction_type == 'invoice' else 'Deducted from Security Deposit'}).",
+            'booking': BookingSerializer(booking).data,
+            'damage': damage_entry
+        })
 
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)

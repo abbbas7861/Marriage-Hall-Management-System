@@ -313,7 +313,7 @@ export const KitchenRecipeManager: React.FC = () => {
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200 animate-pulse" />
+          <Sparkles className="w-5 h-5 text-emerald-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}

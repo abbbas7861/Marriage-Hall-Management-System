@@ -262,7 +262,7 @@ export const WaiterOvertimeTrigger: React.FC<WaiterOvertimeTriggerProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-slate-700/50 mb-4">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Event Selection</span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 Live Floor
               </span>
             </div>
@@ -590,7 +590,7 @@ export const WaiterOvertimeTrigger: React.FC<WaiterOvertimeTriggerProps> = ({
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             : req.status === 'Rejected'
                             ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                         }`}
                       >
                         {req.status === 'Approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}

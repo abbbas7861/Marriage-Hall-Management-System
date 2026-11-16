@@ -110,6 +110,25 @@ export interface Booking {
   guestCount?: number;
   seatingArrangement?: string;
   menuPackage?: string;
+  customMenuItems?: string[];
+  extraServices?: Array<{
+    id?: string;
+    title: string;
+    price: number;
+    category?: string;
+    notes?: string;
+    added_by?: string;
+    timestamp?: string;
+  }>;
+  damagesRecord?: Array<{
+    id?: string;
+    item: string;
+    amount: number;
+    deduction_type?: string;
+    notes?: string;
+    recorded_by?: string;
+    timestamp?: string;
+  }>;
   specialInstructions?: string;
   extraHours?: number;
   ratePerHour?: number;

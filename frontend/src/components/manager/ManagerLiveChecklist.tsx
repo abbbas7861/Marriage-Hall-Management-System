@@ -311,7 +311,7 @@ export const ManagerLiveChecklist: React.FC<ManagerLiveChecklistProps> = ({ init
         <div
           className={`p-6 rounded-2xl border transition-all shadow-xl backdrop-blur-md ${
             curfewInfo.isOvertime
-              ? 'bg-rose-950/40 border-rose-800/60 text-rose-200 animate-pulse'
+              ? 'bg-rose-950/40 border-rose-800/60 text-rose-200'
               : curfewInfo.diffMinutes < 30
               ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
               : 'bg-emerald-950/30 border-emerald-800/50 text-emerald-200'

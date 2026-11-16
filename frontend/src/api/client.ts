@@ -161,6 +161,28 @@ export const bookingsApi = {
     return normalizeId(data);
   },
 
+  async addExtraService(id: string, payload: { title: string; price: number; category?: string; notes?: string }): Promise<{ message: string; booking: Booking; service: any }> {
+    const data = await request<{ message: string; booking: Booking; service: any }>(`bookings/${id}/add-extra-service/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return {
+      ...data,
+      booking: normalizeId(data.booking),
+    };
+  },
+
+  async recordDamage(id: string, payload: { item: string; amount: number; deductionType?: string; notes?: string }): Promise<{ message: string; booking: Booking; damage: any }> {
+    const data = await request<{ message: string; booking: Booking; damage: any }>(`bookings/${id}/record-damage/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return {
+      ...data,
+      booking: normalizeId(data.booking),
+    };
+  },
+
   async delete(id: string): Promise<void> {
     await request(`bookings/${id}`, { method: 'DELETE' });
   },

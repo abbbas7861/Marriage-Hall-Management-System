@@ -26,6 +26,9 @@ class BookingSerializer(serializers.ModelSerializer):
     operationalStatus = serializers.CharField(source='operational_status', required=False, default='Setup in Progress')
     assignedManager = serializers.CharField(source='assigned_manager', required=False, allow_blank=True, default='Manager')
     securityDeposit = serializers.FloatField(source='security_deposit', required=False, default=50000)
+    customMenuItems = serializers.ListField(source='custom_menu_items', child=serializers.CharField(), required=False, default=list)
+    extraServices = serializers.ListField(source='extra_services', child=serializers.DictField(), required=False, default=list)
+    damagesRecord = serializers.ListField(source='damages_record', child=serializers.DictField(), required=False, default=list)
     cnic = serializers.CharField(required=False, allow_blank=True, default='')
     address = serializers.CharField(required=False, allow_blank=True, default='')
 
@@ -35,7 +38,8 @@ class BookingSerializer(serializers.ModelSerializer):
             'id', 'bookingRef', 'customerName', 'contactRef', 'cnic', 'address', 'eventType',
             'hallName', 'date', 'time', 'slot', 'status', 'paymentStatus',
             'amount', 'advancePayment', 'guestCount', 'seatingArrangement',
-            'menuPackage', 'specialInstructions', 'extraHours', 'ratePerHour',
+            'menuPackage', 'customMenuItems', 'extraServices', 'damagesRecord',
+            'specialInstructions', 'extraHours', 'ratePerHour',
             'operationalStatus', 'assignedManager', 'securityDeposit'
         ]
 

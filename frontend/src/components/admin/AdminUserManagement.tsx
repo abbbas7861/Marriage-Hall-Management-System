@@ -18,7 +18,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { authApi } from '../../api/client';
-import { UserRole } from '../../types';
+import { UserRole, AuthUser } from '../../types';
 
 interface StaffUser {
   id: number | string;
@@ -60,7 +60,11 @@ const ROLE_LABELS: Record<UserRole, { label: string; badge: string; desc: string
   },
 };
 
-export const AdminUserManagement: React.FC = () => {
+interface AdminUserManagementProps {
+  currentUser?: AuthUser | null;
+}
+
+export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ currentUser }) => {
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,31 +336,62 @@ export const AdminUserManagement: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 text-[10px] font-semibold border border-teal-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                          <span>Active</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 text-[10px] font-semibold border border-teal-500/20">
+                          Active
                         </span>
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-400 hover:bg-slate-700/50 transition-colors cursor-pointer"
-                            title="Edit User Rights & Salary"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                            title="Terminate Account"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        {(() => {
+                          const isManagerViewing = currentUser?.role === 'manager';
+                          const isTargetAdmin = u.role === 'admin';
+                          const isTargetOtherManager = u.role === 'manager' && String(u.id) !== String(currentUser?.id);
+
+                          if (isManagerViewing && isTargetAdmin) {
+                            return (
+                              <div
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-semibold"
+                                title="Admin accounts can only be edited or removed by Administrators"
+                              >
+                                <Lock className="w-3 h-3 text-amber-400" />
+                                <span>Admin Protected</span>
+                              </div>
+                            );
+                          }
+
+                          if (isManagerViewing && isTargetOtherManager) {
+                            return (
+                              <div
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/20 text-[10px] font-semibold"
+                                title="Manager accounts can only be edited or removed by Administrators"
+                              >
+                                <Lock className="w-3 h-3 text-sky-400" />
+                                <span>Admin Only</span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(u)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-teal-400 hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                title="Edit User Rights & Salary"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(u)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                title="Terminate Account"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );
@@ -454,7 +489,13 @@ export const AdminUserManagement: React.FC = () => {
                     <option value="kitchen" className="bg-slate-900 text-white">Kitchen Staff &amp; Chef</option>
                     <option value="waiter" className="bg-slate-900 text-white">Waiter / Floor Staff Kiosk</option>
                     <option value="accountant" className="bg-slate-900 text-white">Accountant (General Ledger)</option>
-                    <option value="admin" className="bg-slate-900 text-white">Admin / Owner (Full Access)</option>
+                    <option
+                      value="admin"
+                      disabled={currentUser?.role === 'manager'}
+                      className={currentUser?.role === 'manager' ? 'bg-slate-900 text-slate-500 italic' : 'bg-slate-900 text-white'}
+                    >
+                      {currentUser?.role === 'manager' ? 'Admin / Owner (Admin Only)' : 'Admin / Owner (Full Access)'}
+                    </option>
                   </select>
                 </div>
               </div>

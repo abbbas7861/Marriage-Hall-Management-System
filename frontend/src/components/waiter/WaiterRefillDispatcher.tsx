@@ -316,8 +316,8 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
     <div className="w-full max-w-7xl mx-auto space-y-8 select-none animate-in fade-in duration-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-amber-300 font-extrabold text-sm animate-bounce shadow-black/40">
-          <Sparkles className="w-5 h-5 text-slate-950 animate-spin" />
+        <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-amber-300 font-extrabold text-sm shadow-black/40">
+          <Sparkles className="w-5 h-5 text-slate-950" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -335,7 +335,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
                   ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300'
                   : 'bg-rose-500/20 border border-rose-500/40 text-rose-300'
               } shadow-sm`}>
-                <span className={`w-2 h-2 rounded-full ${callerRole === 'Manager' ? 'bg-amber-400' : 'bg-rose-400'} animate-ping`} />
+                <span className={`w-2 h-2 rounded-full ${callerRole === 'Manager' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                 <span>{callerRole === 'Manager' ? 'MANAGER FLOOR COMMAND READY' : '1-TAP DISPATCH READY'}</span>
               </span>
             </div>
@@ -436,7 +436,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
               Operational Stage
             </span>
             <span className="font-bold text-emerald-400 text-sm flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
               <span className="truncate">{selectedBooking?.operationalStatus || 'Food Service Active'}</span>
             </span>
           </div>
@@ -460,7 +460,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
           <div className="flex items-center justify-between pb-3 border-b border-slate-700/60 flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <Flame className="w-4 h-4 animate-pulse" />
+                <Flame className="w-4 h-4" />
               </div>
               <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
                 Live Kitchen Preparation Tracker ({activeEventTickets.length} Active Dishes)
@@ -622,7 +622,7 @@ export const WaiterRefillDispatcher: React.FC<WaiterRefillDispatcherProps> = ({
                 {isPending && (
                   <div className="mt-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 font-bold flex items-center justify-between shadow-sm">
                     <span className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
                       <span>{activeTicket.status}</span>
                     </span>
                     <span className="font-mono text-xs text-slate-400">

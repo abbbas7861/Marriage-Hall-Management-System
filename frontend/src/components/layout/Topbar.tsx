@@ -54,14 +54,11 @@ export const Topbar: React.FC<TopbarProps> = ({
         .toUpperCase()
     : "AD";
 
-  const portalKeys: PortalType[] = [
-    "admin",
-    "manager",
-    "kitchen",
-    "waiter",
-    "vendors",
-    "finance",
-  ];
+  const portalKeys: PortalType[] = (
+    currentUser?.role === "manager"
+      ? ["manager", "kitchen", "waiter", "vendors", "finance"]
+      : ["admin", "manager", "kitchen", "waiter", "vendors", "finance"]
+  ) as PortalType[];
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between px-3 sm:px-4 lg:px-6 shadow-xs dark:shadow-md">

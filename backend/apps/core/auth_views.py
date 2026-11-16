@@ -185,19 +185,26 @@ class LogoutView(APIView):
 
 class UserDirectoryViewSet(APIView):
     """
-    Admin exclusive endpoint to list, create, update, and manage staff users,
-    assign their role, monthly salary, and access permissions.
+    Staff directory and RBAC management viewset.
+    Full user management available to Admins and Managers.
+    Managers cannot edit or delete Administrator accounts or Manager accounts,
+    nor elevate users to Admin.
     """
     permission_classes = [IsAuthenticated]
 
-    def check_admin(self, request):
+    def check_access(self, request):
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role if profile else ('admin' if request.user.is_superuser else '')
+        return request.user.is_superuser or role in ['admin', 'manager']
+
+    def is_admin(self, request):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
         return request.user.is_superuser or role == 'admin'
 
     def get(self, request):
-        if not self.check_admin(request):
-            return Response({'error': 'Admin permissions required.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_access(request):
+            return Response({'error': 'Administrative or Manager permissions required.'}, status=status.HTTP_403_FORBIDDEN)
 
         users = User.objects.all().select_related('profile').order_by('id')
         user_list = []
@@ -217,8 +224,8 @@ class UserDirectoryViewSet(APIView):
         return Response(user_list)
 
     def post(self, request):
-        if not self.check_admin(request):
-            return Response({'error': 'Admin permissions required.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_access(request):
+            return Response({'error': 'Administrative or Manager permissions required.'}, status=status.HTTP_403_FORBIDDEN)
 
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '').strip()
@@ -230,6 +237,9 @@ class UserDirectoryViewSet(APIView):
 
         if not username or not password:
             return Response({'error': 'Username and initial password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if role == 'admin' and not self.is_admin(request):
+            return Response({'error': 'Only Administrators can provision Administrator accounts.'}, status=status.HTTP_403_FORBIDDEN)
 
         if User.objects.filter(username__iexact=username).exists():
             return Response({'error': f"User '{username}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
@@ -250,10 +260,11 @@ class UserDirectoryViewSet(APIView):
             salary=salary or 0
         )
 
+        user_role = "Admin" if self.is_admin(request) else "Manager"
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name=request.user.get_full_name() or request.user.username,
-            user_role="Admin",
+            user_role=user_role,
             action="Created",
             module="User Management",
             details=f"Created staff account '{username}' with role '{role}' and salary PKR {salary}",
@@ -273,18 +284,32 @@ class UserDirectoryViewSet(APIView):
         }, status=status.HTTP_201_CREATED)
 
     def put(self, request, pk=None):
-        if not self.check_admin(request):
-            return Response({'error': 'Admin permissions required.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_access(request):
+            return Response({'error': 'Administrative or Manager permissions required.'}, status=status.HTTP_403_FORBIDDEN)
 
         user_id = pk or request.data.get('id')
         user = User.objects.filter(id=user_id).first()
         if not user:
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        target_profile = getattr(user, 'profile', None)
+        target_role = target_profile.role if target_profile else ('admin' if user.is_superuser else '')
+        is_target_admin = user.is_superuser or target_role == 'admin'
+
+        if not self.is_admin(request):
+            if is_target_admin:
+                return Response({'error': 'Managers cannot edit Administrator accounts.'}, status=status.HTTP_403_FORBIDDEN)
+            if target_role == 'manager' and user.id != request.user.id:
+                return Response({'error': 'Only Administrators can edit Manager accounts.'}, status=status.HTTP_403_FORBIDDEN)
+            if request.data.get('role') == 'admin':
+                return Response({'error': 'Only Administrators can grant Administrator privileges.'}, status=status.HTTP_403_FORBIDDEN)
+
         profile, _ = UserProfile.objects.get_or_create(user=user)
 
         if 'role' in request.data:
             new_role = request.data['role'].strip().lower()
+            if new_role == 'admin' and not self.is_admin(request):
+                return Response({'error': 'Only Administrators can grant Administrator privileges.'}, status=status.HTTP_403_FORBIDDEN)
             profile.role = new_role
             user.is_staff = (new_role in ['admin', 'manager'])
             user.is_superuser = (new_role == 'admin')
@@ -303,10 +328,11 @@ class UserDirectoryViewSet(APIView):
         user.save()
         profile.save()
 
+        user_role = "Admin" if self.is_admin(request) else "Manager"
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name=request.user.get_full_name() or request.user.username,
-            user_role="Admin",
+            user_role=user_role,
             action="Updated",
             module="User Management",
             details=f"Updated details/rights for user '{user.username}'",
@@ -316,8 +342,8 @@ class UserDirectoryViewSet(APIView):
         return Response({'message': f"User '{user.username}' updated successfully."})
 
     def delete(self, request, pk=None):
-        if not self.check_admin(request):
-            return Response({'error': 'Admin permissions required.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_access(request):
+            return Response({'error': 'Administrative or Manager permissions required.'}, status=status.HTTP_403_FORBIDDEN)
 
         user_id = pk or request.query_params.get('id')
         user = User.objects.filter(id=user_id).first()
@@ -325,15 +351,26 @@ class UserDirectoryViewSet(APIView):
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if user.id == request.user.id:
-            return Response({'error': 'You cannot delete your own admin account.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'You cannot delete your own account.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        target_profile = getattr(user, 'profile', None)
+        target_role = target_profile.role if target_profile else ('admin' if user.is_superuser else '')
+        is_target_admin = user.is_superuser or target_role == 'admin'
+
+        if not self.is_admin(request):
+            if is_target_admin:
+                return Response({'error': 'Managers cannot remove Administrator accounts.'}, status=status.HTTP_403_FORBIDDEN)
+            if target_role == 'manager':
+                return Response({'error': 'Only Administrators can remove Manager accounts.'}, status=status.HTTP_403_FORBIDDEN)
 
         uname = user.username
         user.delete()
 
+        user_role = "Admin" if self.is_admin(request) else "Manager"
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name=request.user.get_full_name() or request.user.username,
-            user_role="Admin",
+            user_role=user_role,
             action="Deleted",
             module="User Management",
             details=f"Terminated user account '{uname}'",

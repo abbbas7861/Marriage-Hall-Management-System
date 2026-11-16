@@ -237,7 +237,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200 animate-pulse" />
+          <Sparkles className="w-5 h-5 text-emerald-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
@@ -332,7 +332,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
         <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
-              <AlertTriangle className="w-5 h-5 animate-pulse" />
+              <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -431,7 +431,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
                       </div>
 
                       {isLow ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                           <AlertTriangle className="w-3 h-3" />
                           LOW STOCK
                         </span>

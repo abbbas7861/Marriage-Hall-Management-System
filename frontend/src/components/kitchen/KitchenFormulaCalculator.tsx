@@ -308,7 +308,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200 animate-pulse" />
+          <Sparkles className="w-5 h-5 text-emerald-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
@@ -568,7 +568,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
                   {/* Shortage / Stock Status */}
                   <td className="py-3.5 px-4 text-center">
                     {item.isShortage ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
                         <AlertTriangle className="w-3 h-3" />
                         Shortage: {item.deficitQty} {item.unit}
                       </span>

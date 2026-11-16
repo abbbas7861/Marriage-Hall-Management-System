@@ -238,7 +238,7 @@ export const KitchenDisplayScreen: React.FC = () => {
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200 animate-pulse" />
+          <Sparkles className="w-5 h-5 text-emerald-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
@@ -251,7 +251,7 @@ export const KitchenDisplayScreen: React.FC = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight flex items-center gap-3">
               <span>Kitchen Display Screen (KDS)</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-bold uppercase tracking-wider animate-pulse">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-bold uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5" />
                 LIVE QUEUE
               </span>
@@ -277,7 +277,7 @@ export const KitchenDisplayScreen: React.FC = () => {
             >
               {soundEnabled ? (
                 <>
-                  <Volume2 className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <Volume2 className="w-4 h-4 text-amber-400" />
                   <span>Audio Chime: ON</span>
                 </>
               ) : (
@@ -409,7 +409,7 @@ export const KitchenDisplayScreen: React.FC = () => {
         }`}>
           <div className="p-3.5 bg-amber-500/10 border-b border-amber-500/20 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
               <h2 className="font-black text-amber-300 text-sm tracking-wide uppercase">
                 1. Refill Requested
               </h2>
@@ -447,7 +447,7 @@ export const KitchenDisplayScreen: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-1.5">
                         {ticket.priority === 'Critical' && (
-                          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500 text-white animate-pulse">
+                          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500 text-white">
                             CRITICAL
                           </span>
                         )}
@@ -516,7 +516,7 @@ export const KitchenDisplayScreen: React.FC = () => {
         }`}>
           <div className="p-3.5 bg-orange-500/10 border-b border-orange-500/20 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
+              <Flame className="w-4 h-4 text-orange-400" />
               <h2 className="font-black text-orange-300 text-sm tracking-wide uppercase">
                 2. In Preparation
               </h2>

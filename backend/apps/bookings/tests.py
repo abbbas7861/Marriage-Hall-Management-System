@@ -219,3 +219,82 @@ class MHMSEnterpriseAPITests(TestCase):
         self.assertEqual(rep_res.status_code, status.HTTP_200_OK)
         self.assertIn("grossRevenue", rep_res.data)
         self.assertIn("netProfit", rep_res.data)
+
+    def test_live_extra_service_and_damages_recording(self):
+        # 1. Create a booking
+        booking = Booking.objects.create(
+            booking_ref="BK-LIVE-01",
+            customer_name="Tariq Mahmood",
+            contact_ref="0300-1122334",
+            event_type="Baraat Banquet",
+            hall_name=self.hall.name,
+            date=date.today() + timedelta(days=5),
+            amount=500000,
+            advance_payment=100000,
+            menu_package="Royal Shadi Buffet (Beef & Chicken)",
+            custom_menu_items=["Special Beef Biryani", "Mutton Karahi", "Roghnai Naan"],
+            status="Confirmed",
+            payment_status="Partial"
+        )
+        InvoiceRecord.objects.create(
+            invoice_id="INV-LIVE-01",
+            booking_id="BK-LIVE-01",
+            customer_name="Tariq Mahmood",
+            total_amount=500000,
+            paid_amount=100000,
+            remaining_balance=400000,
+            payment_status="Partial",
+            date=date.today() + timedelta(days=5)
+        )
+
+        # 2. Add Live Extra Service (e.g. Entrance pyro)
+        srv_res = self.client.post(f'/api/v1/bookings/{booking.id}/add-extra-service/', {
+            "title": "Grand Cold Fire Entrance Pyro",
+            "price": 35000,
+            "category": "Entrance Pyro & Effects",
+            "notes": "Client requested live entrance fountains at main gate"
+        }, format='json')
+        self.assertEqual(srv_res.status_code, status.HTTP_200_OK)
+        booking.refresh_from_db()
+        self.assertEqual(float(booking.amount), 535000)
+        self.assertEqual(len(booking.extra_services), 1)
+        self.assertEqual(booking.extra_services[0]['title'], "Grand Cold Fire Entrance Pyro")
+
+        inv = InvoiceRecord.objects.get(booking_id="BK-LIVE-01")
+        self.assertEqual(float(inv.total_amount), 535000)
+        self.assertEqual(float(inv.remaining_balance), 435000)
+
+        # 3. Record Damage (Deduct from Invoice)
+        dmg_res = self.client.post(f'/api/v1/bookings/{booking.id}/record-damage/', {
+            "item": "Broken Buffet Glass Tier",
+            "amount": 15000,
+            "deductionType": "invoice",
+            "notes": "Glass tray broken during dinner service"
+        }, format='json')
+        self.assertEqual(dmg_res.status_code, status.HTTP_200_OK)
+        booking.refresh_from_db()
+        self.assertEqual(float(booking.amount), 550000)
+        self.assertEqual(len(booking.damages_record), 1)
+
+        inv.refresh_from_db()
+        self.assertEqual(float(inv.total_amount), 550000)
+        self.assertEqual(float(inv.remaining_balance), 450000)
+
+        # 4. Modify booking (Menu substitution: Beef instead of chicken)
+        update_res = self.client.put(f'/api/v1/bookings/{booking.id}/', {
+            "bookingRef": booking.booking_ref,
+            "customerName": "Tariq Mahmood",
+            "contactRef": "0300-1122334",
+            "eventType": "Baraat Banquet",
+            "hallName": self.hall.name,
+            "date": str(booking.date),
+            "amount": 580000,
+            "advancePayment": 150000,
+            "menuPackage": "Executive Beef & Mutton Feast",
+            "customMenuItems": ["Beef Biryani", "Special Dumba Karahi", "Beef Bihari Kabab", "Kandahari Naan"],
+            "status": "Confirmed"
+        }, format='json')
+        self.assertEqual(update_res.status_code, status.HTTP_200_OK)
+        booking.refresh_from_db()
+        self.assertEqual(booking.menu_package, "Executive Beef & Mutton Feast")
+        self.assertIn("Special Dumba Karahi", booking.custom_menu_items)

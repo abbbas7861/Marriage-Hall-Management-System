@@ -20,6 +20,11 @@ import {
   Layers,
   ArrowRight,
   Flame,
+  AlertTriangle,
+  Plus,
+  Pencil,
+  X,
+  DollarSign,
 } from 'lucide-react';
 import { Booking, OperationalStatus } from '../../types';
 import { bookingsApi } from '../../api/client';
@@ -84,6 +89,86 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Live Service Modal State
+  const [activeLiveServiceBooking, setActiveLiveServiceBooking] = useState<Booking | null>(null);
+  const [serviceTitle, setServiceTitle] = useState('');
+  const [servicePrice, setServicePrice] = useState('');
+  const [serviceCategory, setServiceCategory] = useState('Entrance Pyro & Effects');
+  const [serviceNotes, setServiceNotes] = useState('');
+
+  // Damage Recording Modal State
+  const [activeDamageBooking, setActiveDamageBooking] = useState<Booking | null>(null);
+  const [damageItem, setDamageItem] = useState('');
+  const [damageAmount, setDamageAmount] = useState('');
+  const [damageDeductionType, setDamageDeductionType] = useState<'invoice' | 'deposit'>('invoice');
+  const [damageNotes, setDamageNotes] = useState('');
+
+  const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  const handleSaveLiveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeLiveServiceBooking) return;
+    const priceNum = parseFloat(servicePrice);
+    if (!serviceTitle.trim() || isNaN(priceNum) || priceNum <= 0) {
+      showToast('Please provide valid service title and price.');
+      return;
+    }
+
+    setModalSubmitting(true);
+    try {
+      const res = await bookingsApi.addExtraService(activeLiveServiceBooking.id, {
+        title: serviceTitle.trim(),
+        price: priceNum,
+        category: serviceCategory,
+        notes: serviceNotes.trim(),
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === activeLiveServiceBooking.id ? res.booking : b))
+      );
+      showToast(`Added Live Service "${serviceTitle.trim()}" (PKR ${priceNum.toLocaleString('en-PK')}) to client's bill!`);
+      setActiveLiveServiceBooking(null);
+      setServiceTitle('');
+      setServicePrice('');
+      setServiceNotes('');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to add live extra service.');
+    } finally {
+      setModalSubmitting(false);
+    }
+  };
+
+  const handleSaveDamage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeDamageBooking) return;
+    const amountNum = parseFloat(damageAmount);
+    if (!damageItem.trim() || isNaN(amountNum) || amountNum <= 0) {
+      showToast('Please provide valid damage description and penalty amount.');
+      return;
+    }
+
+    setModalSubmitting(true);
+    try {
+      const res = await bookingsApi.recordDamage(activeDamageBooking.id, {
+        item: damageItem.trim(),
+        amount: amountNum,
+        deductionType: damageDeductionType,
+        notes: damageNotes.trim(),
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === activeDamageBooking.id ? res.booking : b))
+      );
+      showToast(`Damage penalty of PKR ${amountNum.toLocaleString('en-PK')} logged (${damageDeductionType === 'invoice' ? 'Added to Client Invoice' : 'Deducted from Deposit'})!`);
+      setActiveDamageBooking(null);
+      setDamageItem('');
+      setDamageAmount('');
+      setDamageNotes('');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to record damage penalty.');
+    } finally {
+      setModalSubmitting(false);
+    }
   };
 
   const loadEvents = async () => {
@@ -402,7 +487,7 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                       </span>
                     </h2>
                     {isToday && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                      <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold uppercase tracking-wider">
                         LIVE TODAY
                       </span>
                     )}
@@ -451,6 +536,49 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                   </div>
                 </div>
 
+                {/* Live Add-ons & Damages Row if present */}
+                {((booking.extraServices && booking.extraServices.length > 0) ||
+                  (booking.damagesRecord && booking.damagesRecord.length > 0) ||
+                  (booking.customMenuItems && booking.customMenuItems.length > 0)) && (
+                  <div className="py-2.5 px-3 my-2 bg-slate-900/80 rounded-xl border border-slate-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {booking.extraServices && booking.extraServices.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300">
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                          <span className="font-semibold">Live Extras ({booking.extraServices.length}):</span>
+                          <span className="font-mono font-bold text-white">
+                            +PKR {booking.extraServices.reduce((sum, s) => sum + (s.price || 0), 0).toLocaleString('en-PK')}
+                          </span>
+                          <span className="text-[10px] text-slate-400 truncate max-w-xs">
+                            ({booking.extraServices.map((s) => s.title).join(', ')})
+                          </span>
+                        </div>
+                      )}
+
+                      {booking.damagesRecord && booking.damagesRecord.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                          <span className="font-semibold">Damages ({booking.damagesRecord.length}):</span>
+                          <span className="font-mono font-bold text-white">
+                            PKR {booking.damagesRecord.reduce((sum, d) => sum + (d.amount || 0), 0).toLocaleString('en-PK')}
+                          </span>
+                          <span className="text-[10px] text-slate-400 truncate max-w-xs">
+                            ({booking.damagesRecord.map((d) => d.item).join(', ')})
+                          </span>
+                        </div>
+                      )}
+
+                      {booking.customMenuItems && booking.customMenuItems.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-300">
+                          <Utensils className="w-3.5 h-3.5 text-teal-400" />
+                          <span className="font-semibold">Dishes:</span>
+                          <span className="text-white truncate max-w-xs">{booking.customMenuItems.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* 4-Step Interactive Operational Progression */}
                 <div className="pt-4 pb-3">
                   <div className="flex items-center justify-between mb-2">
@@ -492,7 +620,7 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                             </span>
                             {isPast && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
                             {isCurrent && (
-                              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
                             )}
                           </div>
                           <p
@@ -516,7 +644,7 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                       onClick={() => onNavigateToTab?.('manager-kitchen-refills', booking)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
                     >
-                      <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                      <Flame className="w-3.5 h-3.5 text-amber-400" />
                       <span>Kitchen Orders &amp; Refills</span>
                     </button>
 
@@ -555,6 +683,33 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                       <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                       <span>Security Settlement</span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveLiveServiceBooking(booking)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      <span>+ Live Service</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveDamageBooking(booking)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Record Damage</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToTab?.('bookings', booking)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Edit Booking</span>
+                    </button>
                   </div>
 
                   {activeStepIndex < OPERATIONAL_STEPS.length - 1 && (
@@ -576,6 +731,221 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
           })
         )}
       </div>
+
+      {/* Live Extra Service Modal */}
+      {activeLiveServiceBooking && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-700 animate-in fade-in-50">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Add Live Service to Client Bill</h3>
+                  <p className="text-xs text-slate-400">
+                    {activeLiveServiceBooking.customerName} • {activeLiveServiceBooking.bookingRef}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveLiveServiceBooking(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveLiveService} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Extra Service / Special Effect Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={serviceTitle}
+                  onChange={(e) => setServiceTitle(e.target.value)}
+                  placeholder="e.g. Grand Cold Fire Entrance Pyro (4 Fountains)"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Charge Amount (PKR) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={servicePrice}
+                    onChange={(e) => setServicePrice(e.target.value)}
+                    placeholder="35000"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={serviceCategory}
+                    onChange={(e) => setServiceCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                  >
+                    <option value="Entrance Pyro & Effects">Entrance Pyro &amp; Effects</option>
+                    <option value="Stage Lighting & Smoke">Stage Lighting &amp; Smoke</option>
+                    <option value="Catering & Extra Dishes">Catering &amp; Extra Dishes</option>
+                    <option value="Audio / DJ / Sound">Audio / DJ / Sound</option>
+                    <option value="Extra Seating & Lounges">Extra Seating &amp; Lounges</option>
+                    <option value="Climate Control & AC">Climate Control &amp; AC</option>
+                    <option value="Misc Special Request">Misc Special Request</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Notes / Staff Instructions
+                </label>
+                <textarea
+                  rows={2}
+                  value={serviceNotes}
+                  onChange={(e) => setServiceNotes(e.target.value)}
+                  placeholder="e.g. Authorized by client on stage. Pyro crew deployed at 09:30 PM."
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveLiveServiceBooking(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSubmitting}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition-all cursor-pointer shadow-md shadow-purple-600/30 disabled:opacity-50"
+                >
+                  {modalSubmitting ? 'Adding...' : 'Add to Client Bill & Update Invoice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Record Damage & Penalty Modal */}
+      {activeDamageBooking && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-700 animate-in fade-in-50">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Record Event Damage &amp; Penalty</h3>
+                  <p className="text-xs text-slate-400">
+                    {activeDamageBooking.customerName} • {activeDamageBooking.bookingRef}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveDamageBooking(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDamage} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Damaged Property / Item Description *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={damageItem}
+                  onChange={(e) => setDamageItem(e.target.value)}
+                  placeholder="e.g. Broken Glass Table Top / Stained Velvet Bridal Sofa"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Penalty / Repair Cost (PKR) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={damageAmount}
+                    onChange={(e) => setDamageAmount(e.target.value)}
+                    placeholder="15000"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">
+                    Billing Target
+                  </label>
+                  <select
+                    value={damageDeductionType}
+                    onChange={(e) => setDamageDeductionType(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-rose-500 cursor-pointer"
+                  >
+                    <option value="invoice">Add to Final Invoice Bill</option>
+                    <option value="deposit">Deduct from Security Deposit Held</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Incident Report &amp; Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={damageNotes}
+                  onChange={(e) => setDamageNotes(e.target.value)}
+                  placeholder="e.g. Buffet glassware dropped during dessert rush. Client acknowledged."
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveDamageBooking(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSubmitting}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all cursor-pointer shadow-md shadow-rose-600/30 disabled:opacity-50"
+                >
+                  {modalSubmitting ? 'Recording...' : 'Record Penalty & Apply to Bill'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -295,7 +295,7 @@ export const CalendarModule: React.FC<{
               Calendar &amp; Availability
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-teal-300 text-xs font-mono font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
               REAL-TIME OCCUPANCY
             </span>
           </div>

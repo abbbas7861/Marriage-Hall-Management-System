@@ -441,7 +441,7 @@ export const ManagerAssetRequisitions: React.FC<ManagerAssetRequisitionsProps> =
                               : item.status === 'Returned'
                               ? 'bg-teal-500/10 text-teal-300 border-teal-500/20'
                               : item.status === 'Shortage'
-                              ? 'bg-rose-500/10 text-rose-300 border-rose-500/20 animate-pulse'
+                              ? 'bg-rose-500/10 text-rose-300 border-rose-500/20'
                               : item.status === 'Approved'
                               ? 'bg-sky-500/10 text-sky-300 border-sky-500/20'
                               : 'bg-amber-500/10 text-amber-300 border-amber-500/20'

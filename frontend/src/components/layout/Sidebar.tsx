@@ -1,6 +1,6 @@
 import React from "react";
 import { Lock, Sparkles, X } from "lucide-react";
-import { NavModuleId, PortalType } from "../../types";
+import { NavModuleId, PortalType, AuthUser } from "../../types";
 import { PORTAL_CONFIGS, PortalNavItem } from "../../config/portals";
 
 interface SidebarProps {
@@ -11,6 +11,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   onSelectPortal?: (portal: PortalType) => void;
   allowedPortals?: PortalType[];
+  currentUser?: AuthUser | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -21,18 +22,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   onSelectPortal,
   allowedPortals,
+  currentUser,
 }) => {
+  const effectivePortal: PortalType =
+    currentUser?.role === "manager" && activePortal === "admin"
+      ? "manager"
+      : activePortal;
+
   const currentPortalConfig =
-    PORTAL_CONFIGS[activePortal] || PORTAL_CONFIGS.admin;
+    PORTAL_CONFIGS[effectivePortal] ||
+    (currentUser?.role === "manager"
+      ? PORTAL_CONFIGS.manager
+      : PORTAL_CONFIGS.admin);
   const PortalIcon = currentPortalConfig.icon;
-  const portalKeys: PortalType[] = [
-    "admin",
-    "manager",
-    "kitchen",
-    "waiter",
-    "vendors",
-    "finance",
-  ];
+  const portalKeys: PortalType[] = (
+    currentUser?.role === "manager"
+      ? ["manager", "kitchen", "waiter", "vendors", "finance"]
+      : ["admin", "manager", "kitchen", "waiter", "vendors", "finance"]
+  ) as PortalType[];
 
   const renderNavGroup = (items: PortalNavItem[], groupTitle?: string) => (
     <div className="flex flex-col gap-1 mb-4">
@@ -130,12 +137,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <PortalIcon className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm text-white tracking-tight truncate font-['Plus_Jakarta_Sans']">
-                    {currentPortalConfig.shortName}
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                </div>
+                <span className="font-bold text-sm text-white tracking-tight truncate font-['Plus_Jakarta_Sans']">
+                  {currentPortalConfig.shortName}
+                </span>
                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest truncate">
                   {currentPortalConfig.name}
                 </span>

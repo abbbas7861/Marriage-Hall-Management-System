@@ -17,9 +17,9 @@ class HallViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role == 'admin'):
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
             return Response(
-                {'error': 'Only Administrators are authorized to delete venue halls.'},
+                {'error': 'Administrative or Manager permissions required to delete venue halls.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().destroy(request, *args, **kwargs)

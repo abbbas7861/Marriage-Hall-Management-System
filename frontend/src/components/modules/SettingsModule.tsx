@@ -463,7 +463,7 @@ export const SettingsModule: React.FC = () => {
                         API Gateway Status
                       </span>
                       <div className="text-base font-bold text-emerald-400 mt-1 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
                         <span>Connected &amp; Online</span>
                       </div>
                       <span className="text-[11px] text-slate-400 mt-1 block">

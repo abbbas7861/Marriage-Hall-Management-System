@@ -25,9 +25,9 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role == 'admin'):
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
             return Response(
-                {'error': 'Only Administrators are authorized to void or delete invoice records.'},
+                {'error': 'Administrative or Manager permissions required to void or delete invoice records.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         inv = self.get_object()
@@ -107,9 +107,9 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role == 'admin'):
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
             return Response(
-                {'error': 'Only Administrators are authorized to delete payment transactions.'},
+                {'error': 'Administrative or Manager permissions required to delete payment transactions.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         txn = self.get_object()
@@ -140,9 +140,9 @@ class ExpenseRecordViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role == 'admin'):
+        if not (request.user.is_superuser or role in ['admin', 'manager']):
             return Response(
-                {'error': 'Only Administrators are authorized to delete expense vouchers.'},
+                {'error': 'Administrative or Manager permissions required to delete expense vouchers.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().destroy(request, *args, **kwargs)

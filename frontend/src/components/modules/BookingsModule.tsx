@@ -35,20 +35,27 @@ interface BookingsModuleProps {
     endTime?: string;
   } | null;
   initialMode?: 'table' | 'create';
+  initialBooking?: Booking | null;
 }
 
 export const BookingsModule: React.FC<BookingsModuleProps> = ({
   initialCreateData,
   initialMode = 'table',
+  initialBooking,
 }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'table' | 'create'>(initialMode);
+  const [viewMode, setViewMode] = useState<'table' | 'create'>(initialBooking ? 'create' : initialMode);
   const [hallsList, setHallsList] = useState<Array<{ id?: string; name: string }>>(CANONICAL_HALLS);
 
   useEffect(() => {
-    setViewMode(initialMode);
-  }, [initialMode, initialCreateData]);
+    if (initialBooking) {
+      setEditingBooking(initialBooking);
+      setViewMode('create');
+    } else {
+      setViewMode(initialMode);
+    }
+  }, [initialMode, initialCreateData, initialBooking]);
 
   useEffect(() => {
     let isMounted = true;
@@ -99,7 +106,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
 
   // Details Modal & Edit State
   const [viewBooking, setViewBooking] = useState<Booking | null>(null);
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(initialBooking || null);
   const [contractBooking, setContractBooking] = useState<Booking | null>(null);
 
   const handleOpenEdit = (booking: Booking) => {
@@ -257,7 +264,7 @@ export const BookingsModule: React.FC<BookingsModuleProps> = ({
               Bookings &amp; Reservations
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-teal-300 text-xs font-mono font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
               MODULE ACTIVE
             </span>
           </div>

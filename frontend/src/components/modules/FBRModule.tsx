@@ -132,7 +132,7 @@ export const FBRModule: React.FC = () => {
           >
             <span
               className={`w-2 h-2 rounded-full ${
-                isFbrEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                isFbrEnabled ? 'bg-emerald-400' : 'bg-slate-500'
               }`}
             />
             <span>{isFbrEnabled ? 'FBR Invoicing Active' : 'FBR Invoicing Disabled'}</span>

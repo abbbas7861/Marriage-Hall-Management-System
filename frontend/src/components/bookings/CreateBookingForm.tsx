@@ -15,10 +15,13 @@ import {
   Calculator,
   ShieldCheck,
   Check,
+  Trash2,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
-import { Booking } from '../../types';
+import { Booking, MenuPackage } from '../../types';
 import { formatTo12Hour } from '../../utils/timeFormat';
-import { hallsApi, bookingsApi } from '../../api/client';
+import { hallsApi, bookingsApi, menuPackagesApi } from '../../api/client';
 import { CANONICAL_HALLS } from '../../constants/halls';
 
 interface CreateBookingFormProps {
@@ -42,8 +45,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
 }) => {
   const [fullName, setFullName] = useState(initialBooking?.customerName || '');
   const [phone, setPhone] = useState(initialBooking?.contactRef || '');
-  const [cnic, setCnic] = useState('');
-  const [address, setAddress] = useState('');
+  const [cnic, setCnic] = useState(initialBooking?.cnic || '');
+  const [address, setAddress] = useState(initialBooking?.address || '');
 
   const [eventType, setEventType] = useState(initialBooking?.eventType || '');
   const [hallVenue, setHallVenue] = useState(initialBooking?.hallName || initialHall || '');
@@ -51,20 +54,36 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
   const [expectedGuests, setExpectedGuests] = useState(
     initialBooking?.guestCount ? String(initialBooking.guestCount) : ''
   );
-  const [seatingArrangement, setSeatingArrangement] = useState('');
+  const [seatingArrangement, setSeatingArrangement] = useState(initialBooking?.seatingArrangement || '');
 
-  const [menuPackage, setMenuPackage] = useState('');
-  const [specialInstructions, setSpecialInstructions] = useState('');
+  // Menu Packages & Customization State
+  const [menuPackage, setMenuPackage] = useState(initialBooking?.menuPackage || '');
+  const [availablePackages, setAvailablePackages] = useState<MenuPackage[]>([]);
+  const [selectedDishes, setSelectedDishes] = useState<string[]>(initialBooking?.customMenuItems || []);
+  const [newDishInput, setNewDishInput] = useState('');
+  const [customMenuNotes, setCustomMenuNotes] = useState('');
+
+  // Live Extra Services / Add-ons State
+  const [extraServicesList, setExtraServicesList] = useState<Array<{ title: string; price: number; category?: string; notes?: string }>>(
+    (initialBooking?.extraServices as any[]) || []
+  );
+  const [newServiceTitle, setNewServiceTitle] = useState('');
+  const [newServicePrice, setNewServicePrice] = useState('');
+  const [newServiceCategory, setNewServiceCategory] = useState('Entrance Pyro / Effects');
+
+  const [specialInstructions, setSpecialInstructions] = useState(initialBooking?.specialInstructions || '');
 
   const [startTime, setStartTime] = useState(initialStartTime || '');
   const [endTime, setEndTime] = useState(initialEndTime || '');
-  const [extraHours, setExtraHours] = useState('');
-  const [ratePerHour, setRatePerHour] = useState('');
+  const [extraHours, setExtraHours] = useState(initialBooking?.extraHours ? String(initialBooking.extraHours) : '');
+  const [ratePerHour, setRatePerHour] = useState(initialBooking?.ratePerHour ? String(initialBooking.ratePerHour) : '');
 
   const [totalBookingAmount, setTotalBookingAmount] = useState(
     initialBooking?.amount ? String(initialBooking.amount) : ''
   );
-  const [advancePayment, setAdvancePayment] = useState('');
+  const [advancePayment, setAdvancePayment] = useState(
+    initialBooking?.advancePayment ? String(initialBooking.advancePayment) : ''
+  );
 
   const [validationError, setValidationError] = useState('');
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -92,10 +111,75 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
     }).catch(() => {
       // Keep CANONICAL_HALLS fallback
     });
+
+    menuPackagesApi.list().then((data) => {
+      if (!isMounted) return;
+      if (Array.isArray(data)) {
+        setAvailablePackages(data);
+      }
+    }).catch(() => {});
+
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const handleSelectPackage = (pkgName: string) => {
+    setMenuPackage(pkgName);
+    const found = availablePackages.find((p) => p.name === pkgName);
+    if (found && Array.isArray(found.includedItems) && found.includedItems.length > 0) {
+      setSelectedDishes([...found.includedItems]);
+    }
+  };
+
+  const handleAddDish = () => {
+    const trimmed = newDishInput.trim();
+    if (!trimmed) return;
+    if (!selectedDishes.includes(trimmed)) {
+      setSelectedDishes((prev) => [...prev, trimmed]);
+    }
+    setNewDishInput('');
+  };
+
+  const handleRemoveDish = (index: number) => {
+    setSelectedDishes((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleAddService = () => {
+    const title = newServiceTitle.trim();
+    const priceNum = parseFloat(newServicePrice);
+    if (!title || isNaN(priceNum) || priceNum <= 0) {
+      showToast('Please enter a valid extra service title and price.', 'error');
+      return;
+    }
+    setExtraServicesList((prev) => [
+      ...prev,
+      {
+        title,
+        price: priceNum,
+        category: newServiceCategory,
+      },
+    ]);
+    // Also automatically add to total booking amount
+    setTotalBookingAmount((prev) => {
+      const cur = parseFloat(prev) || 0;
+      return String(cur + priceNum);
+    });
+    setNewServiceTitle('');
+    setNewServicePrice('');
+    showToast(`Extra Service "${title}" added (+Rs. ${priceNum.toLocaleString('en-PK')}).`, 'success');
+  };
+
+  const handleRemoveService = (index: number) => {
+    const s = extraServicesList[index];
+    if (s) {
+      setTotalBookingAmount((prev) => {
+        const cur = parseFloat(prev) || 0;
+        return String(Math.max(0, cur - (s.price || 0)));
+      });
+    }
+    setExtraServicesList((prev) => prev.filter((_, idx) => idx !== index));
+  };
 
   // Real-time conflict validation against backend
   useEffect(() => {
@@ -223,11 +307,17 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
 
     const formatted12Slot = startTime && endTime ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}` : (initialBooking?.slot || 'Scheduled Time');
 
+    const combinedNotes = customMenuNotes
+      ? `${specialInstructions}${specialInstructions ? '\n' : ''}[Custom Menu / Dietary Notes]: ${customMenuNotes}`.trim()
+      : specialInstructions;
+
     const newBooking: Booking = {
       id: initialBooking?.id || `bk-${Date.now()}`,
       bookingRef: initialBooking?.bookingRef || `BK-${Math.floor(10000 + Math.random() * 90000)}`,
       customerName: fullName.trim(),
-      contactRef: phone ? phone.trim() : (initialBooking?.contactRef || `CNIC-${cnic ? cnic.slice(-4) : '0000'}`),
+      contactRef: phone ? phone.trim() : (initialBooking?.contactRef || ''),
+      cnic: cnic.trim(),
+      address: address.trim(),
       eventType: eventType || 'Other Event',
       hallName: hallVenue,
       date: eventDate,
@@ -240,8 +330,20 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           : parseFloat(advancePayment) > 0
           ? 'Partial'
           : (initialBooking?.paymentStatus || 'Unpaid'),
-      amount: totalBookingAmount ? parseFloat(totalBookingAmount) : undefined,
+      amount: totalBookingAmount ? parseFloat(totalBookingAmount) : 0,
+      advancePayment: advancePayment ? parseFloat(advancePayment) : 0,
       guestCount: expectedGuests ? parseInt(expectedGuests, 10) : undefined,
+      seatingArrangement: seatingArrangement,
+      menuPackage: menuPackage,
+      customMenuItems: selectedDishes,
+      extraServices: extraServicesList,
+      damagesRecord: initialBooking?.damagesRecord || [],
+      specialInstructions: combinedNotes,
+      extraHours: extraHours ? parseFloat(extraHours) : 0,
+      ratePerHour: ratePerHour ? parseFloat(ratePerHour) : 0,
+      securityDeposit: initialBooking?.securityDeposit || 50000,
+      operationalStatus: initialBooking?.operationalStatus || 'Setup in Progress',
+      assignedManager: initialBooking?.assignedManager || 'Manager',
     };
 
     onSave(newBooking);
@@ -457,7 +559,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               <div className="md:col-span-2 p-4 rounded-xl bg-rose-950/40 border-2 border-rose-500 text-rose-200 shadow-md animate-in fade-in slide-in-from-top-1 duration-200">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                    <AlertTriangle className="w-4 h-4 animate-pulse" />
+                    <AlertTriangle className="w-4 h-4" />
                   </div>
                   <div className="flex-1 text-xs">
                     <div className="flex items-center gap-2 mb-1">
@@ -532,40 +634,260 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           <div className="grid grid-cols-1 gap-4">
             {/* Menu Package Selection */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Menu Package Selection
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-300">
+                  Menu Package Tier
+                </label>
+                {menuPackage && (
+                  <span className="text-[10px] font-mono text-teal-400 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                    Live Menu Connected
+                  </span>
+                )}
+              </div>
               <select
                 value={menuPackage}
-                onChange={(e) => setMenuPackage(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
+                onChange={(e) => handleSelectPackage(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-teal-500 transition-all cursor-pointer font-semibold"
               >
-                <option value="">[Select Menu Package]</option>
-                <option value="Package A - Standard Royal Buffet">
-                  Package A - Standard Royal Buffet (3 Main, 2 Rice, Desserts)
-                </option>
-                <option value="Package B - Imperial Banquet Tier">
-                  Package B - Imperial Banquet Tier (5 Main, Live BBQ, Kashmiri Chai)
-                </option>
-                <option value="Package C - Grand Executive Feast">
-                  Package C - Grand Executive Feast (Full 7-Course Live Stalls)
-                </option>
+                <option value="">[Select Menu Package from Culinary Registry]</option>
+                {availablePackages.map((pkg) => (
+                  <option key={pkg.id || pkg.name} value={pkg.name}>
+                    {pkg.name} — Rs. {Number(pkg.pricePerHead || 0).toLocaleString('en-PK')}/head ({pkg.tier || 'Standard'})
+                  </option>
+                ))}
+                {availablePackages.length === 0 && (
+                  <>
+                    <option value="Royal Shadi Buffet (Beef & Chicken)">
+                      Royal Shadi Buffet (Beef &amp; Chicken) — Rs. 2,450/head (Royal)
+                    </option>
+                    <option value="Executive Mutton & Chicken Banquet">
+                      Executive Mutton &amp; Chicken Banquet — Rs. 2,850/head (Executive)
+                    </option>
+                    <option value="Traditional Economy Feast">
+                      Traditional Economy Feast — Rs. 1,850/head (Budget)
+                    </option>
+                  </>
+                )}
                 <option value="Custom Catering / Hall Only">Custom Catering / Hall Only</option>
               </select>
             </div>
 
-            {/* Special Instructions */}
+            {/* Included & Substituted Dishes Area */}
+            <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-700/80">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Utensils className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Menu Dishes &amp; Custom Substitutions (e.g. Swap Chicken for Beef)</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {selectedDishes.length} Items Selected
+                </span>
+              </div>
+
+              {/* Dishes Chips */}
+              <div className="flex flex-wrap gap-1.5 mb-3 min-h-[36px] p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+                {selectedDishes.length === 0 ? (
+                  <span className="text-slate-500 text-xs italic py-1">
+                    Select a menu package above or type dishes below (e.g. Beef Biryani, Mutton Karahi, Roghnai Naan)...
+                  </span>
+                ) : (
+                  selectedDishes.map((dish, idx) => (
+                    <span
+                      key={`${dish}-${idx}`}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-500/15 border border-teal-500/30 text-teal-200 text-xs font-medium"
+                    >
+                      <span>{dish}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDish(idx)}
+                        className="p-0.5 rounded hover:bg-rose-500/20 hover:text-rose-300 text-teal-400 cursor-pointer"
+                        title="Remove or swap this dish"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+
+              {/* Add / Substitute Dish Input */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newDishInput}
+                  onChange={(e) => setNewDishInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddDish();
+                    }
+                  }}
+                  placeholder="Type dish to add/substitute (e.g. Special Beef Biryani, Dumba Karahi) and click Add..."
+                  className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddDish}
+                  className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+                >
+                  Add Dish
+                </button>
+              </div>
+
+              {/* Quick Suggestions for fast substitution */}
+              <div className="flex items-center gap-1.5 flex-wrap mt-2.5 pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                <span className="font-semibold text-slate-400">Quick Swap:</span>
+                {['Special Beef Biryani', 'Mutton Karahi', 'Beef Seekh Kabab', 'Chicken Tikka', 'Roghnai Naan', 'Shahi Kheer'].map((quick) => (
+                  <button
+                    key={quick}
+                    type="button"
+                    onClick={() => {
+                      if (!selectedDishes.includes(quick)) {
+                        setSelectedDishes((prev) => [...prev, quick]);
+                      }
+                    }}
+                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer text-[10px]"
+                  >
+                    + {quick}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Menu & Dietary Accommodation Area */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Special Instructions
+                Custom Menu &amp; Chef Accommodations Area
+              </label>
+              <textarea
+                rows={2}
+                value={customMenuNotes}
+                onChange={(e) => setCustomMenuNotes(e.target.value)}
+                placeholder="Enter client's custom menu requests (e.g. 50 plates beef biryani for VIP table, low spice mutton karahi, sugar-free firni)..."
+                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition-all resize-none"
+              />
+            </div>
+
+            {/* General Special Instructions */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                General Special Instructions &amp; Hall Setup Notes
               </label>
               <textarea
                 rows={2}
                 value={specialInstructions}
                 onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="[Enter Special Instructions (e.g. food allergies, spice levels, sugar-free desserts)]"
+                placeholder="Enter hall setup requests, stage backdrop preferences, or special arrangements..."
                 className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition-all resize-none"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Section: Live Extra Services & Entrance Effects (Bill Additions) */}
+        <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl p-5 sm:p-6">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-700/60 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white font-['Plus_Jakarta_Sans']">
+                Live Extra Services &amp; Special Effects
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Entrance pyrotechnics, cold fire, heavy smoke, extra lighting, and add-on services billed to client.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {/* Added Services List */}
+            {extraServicesList.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {extraServicesList.map((srv, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700 text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-bold">
+                        {srv.category || 'Service'}
+                      </span>
+                      <span className="font-semibold text-white">{srv.title}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-teal-300">
+                        + PKR {Number(srv.price || 0).toLocaleString('en-PK')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveService(idx)}
+                        className="p-1 rounded text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                        title="Remove service"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Service Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+              <div className="sm:col-span-2">
+                <input
+                  type="text"
+                  value={newServiceTitle}
+                  onChange={(e) => setNewServiceTitle(e.target.value)}
+                  placeholder="e.g. Grand Cold Fire Entrance Effect"
+                  className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  value={newServicePrice}
+                  onChange={(e) => setNewServicePrice(e.target.value)}
+                  placeholder="Price (PKR)"
+                  className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 font-mono"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddService}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add to Bill</span>
+              </button>
+            </div>
+
+            {/* Quick Service Suggestions */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[10px] text-slate-400">
+              <span className="font-semibold text-slate-400">Quick Add:</span>
+              {[
+                { title: 'Cold Fire Entrance Pyro (4 Fountains)', price: 25000, cat: 'Entrance Pyro' },
+                { title: 'Heavy Fog Stage Cloud Machine', price: 15000, cat: 'Stage Effects' },
+                { title: 'Rose Petal Air Cannon Shot', price: 10000, cat: 'Entrance Effects' },
+                { title: 'Extra AC Chiller Duct Units', price: 30000, cat: 'Climate' },
+              ].map((q) => (
+                <button
+                  key={q.title}
+                  type="button"
+                  onClick={() => {
+                    setNewServiceTitle(q.title);
+                    setNewServicePrice(String(q.price));
+                    setNewServiceCategory(q.cat);
+                  }}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer"
+                >
+                  + {q.title} (Rs. {q.price.toLocaleString('en-PK')})
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -638,7 +960,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
             {/* Cleaning Turnover Notice */}
             {conflictError ? (
               <div className="md:col-span-2 p-3.5 rounded-xl bg-rose-950/40 border-2 border-rose-500 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 animate-pulse" />
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-rose-200 font-bold block mb-0.5">Time Collision / Turnover Conflict:</strong>
                   {conflictError}

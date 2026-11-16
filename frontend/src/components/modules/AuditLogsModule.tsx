@@ -422,7 +422,7 @@ export const AuditLogsModule: React.FC = () => {
         {/* Audit Footer / Governance Note */}
         <div className="p-3.5 border-t border-slate-700/60 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-teal-400" />
             <span>Cryptographic Log Hash: SHA-256 Validated</span>
           </div>
           <span className="font-mono text-[11px] text-slate-400">
