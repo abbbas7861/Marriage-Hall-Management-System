@@ -1,4 +1,3 @@
-
 """
 Django settings for config project.
 """
@@ -18,7 +17,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("DJANGO_SECRET_KEY environment variable is required")
 
-DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() #in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
@@ -79,20 +78,45 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database - Neon PostgreSQL
+# Database configuration
 DATABASE_URL = os.getenv('NEON_DATABASE_URL')
 
-if not DATABASE_URL:
-    raise ValueError("NEON_DATABASE_URL environment variable is required")
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=0,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=0,
-        conn_health_checks=True,
-        ssl_require=True,
-    )
-}
+    # Check actual Neon connectivity
+    from django.db import connections
+    from django.db.utils import OperationalError
+
+    try:
+        connections['default'].ensure_connection()
+        connections['default'].close()
+        print("Database: Connected to Neon PostgreSQL")
+
+    except OperationalError:
+        print("Database: Neon unavailable, switching to SQLite")
+
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+
+else:
+    print("Database: No Neon URL found, using SQLite")
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password Validation
 AUTH_PASSWORD_VALIDATORS = [
