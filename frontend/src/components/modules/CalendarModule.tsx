@@ -487,9 +487,9 @@ export const CalendarModule: React.FC<{
                       blocks.map((b) => (
                         <div
                           key={b.id}
-                          className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 shadow-sm truncate"
+                          className="px-2 py-0.5 rounded-md bg-amber-100 border border-amber-300 !text-amber-900 text-[10px] font-semibold flex items-center gap-1 shadow-sm truncate"
                         >
-                          <Lock className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                          <Lock className="w-2.5 h-2.5 !text-amber-700 shrink-0" />
                           <span className="truncate">[{b.hallName}]</span>
                         </div>
                       ))
@@ -499,14 +499,14 @@ export const CalendarModule: React.FC<{
                           key={b.id}
                           className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 truncate border ${
                             b.slot?.toLowerCase().includes('morning')
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-teal-500/20 text-teal-300 border-teal-500/30'
+                              ? 'bg-amber-100 !text-amber-900 border-amber-300'
+                              : 'bg-teal-100 !text-teal-900 border-teal-300'
                           }`}
                         >
                           {b.slot?.toLowerCase().includes('morning') ? (
-                            <Sun className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                            <Sun className="w-2.5 h-2.5 !text-amber-700 shrink-0" />
                           ) : (
-                            <Moon className="w-2.5 h-2.5 text-teal-400 shrink-0" />
+                            <Moon className="w-2.5 h-2.5 !text-teal-700 shrink-0" />
                           )}
                           <span className="truncate">{b.customerName}</span>
                         </div>
@@ -576,14 +576,14 @@ export const CalendarModule: React.FC<{
                     blocks.map((b) => (
                       <div
                         key={b.id}
-                        className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-medium flex flex-col gap-1"
+                        className="p-2 rounded-lg bg-amber-100 border border-amber-300 !text-amber-900 text-xs font-medium flex flex-col gap-1"
                       >
-                        <div className="flex items-center gap-1 font-bold text-[11px] text-amber-400">
+                        <div className="flex items-center gap-1 font-bold text-[11px] !text-amber-700">
                           <Lock className="w-3 h-3" />
                           <span>BLOCKED</span>
                         </div>
                         <span className="text-[10px]">{b.hallName}</span>
-                        <span className="text-[10px] text-amber-400 italic">[{b.reason}]</span>
+                        <span className="text-[10px] !text-amber-700 italic">[{b.reason}]</span>
                       </div>
                     ))
                   ) : (

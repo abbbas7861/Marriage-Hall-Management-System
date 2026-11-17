@@ -672,35 +672,43 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               </select>
             </div>
 
-            {/* Included & Substituted Dishes Area */}
-            <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-700/80">
+            {/* Included & Substituted Dishes Area - FIXED INLINE STYLES */}
+            <div 
+              className="p-3.5 rounded-xl border" 
+              style={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
+            >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Utensils className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-bold flex items-center gap-1.5" style={{ color: '#ffffff' }}>
+                  <Utensils className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
                   <span>Menu Dishes &amp; Custom Substitutions (e.g. Swap Chicken for Beef)</span>
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[10px] font-mono" style={{ color: '#94a3b8' }}>
                   {selectedDishes.length} Items Selected
                 </span>
               </div>
 
-              {/* Dishes Chips */}
-              <div className="flex flex-wrap gap-1.5 mb-3 min-h-[36px] p-2 bg-slate-950/60 rounded-lg border border-slate-800">
+              {/* Dishes Chips - FIXED INLINE STYLES */}
+              <div 
+                className="flex flex-wrap gap-1.5 mb-3 min-h-[36px] p-2 rounded-lg border" 
+                style={{ backgroundColor: '#020617', borderColor: '#1e293b' }}
+              >
                 {selectedDishes.length === 0 ? (
-                  <span className="text-slate-500 text-xs italic py-1">
+                  <span className="text-xs italic py-1" style={{ color: '#94a3b8' }}>
                     Select a menu package above or type dishes below (e.g. Beef Biryani, Mutton Karahi, Roghnai Naan)...
                   </span>
                 ) : (
                   selectedDishes.map((dish, idx) => (
                     <span
                       key={`${dish}-${idx}`}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-500/15 border border-teal-500/30 text-teal-200 text-xs font-medium"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+                      style={{ backgroundColor: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#99f6e4' }}
                     >
                       <span>{dish}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveDish(idx)}
-                        className="p-0.5 rounded hover:bg-rose-500/20 hover:text-rose-300 text-teal-400 cursor-pointer"
+                        className="p-0.5 rounded hover:bg-rose-500/20 hover:text-rose-300 transition-colors cursor-pointer"
+                        style={{ color: '#2dd4bf' }}
                         title="Remove or swap this dish"
                       >
                         <X className="w-3 h-3" />
@@ -723,7 +731,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                     }
                   }}
                   placeholder="Type dish to add/substitute (e.g. Special Beef Biryani, Dumba Karahi) and click Add..."
-                  className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500"
+                  className="flex-1 px-3 py-1.5 border rounded-lg text-xs focus:outline-none focus:border-teal-500 transition-colors"
+                  style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#ffffff' }}
                 />
                 <button
                   type="button"
@@ -735,8 +744,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               </div>
 
               {/* Quick Suggestions for fast substitution */}
-              <div className="flex items-center gap-1.5 flex-wrap mt-2.5 pt-2 border-t border-slate-800 text-[11px] text-slate-400">
-                <span className="font-semibold text-slate-400">Quick Swap:</span>
+              <div className="flex items-center gap-1.5 flex-wrap mt-2.5 pt-2 border-t text-[11px]" style={{ borderColor: '#1e293b', color: '#94a3b8' }}>
+                <span className="font-semibold" style={{ color: '#cbd5e1' }}>Quick Swap:</span>
                 {['Special Beef Biryani', 'Mutton Karahi', 'Beef Seekh Kabab', 'Chicken Tikka', 'Roghnai Naan', 'Shahi Kheer'].map((quick) => (
                   <button
                     key={quick}
@@ -746,7 +755,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                         setSelectedDishes((prev) => [...prev, quick]);
                       }
                     }}
-                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 cursor-pointer text-[10px]"
+                    className="px-2 py-0.5 rounded border cursor-pointer text-[10px]"
+                    style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#cbd5e1' }}
                   >
                     + {quick}
                   </button>

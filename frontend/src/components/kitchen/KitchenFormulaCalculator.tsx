@@ -34,7 +34,7 @@ interface FormulaLineItem {
   name: string;
   category: string;
   pantryItemId?: string;
-  ratioPerHeadGrams: number; // in grams or ml or units per guest
+  ratioPerHeadGrams: number; 
   unit: string;
   displayUnit: string;
   unitPrice: number;
@@ -47,7 +47,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Fresh Broiler Chicken (Curry Cut, Skinless)',
     category: 'Meat & Poultry',
-    ratioPerHeadGrams: 250, // 250g per head
+    ratioPerHeadGrams: 250, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 580,
@@ -57,7 +57,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Premium Desi Mutton (Mix Boti/Chops)',
     category: 'Meat & Poultry',
-    ratioPerHeadGrams: 220, // 220g per head
+    ratioPerHeadGrams: 220, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 2200,
@@ -67,7 +67,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Super Kernel Basmati Rice (Aged 2 Years)',
     category: 'Grains & Rice',
-    ratioPerHeadGrams: 160, // 160g per head
+    ratioPerHeadGrams: 160, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 390,
@@ -77,7 +77,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Pure Desi Ghee (Tin 16 kg)',
     category: 'Oils & Ghee',
-    ratioPerHeadGrams: 25, // 25g per head
+    ratioPerHeadGrams: 25, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 1530,
@@ -87,7 +87,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Canola Premium Cooking Oil',
     category: 'Oils & Ghee',
-    ratioPerHeadGrams: 30, // 30ml per head
+    ratioPerHeadGrams: 30, 
     unit: 'Liters',
     displayUnit: 'ml/head',
     unitPrice: 490,
@@ -97,7 +97,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Fine White Wheat Flour (Special Maida Grade 1)',
     category: 'Bakery & Dry Goods',
-    ratioPerHeadGrams: 120, // 120g per head (~1.2 naans)
+    ratioPerHeadGrams: 120, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 136,
@@ -107,7 +107,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Fresh Full Cream Dairy Buffalo Milk',
     category: 'Dairy',
-    ratioPerHeadGrams: 80, // 80ml per head (Kheer/Tea)
+    ratioPerHeadGrams: 80, 
     unit: 'Liters',
     displayUnit: 'ml/head',
     unitPrice: 210,
@@ -117,7 +117,7 @@ const DEFAULT_FORMULA_PRESETS: Omit<FormulaLineItem, 'id' | 'currentStock'>[] = 
   {
     name: 'Whole Spices Mix (Shahi Garam Masala & Cardamom)',
     category: 'Spices & Seasonings',
-    ratioPerHeadGrams: 12, // 12g per head
+    ratioPerHeadGrams: 12, 
     unit: 'kg',
     displayUnit: 'g/head',
     unitPrice: 3200,
@@ -130,7 +130,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBookingRef, setSelectedBookingRef] = useState<string>('');
   const [guestCount, setGuestCount] = useState<number>(500);
-  const [wastageBufferPct, setWastageBufferPct] = useState<number>(8); // 8% default contingency
+  const [wastageBufferPct, setWastageBufferPct] = useState<number>(8); 
   const [formulaLines, setFormulaLines] = useState<FormulaLineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -226,7 +226,6 @@ export const KitchenFormulaCalculator: React.FC = () => {
     const bufferMultiplier = 1 + (Number(wastageBufferPct) || 0) / 100;
 
     return formulaLines.map((line) => {
-      // Net kg or liters: (guestCount * ratioGrams) / 1000
       const netQty = (guestCount * line.ratioPerHeadGrams) / 1000;
       const grossQty = Math.round(netQty * bufferMultiplier * 10) / 10;
       const deficitQty = Math.max(0, Math.round((grossQty - line.currentStock) * 10) / 10);
@@ -307,22 +306,23 @@ export const KitchenFormulaCalculator: React.FC = () => {
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200" />
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up" style={{ backgroundColor: '#059669', color: '#ffffff', border: '1px solid #34d399' }}>
+          <Sparkles className="w-5 h-5" style={{ color: '#a7f3d0' }} />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Banner */}
-      <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+      {/* Top Banner - FORCED DARK */}
+      <div className="rounded-2xl p-6 relative overflow-hidden" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-teal-500/10 via-amber-500/10 to-transparent rounded-full blur-3xl -z-10" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-                        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            {/* REPLACED H1 WITH DIV + INLINE STYLES TO PREVENT HIDING */}
+            <div style={{ color: '#ffffff', fontSize: '28px', fontWeight: '900', marginBottom: '4px', lineHeight: '1.2' }}>
               Raw Ingredient Formula & Grocery Requisition Engine
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
+            </div>
+            <p className="text-xs sm:text-sm mt-1 max-w-2xl" style={{ color: '#cbd5e1' }}>
               Automatic banquet calculator computing exact raw weights (Rice, Meat, Cooking Oil, Dairy, Spices) based on Guest Count and per-head ratios with 1-click supplier purchase order generation.
             </p>
           </div>
@@ -330,15 +330,17 @@ export const KitchenFormulaCalculator: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition"
+              style={{ backgroundColor: '#1e293b', color: '#e2e8f0', border: '1px solid #334155' }}
             >
-              <Printer className="w-4 h-4 text-sky-400" />
+              <Printer className="w-4 h-4" style={{ color: '#38bdf8' }} />
               <span>Print Kitchen Prep Sheet</span>
             </button>
 
             <button
               onClick={() => setIsConfirmModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+              style={{ background: 'linear-gradient(to right, #10b981, #0d9488)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.39)' }}
             >
               <ShoppingCart className="w-4 h-4" />
               <span>Generate Grocery Requisition</span>
@@ -347,17 +349,18 @@ export const KitchenFormulaCalculator: React.FC = () => {
         </div>
 
         {/* Dynamic Controls Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6" style={{ borderTop: '1px solid #1e293b' }}>
           {/* 1. Linked Event Selector */}
-          <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <label className="block text-xs font-semibold mb-1.5 flex items-center justify-between" style={{ color: '#cbd5e1' }}>
               <span>Select Active Banquet Event:</span>
-              <Building2 className="w-3.5 h-3.5 text-sky-400" />
+              <Building2 className="w-3.5 h-3.5" style={{ color: '#38bdf8' }} />
             </label>
             <select
               value={selectedBookingRef}
               onChange={(e) => handleSelectBooking(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg px-3 py-2 text-xs font-medium focus:outline-none"
+              style={{ backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #334155' }}
             >
               <option value="">Custom Manual Estimate (No Booking)</option>
               {bookings.map((b) => (
@@ -369,10 +372,10 @@ export const KitchenFormulaCalculator: React.FC = () => {
           </div>
 
           {/* 2. Guest Count Stepper */}
-          <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <label className="block text-xs font-semibold mb-1.5 flex items-center justify-between" style={{ color: '#cbd5e1' }}>
               <span>Guest Headcount:</span>
-              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <Users className="w-3.5 h-3.5" style={{ color: '#34d399' }} />
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -381,7 +384,8 @@ export const KitchenFormulaCalculator: React.FC = () => {
                 step="25"
                 value={guestCount}
                 onChange={(e) => setGuestCount(Math.max(10, Number(e.target.value) || 0))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none"
+                style={{ backgroundColor: '#0f172a', color: '#ffffff', border: '1px solid #334155' }}
               />
               <div className="flex gap-1 shrink-0">
                 {[300, 500, 750, 1000].map((count) => (
@@ -389,11 +393,12 @@ export const KitchenFormulaCalculator: React.FC = () => {
                     key={count}
                     type="button"
                     onClick={() => setGuestCount(count)}
-                    className={`px-2 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    className="px-2 py-1.5 rounded-lg text-xs font-semibold border transition"
+                    style={
                       guestCount === count
-                        ? 'bg-emerald-500 text-white border-emerald-400'
-                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-                    }`}
+                        ? { backgroundColor: '#10b981', color: '#ffffff', borderColor: '#34d399' }
+                        : { backgroundColor: '#0f172a', color: '#cbd5e1', borderColor: '#334155' }
+                    }
                   >
                     {count}
                   </button>
@@ -403,10 +408,10 @@ export const KitchenFormulaCalculator: React.FC = () => {
           </div>
 
           {/* 3. Wastage Buffer Contingency */}
-          <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+          <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <label className="block text-xs font-semibold mb-1.5 flex items-center justify-between" style={{ color: '#cbd5e1' }}>
               <span>Contingency / Wastage Buffer:</span>
-              <span className="font-bold text-amber-400 font-mono">+{wastageBufferPct}%</span>
+              <span className="font-bold font-mono" style={{ color: '#fbbf24' }}>+{wastageBufferPct}%</span>
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -418,77 +423,79 @@ export const KitchenFormulaCalculator: React.FC = () => {
                 onChange={(e) => setWastageBufferPct(Number(e.target.value) || 0)}
                 className="w-full accent-amber-400 cursor-pointer"
               />
-              <span className="text-xs font-bold text-slate-300 w-10 text-right font-mono">
+              <span className="text-xs font-bold w-10 text-right font-mono" style={{ color: '#cbd5e1' }}>
                 {wastageBufferPct}%
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 mt-1 block">
+            <span className="text-[10px] mt-1 block" style={{ color: '#64748b' }}>
               Covers kitchen trimming, evaporation & refill buffers
             </span>
           </div>
         </div>
 
-        {/* Live Calculation KPI Ribbon */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="bg-slate-800/30 p-3 rounded-xl border border-slate-700/40">
-            <span className="text-[11px] text-slate-400 block">Total Raw Food Required</span>
-            <p className="text-xl font-black text-white">
-              {totals.totalGrossWeightKg.toLocaleString()} <span className="text-xs font-semibold text-slate-400">kg/liters</span>
+        {/* Live Calculation KPI Ribbon - FORCED DARK */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6" style={{ borderTop: '1px solid #1e293b' }}>
+          <div className="p-3 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <span className="text-[11px] block" style={{ color: '#94a3b8' }}>Total Raw Food Required</span>
+            <p className="text-xl font-black" style={{ color: '#ffffff' }}>
+              {totals.totalGrossWeightKg.toLocaleString()} <span className="text-xs font-semibold" style={{ color: '#cbd5e1' }}>kg/liters</span>
             </p>
-            <span className="text-[10px] text-slate-500">Gross for {guestCount} Guests</span>
+            <span className="text-[10px]" style={{ color: '#64748b' }}>Gross for {guestCount} Guests</span>
           </div>
 
-          <div className="bg-slate-800/30 p-3 rounded-xl border border-slate-700/40">
-            <span className="text-[11px] text-slate-400 block">Estimated Grocery Budget</span>
-            <p className="text-xl font-black text-emerald-400">
+          <div className="p-3 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <span className="text-[11px] block" style={{ color: '#94a3b8' }}>Estimated Grocery Budget</span>
+            <p className="text-xl font-black" style={{ color: '#34d399' }}>
               Rs. {totals.totalGrossCost.toLocaleString()}
             </p>
-            <span className="text-[10px] text-emerald-400/80">Total Ingredient Value</span>
+            <span className="text-[10px]" style={{ color: '#059669' }}>Total Ingredient Value</span>
           </div>
 
-          <div className="bg-slate-800/30 p-3 rounded-xl border border-slate-700/40">
-            <span className="text-[11px] text-slate-400 block">Raw Cost / Guest Head</span>
-            <p className="text-xl font-black text-white">
+          <div className="p-3 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <span className="text-[11px] block" style={{ color: '#94a3b8' }}>Raw Cost / Guest Head</span>
+            <p className="text-xl font-black" style={{ color: '#ffffff' }}>
               Rs. {totals.foodCostPerGuest.toLocaleString()}
             </p>
-            <span className="text-[10px] text-slate-500">Excludes overheads & hall</span>
+            <span className="text-[10px]" style={{ color: '#64748b' }}>Excludes overheads & hall</span>
           </div>
 
-          <div className="bg-slate-800/30 p-3 rounded-xl border border-slate-700/40">
-            <span className="text-[11px] text-slate-400 block">Pantry Shortage Deficit</span>
-            <p className={`text-xl font-black ${totals.shortageCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <div className="p-3 rounded-xl" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <span className="text-[11px] block" style={{ color: '#94a3b8' }}>Pantry Shortage Deficit</span>
+            <p className="text-xl font-black" style={{ color: totals.shortageCount > 0 ? '#fb7185' : '#34d399' }}>
               Rs. {totals.totalDeficitCost.toLocaleString()}
             </p>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px]" style={{ color: '#cbd5e1' }}>
               {totals.shortageCount > 0 ? `${totals.shortageCount} Items Below Required` : 'Fully in stock!'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Ingredient Formula Table */}
-      <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-800">
+      {/* Main Ingredient Formula Table - FORCED DARK */}
+      <div className="rounded-2xl p-6 shadow-xl overflow-hidden" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4" style={{ borderBottom: '1px solid #1e293b' }}>
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Scale className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-base font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
+              <Scale className="w-4 h-4" style={{ color: '#34d399' }} />
               <span>Dynamic Catering Ingredient Formula ({guestCount} Guests)</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Formula: <code className="text-emerald-300 font-mono">Total Guests × Ratio per Head + {wastageBufferPct}% Buffer = Requisition</code>
+            <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>
+              Formula: <code className="font-mono" style={{ color: '#6ee7b7' }}>Total Guests × Ratio per Head + {wastageBufferPct}% Buffer = Requisition</code>
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFormulaLines((prev) => prev.map((l) => ({ ...l, included: true })))}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 border border-slate-700"
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
             >
               Select All
             </button>
             <button
               onClick={() => setFormulaLines((prev) => prev.map((l) => ({ ...l, included: false })))}
-              className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 border border-slate-700"
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+              style={{ backgroundColor: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
             >
               Deselect All
             </button>
@@ -497,7 +504,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-800/80 text-slate-300 uppercase text-[10px] tracking-wider border-b border-slate-700">
+            <thead className="uppercase text-[10px] tracking-wider" style={{ backgroundColor: '#1e293b', color: '#cbd5e1', borderBottom: '1px solid #334155' }}>
               <tr>
                 <th className="py-3 px-3 w-10 text-center">Inc</th>
                 <th className="py-3 px-4">Raw Ingredient</th>
@@ -509,13 +516,12 @@ export const KitchenFormulaCalculator: React.FC = () => {
                 <th className="py-3 px-4 text-right">Est. Cost (Rs.)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-slate-300">
+            <tbody className="divide-y" style={{ borderColor: '#1e293b', color: '#cbd5e1' }}>
               {calculatedItems.map((item) => (
                 <tr
                   key={item.id}
-                  className={`hover:bg-slate-800/30 transition ${
-                    !item.included ? 'opacity-40 bg-slate-900/30' : ''
-                  }`}
+                  className="transition hover:bg-slate-800/30"
+                  style={{ opacity: !item.included ? 0.4 : 1, backgroundColor: !item.included ? 'rgba(15, 23, 42, 0.3)' : 'transparent' }}
                 >
                   {/* Checkbox */}
                   <td className="py-3.5 px-3 text-center">
@@ -523,57 +529,59 @@ export const KitchenFormulaCalculator: React.FC = () => {
                       type="checkbox"
                       checked={item.included}
                       onChange={() => handleToggleInclude(item.id)}
-                      className="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      className="rounded cursor-pointer"
+                      style={{ accentColor: '#10b981' }}
                     />
                   </td>
 
                   {/* Ingredient Name & Category */}
                   <td className="py-3.5 px-4">
-                    <span className="font-bold text-white block text-sm">{item.name}</span>
-                    <span className="text-[11px] text-slate-400">
-                      {item.category} • Supplier: <strong className="text-slate-300">{item.supplierName}</strong>
+                    <span className="font-bold block text-sm" style={{ color: '#ffffff' }}>{item.name}</span>
+                    <span className="text-[11px]" style={{ color: '#94a3b8' }}>
+                      {item.category} • Supplier: <strong style={{ color: '#cbd5e1' }}>{item.supplierName}</strong>
                     </span>
                   </td>
 
                   {/* Editable Ratio */}
                   <td className="py-3.5 px-3 text-center">
-                    <div className="inline-flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1">
+                    <div className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1" style={{ backgroundColor: '#334155', border: '1px solid #475569' }}>
                       <input
                         type="number"
                         min="1"
                         step="5"
                         value={item.ratioPerHeadGrams}
                         onChange={(e) => handleUpdateRatio(item.id, Number(e.target.value) || 0)}
-                        className="w-14 bg-transparent text-white font-bold text-xs text-right focus:outline-none"
+                        className="w-14 bg-transparent font-bold text-xs text-right focus:outline-none"
+                        style={{ color: '#ffffff' }}
                       />
-                      <span className="text-[10px] text-slate-400 font-semibold">{item.displayUnit}</span>
+                      <span className="text-[10px] font-semibold" style={{ color: '#cbd5e1' }}>{item.displayUnit}</span>
                     </div>
                   </td>
 
                   {/* Net Requirement */}
-                  <td className="py-3.5 px-3 text-right font-mono font-semibold text-slate-300">
+                  <td className="py-3.5 px-3 text-right font-mono font-semibold" style={{ color: '#cbd5e1' }}>
                     {item.netQty.toLocaleString()} {item.unit}
                   </td>
 
                   {/* Gross with Buffer */}
-                  <td className="py-3.5 px-3 text-right font-mono font-extrabold text-white text-sm">
+                  <td className="py-3.5 px-3 text-right font-mono font-extrabold text-sm" style={{ color: '#ffffff' }}>
                     {item.grossQty.toLocaleString()} {item.unit}
                   </td>
 
                   {/* Current Pantry Balance */}
-                  <td className="py-3.5 px-3 text-right font-mono text-slate-400">
+                  <td className="py-3.5 px-3 text-right font-mono" style={{ color: '#94a3b8' }}>
                     {item.currentStock.toLocaleString()} {item.unit}
                   </td>
 
                   {/* Shortage / Stock Status */}
                   <td className="py-3.5 px-4 text-center">
                     {item.isShortage ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold" style={{ backgroundColor: '#e11d48', color: '#ffffff', border: '1px solid #fb7185' }}>
                         <AlertTriangle className="w-3 h-3" />
                         Shortage: {item.deficitQty} {item.unit}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                         <CheckCircle2 className="w-3 h-3" />
                         Pantry Covered
                       </span>
@@ -581,24 +589,24 @@ export const KitchenFormulaCalculator: React.FC = () => {
                   </td>
 
                   {/* Total Cost */}
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-white text-sm">
+                  <td className="py-3.5 px-4 text-right font-mono font-bold text-sm" style={{ color: '#ffffff' }}>
                     Rs. {item.totalEstimatedCost.toLocaleString()}
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-slate-800/80 border-t-2 border-slate-700 font-bold text-xs">
+            <tfoot className="font-bold text-xs" style={{ backgroundColor: '#1e293b', borderTop: '2px solid #334155' }}>
               <tr>
-                <td colSpan={4} className="py-3 px-4 text-white uppercase tracking-wider">
+                <td colSpan={4} className="py-3 px-4 uppercase tracking-wider" style={{ color: '#ffffff' }}>
                   TOTAL GROSS REQUISITION BUDGET:
                 </td>
-                <td className="py-3 px-3 text-right font-mono text-white text-sm">
+                <td className="py-3 px-3 text-right font-mono text-sm" style={{ color: '#ffffff' }}>
                   {totals.totalGrossWeightKg.toLocaleString()} kg
                 </td>
-                <td colSpan={2} className="py-3 px-4 text-right text-rose-400 font-mono">
+                <td colSpan={2} className="py-3 px-4 text-right font-mono" style={{ color: '#fb7185' }}>
                   Shortage Cost: Rs. {totals.totalDeficitCost.toLocaleString()}
                 </td>
-                <td className="py-3 px-4 text-right font-mono text-emerald-400 text-base">
+                <td className="py-3 px-4 text-right font-mono text-base" style={{ color: '#34d399' }}>
                   Rs. {totals.totalGrossCost.toLocaleString()}
                 </td>
               </tr>
@@ -771,4 +779,3 @@ export const KitchenFormulaCalculator: React.FC = () => {
     </div>
   );
 };
-

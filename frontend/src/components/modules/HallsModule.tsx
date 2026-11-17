@@ -474,15 +474,15 @@ export const HallsModule: React.FC = () => {
 
                   {/* Top Badges */}
                   <div className="relative z-10 flex items-center justify-between gap-2">
-                    <span className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-white border border-white/20">
+                    <span className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md !text-white border border-white/20">
                       [{hall.code || 'HL-01'}]
                     </span>
 
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-md ${
                         isActive
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                          ? 'bg-emerald-500/20 !text-emerald-300 border border-emerald-400/30'
+                          : 'bg-amber-500/20 !text-amber-300 border border-amber-400/30'
                       }`}
                     >
                       <span
@@ -496,12 +496,12 @@ export const HallsModule: React.FC = () => {
 
                   {/* Hall Name & Location in Banner */}
                   <div className="relative z-10">
-                    <h3 className="text-lg font-bold !text-white drop-shadow-md tracking-tight font-['Plus_Jakarta_Sans'] group-hover:text-teal-300 transition-colors drop-shadow-sm">
+                    <h3 className="text-lg font-bold !text-white drop-shadow-md tracking-tight font-['Plus_Jakarta_Sans'] group-hover:!text-teal-300 transition-colors">
                       {hall.name}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-xs  !text-white opacity-90 drop-shadow-md mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                      <span className="!text-white font-medium">{hall.locationFloor}</span>
+                    <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 !text-teal-400 shrink-0 drop-shadow-sm" />
+                      <span className="!text-slate-200 font-medium drop-shadow-sm">{hall.locationFloor}</span>
                     </div>
                   </div>
                 </div>
@@ -533,26 +533,21 @@ export const HallsModule: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Facilities Badges */}
+                  {/* Facilities Badges (Icons Removed here) */}
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                       Included Facilities
                     </span>
                     <div className="flex flex-wrap gap-1.5 min-h-[30px]">
                       {hall.facilities && hall.facilities.length > 0 ? (
-                        hall.facilities.map((fac) => {
-                          const config = AVAILABLE_FACILITIES.find((f) => f.id === fac);
-                          const Icon = config ? config.icon : Sparkles;
-                          return (
-                            <span
-                              key={fac}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-700/80 text-[11px] font-medium text-teal-300"
-                            >
-                              <Icon className="w-3 h-3 text-teal-400" />
-                              <span>{fac}</span>
-                            </span>
-                          );
-                        })
+                        hall.facilities.map((fac) => (
+                          <span
+                            key={fac}
+                            className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-700/80 text-[11px] font-medium !text-teal-300"
+                          >
+                            <span>{fac}</span>
+                          </span>
+                        ))
                       ) : (
                         <span className="text-[11px] text-slate-500 italic">
                           No specific amenities selected.
@@ -571,7 +566,7 @@ export const HallsModule: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openEditModal(hall)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-700 border border-slate-600/50 text-slate-200 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-500 !text-white text-xs font-semibold transition-all shadow-sm cursor-pointer"
                         title="Edit Hall Settings"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -581,7 +576,7 @@ export const HallsModule: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteHall(hall.id, hall.name)}
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 !text-rose-400 transition-colors shadow-sm cursor-pointer"
                         title="Delete Hall"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

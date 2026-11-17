@@ -484,3 +484,22 @@
 [data-theme="light"] main button.bg-gradient-to-r {
   color: #ffffff !important;
 }
+@media print {
+  /* Browser ke default headers/footers ko hide karne ki koshish */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  
+  body {
+    margin: 1.6cm; /* Thora margin taake text page ke kinare se na takraye */
+  }
+
+  /* Sidebar, Topbar aur buttons ko print se hide karein */
+  .no-print, 
+  aside, 
+  header, 
+  button {
+    display: none !important;
+  }
+}
