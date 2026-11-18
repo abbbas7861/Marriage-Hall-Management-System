@@ -100,17 +100,13 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
     fetchDashboardData();
   }, []);
 
-  // Live KPI Cards configuration with rich glowing accents & dark borders
+  // Live KPI Cards configuration (4 Essential Cards - Apple / Stripe Style)
   const kpiCards = [
     {
       title: 'Active Halls',
       value: `${stats.totalHalls || 0} Halls`,
       subtext: 'Operational Venue Capacity',
       icon: Building2,
-      glow: 'shadow-emerald-500/10 hover:shadow-emerald-500/20',
-      iconBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
-      accentGlow: 'from-emerald-500/15 via-emerald-500/5 to-transparent',
-      borderColor: 'border-slate-700/60 hover:border-emerald-500/50',
       actionModule: 'admin-halls',
     },
     {
@@ -118,43 +114,20 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
       value: stats.totalBookings || 0,
       subtext: `${stats.upcomingEventsCount || 0} events scheduled soon`,
       icon: CalendarDays,
-      glow: 'shadow-sky-500/10 hover:shadow-sky-500/20',
-      iconBg: 'bg-sky-500/10 text-sky-400 border border-sky-500/30',
-      accentGlow: 'from-sky-500/15 via-sky-500/5 to-transparent',
-      borderColor: 'border-slate-700/60 hover:border-sky-500/50',
       actionModule: 'admin-bookings',
-    },
-    {
-      title: "Today's Occupancy",
-      value: `${stats.hallOccupancy || 0}%`,
-      subtext: stats.hallOccupancy > 0 ? 'Active banquet shifts' : 'No bookings today',
-      icon: Percent,
-      glow: 'shadow-amber-500/10 hover:shadow-amber-500/20',
-      iconBg: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
-      accentGlow: 'from-amber-500/15 via-amber-500/5 to-transparent',
-      borderColor: 'border-slate-700/60 hover:border-amber-500/50',
-      actionModule: 'calendar',
     },
     {
       title: 'Month-to-Date Revenue',
       value: formatPKR(stats.mtdRevenue || stats.totalYearRevenue || 0),
       subtext: `Fiscal Year: ${formatPKR(stats.totalYearRevenue || 0)}`,
       icon: Wallet,
-      glow: 'shadow-teal-500/10 hover:shadow-teal-500/20',
-      iconBg: 'bg-teal-500/10 text-teal-400 border border-teal-500/30',
-      accentGlow: 'from-teal-500/15 via-teal-500/5 to-transparent',
-      borderColor: 'border-slate-700/60 hover:border-teal-500/50',
       actionModule: 'finance-overview',
     },
     {
       title: 'Outstanding Receivables',
       value: formatPKR(stats.pendingPayments || 0),
-      subtext: `${stats.pendingInvoicesCount || 0} pending billing settlements`,
+      subtext: `${stats.pendingInvoicesCount || 0} pending settlements`,
       icon: ArrowDownLeft,
-      glow: 'shadow-rose-500/10 hover:shadow-rose-500/20',
-      iconBg: 'bg-rose-500/10 text-rose-400 border border-rose-500/30',
-      accentGlow: 'from-rose-500/15 via-rose-500/5 to-transparent',
-      borderColor: 'border-slate-700/60 hover:border-rose-500/50',
       actionModule: 'finance-receivables',
     },
   ];
@@ -165,100 +138,90 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-700/50 p-6 sm:p-8 shadow-sm dark:shadow-2xl dark:shadow-black/40 text-slate-900 dark:text-slate-100"
+        transition={{ duration: 0.3 }}
+        className="relative rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-xs text-slate-900 dark:text-slate-100"
       >
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-teal-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl pointer-events-none dark:block hidden" />
-        <div className="absolute -bottom-10 left-1/4 w-80 h-80 bg-gradient-to-tr from-sky-500/10 via-teal-500/5 to-transparent rounded-full blur-3xl pointer-events-none dark:block hidden" />
-
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                <span>Live Telemetry Active</span>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Live System Active</span>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
               Admin Executive Overview
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
               Omniscient venue orchestration, real-time occupancy distribution, and financial health trajectories.
             </p>
           </div>
 
-          {/* Neatly Grouped Clean Action Toolbar */}
-          <div className="flex items-center flex-wrap gap-3 shrink-0">
+          {/* Standardized Clean Action Toolbar */}
+          <div className="flex items-center flex-wrap gap-2.5 shrink-0">
             {onOpenCreateBooking && (
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+              <button
                 type="button"
                 onClick={onOpenCreateBooking}
-                className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold shadow-md shadow-teal-500/25 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                <PlusCircle className="w-4 h-4 stroke-[2]" />
                 <span>New Booking Intake</span>
-              </motion.button>
+              </button>
             )}
 
             <button
               type="button"
               onClick={() => onNavigateToModule?.('admin-users')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 !text-slate-800 dark:!text-slate-200 text-xs sm:text-sm font-semibold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium transition-colors cursor-pointer"
             >
-              <Users className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
-              <span className="!text-slate-800 dark:!text-slate-200">User Directory</span>
+              <Users className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+              <span>User Directory</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigateToModule?.('finance-overview')}
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 !text-slate-800 dark:!text-slate-200 text-xs sm:text-sm font-semibold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-medium transition-colors cursor-pointer"
             >
-              <Scale className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span className="!text-slate-800 dark:!text-slate-200">Financial Statements</span>
+              <Scale className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+              <span>Financial Statements</span>
             </button>
           </div>
         </div>
       </motion.div>
 
-      {/* 5 High-Impact KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      {/* 4 Essential Clean KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
             <motion.div
               key={kpi.title}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: idx * 0.05 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              transition={{ duration: 0.25, delay: idx * 0.04 }}
               onClick={() => onNavigateToModule?.(kpi.actionModule)}
-              className="relative overflow-hidden w-full rounded-2xl bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/50 p-5 shadow-sm dark:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+              className="w-full rounded-xl bg-white dark:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-600 border border-slate-200 dark:border-slate-800 p-5 transition-colors cursor-pointer group flex flex-col justify-between"
             >
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${kpi.accentGlow} rounded-full blur-2xl pointer-events-none dark:block hidden`} />
-
               <div>
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">
+                  <span className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">
                     {kpi.title}
                   </span>
-                  <div
-                    className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/25 dark:bg-slate-800 dark:border-slate-700/60 flex items-center justify-center shrink-0 text-teal-600 dark:text-teal-400 group-hover:scale-110 shadow-xs dark:shadow-lg transition-transform duration-300"
-                  >
-                    <Icon className="w-5 h-5" />
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300">
+                    <Icon className="w-4 h-4" />
                   </div>
                 </div>
 
-                <div className="!text-slate-900 dark:text-white text-2xl sm:text-3xl font-bold mt-2 font-mono truncate tracking-tight" title={String(kpi.value)}>
+                <div className="text-slate-900 dark:text-white text-2xl font-bold mt-2 font-mono truncate tracking-tight" title={String(kpi.value)}>
                   {kpi.value}
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between text-xs !text-slate-600 dark:!text-slate-400">
-                <span className="truncate !text-slate-600 dark:!text-slate-400">{kpi.subtext}</span>
-                <ArrowUpRight className="w-3.5 h-3.5 !text-slate-600 dark:!text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="truncate">{kpi.subtext}</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-500 transition-colors" />
               </div>
             </motion.div>
           );
@@ -289,13 +252,13 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
               </p>
             </div>
 
-            <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 p-1 text-xs font-semibold self-start sm:self-auto">
+            <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 text-xs font-medium self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setActiveFilter('year')}
-                className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                   activeFilter === 'year'
-                    ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 shadow-md font-bold'
+                    ? 'bg-teal-600 text-white font-medium'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -304,9 +267,9 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveFilter('quarter')}
-                className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
                   activeFilter === 'quarter'
-                    ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 shadow-md font-bold'
+                    ? 'bg-teal-600 text-white font-medium'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >

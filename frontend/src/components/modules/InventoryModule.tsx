@@ -249,7 +249,7 @@ export const InventoryModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Inventory Item</span>
+            <span>+ Add Inventory Item</span>
           </button>
         </div>
       </div>
@@ -416,7 +416,7 @@ export const InventoryModule: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Inventory Item</span>
+              <span>+ Add Inventory Item</span>
             </button>
 
             {/* Structural Table Skeleton Placeholder for No-Mock-Data Rule */}
@@ -605,7 +605,7 @@ export const InventoryModule: React.FC = () => {
       {/* Simulated "Add / Edit Inventory Item" Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
@@ -723,7 +723,7 @@ export const InventoryModule: React.FC = () => {
                     type="text"
                     value={formStorageLocation}
                     onChange={(e) => setFormStorageLocation(e.target.value)}
-                    placeholder="[e.g., Grand Crystal Ballroom Storage Room]"
+                    placeholder="[e.g., Hall 1 Storage Room]"
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                   />
                 </div>
@@ -753,7 +753,7 @@ export const InventoryModule: React.FC = () => {
       {/* Simulated "Issue to Event" Modal */}
       {issueModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <div>
                 <h4 className="text-sm font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
@@ -803,7 +803,7 @@ export const InventoryModule: React.FC = () => {
                   type="text"
                   value={issueEventName}
                   onChange={(e) => setIssueEventName(e.target.value)}
-                  placeholder="[e.g., Barat - Grand Crystal Ballroom]"
+                  placeholder="[e.g., Barat - Hall 1 (Royal Crystal)]"
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>

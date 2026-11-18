@@ -212,7 +212,7 @@ const TEMPLATES: CardTemplate[] = [
     id: 11,
     name: 'Template 11',
     subtitle: 'Celestial Navy Gold',
-    badge: 'Grand Crystal Ballroom',
+    badge: 'Grand Ballroom',
     themeStyle: {
       bgGradient: 'bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]',
       cardBorder: 'border-[#e2b714]',

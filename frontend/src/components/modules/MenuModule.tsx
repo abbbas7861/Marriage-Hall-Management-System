@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Utensils,
   ChefHat,
@@ -15,91 +15,26 @@ import {
   CheckCircle2,
   Layers,
   Sparkles,
-  RefreshCw,
 } from 'lucide-react';
 import { MenuPackage } from '../../types';
-import { menuPackagesApi } from '../../api/client';
 
 // Suggested popular dishes for quick selection in the tag input
 const QUICK_DISH_SUGGESTIONS = [
   'Chicken Biryani',
-  'Beef Biryani',
-  'Mutton Biryani',
   'Mutton Karahi',
-  'Chicken Karahi',
-  'Beef Seekh Kabab',
-  'Chicken Tikka Boti',
-  'Beef Bihari Boti',
+  'Seekh Kabab',
+  'Chicken Tikka',
   'Roghnai Naan',
-  'Kandahari Naan',
-  'Fresh Salad & Mint Raita',
-  'Shahi Gulab Jamun',
-  'Kheer / Zafrani Firni',
-  'Kulfi Falooda',
-  'Mint Lemonade & Soft Drinks',
-];
-
-const DEFAULT_BANQUET_TEMPLATES: Array<Partial<MenuPackage>> = [
-  {
-    name: 'Royal Shadi Buffet (Beef & Chicken)',
-    tier: 'Royal',
-    pricePerHead: 2450,
-    costPerHead: 1750,
-    description: 'Premier banquet feast featuring Beef Biryani, Chicken Karahi, Live BBQ & Sweets',
-    includedItems: [
-      'Special Beef Biryani',
-      'Desi Ghee Chicken Karahi',
-      'Live Beef Seekh Kabab',
-      'Chicken Malai Boti',
-      'Fresh Roghnai Naan',
-      'Mint Raita & Kachumber Salad',
-      'Zafrani Kheer',
-      'Hot Gulab Jamun',
-      'Mineral Water & Cold Drinks',
-    ],
-    status: 'Active',
-  },
-  {
-    name: 'Executive Mutton & Chicken Banquet',
-    tier: 'Executive',
-    pricePerHead: 2850,
-    costPerHead: 2050,
-    description: 'Luxury celebration menu with tender Mutton Karahi and aromatic Chicken Pulao/Biryani',
-    includedItems: [
-      'Special Mutton Karahi',
-      'Mughlai Chicken Biryani',
-      'Reshmi Kabab',
-      'Chicken Tikka Boti',
-      'Special Roghnai & Garlic Naan',
-      'Zeera Raita & Russian Salad',
-      'Shahi Tukray',
-      'Pistachio Kulfi',
-      'Green Tea / Kashmiri Chai',
-    ],
-    status: 'Active',
-  },
-  {
-    name: 'Traditional Economy Feast',
-    tier: 'Budget',
-    pricePerHead: 1850,
-    costPerHead: 1350,
-    description: 'Classic wedding meal offering delicious taste with cost efficiency',
-    includedItems: [
-      'Chicken Dum Biryani',
-      'Chicken Qorma / Karahi',
-      'Live Beef Kabab',
-      'Tandoori Roghnai Naan',
-      'Raita & Fresh Salad',
-      'Traditional Firni',
-      'Soft Drinks',
-    ],
-    status: 'Active',
-  },
+  'Fresh Salad & Raita',
+  'Gulab Jamun',
+  'Kheer / Firni',
+  'Mint Lemonade',
 ];
 
 export const MenuModule: React.FC = () => {
+  // STRICT DATA RULE: DO NOT hardcode any dummy data.
+  // Must start as empty array []
   const [packages, setPackages] = useState<MenuPackage[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,14 +46,12 @@ export const MenuModule: React.FC = () => {
 
   // Form Fields
   const [formName, setFormName] = useState('');
-  const [formTier, setFormTier] = useState<'Royal' | 'Executive' | 'Budget' | 'Corporate'>('Executive');
   const [formPricePerHead, setFormPricePerHead] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDishes, setFormDishes] = useState<string[]>([]);
   const [dishInput, setDishInput] = useState('');
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
   const [formError, setFormError] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -126,49 +59,9 @@ export const MenuModule: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const loadPackages = async () => {
-    try {
-      setLoading(true);
-      const data = await menuPackagesApi.list();
-      setPackages(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      console.error('Failed to load menu packages:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPackages();
-  }, []);
-
-  const handleSeedDefaults = async () => {
-    try {
-      setActionLoading(true);
-      for (const tpl of DEFAULT_BANQUET_TEMPLATES) {
-        await menuPackagesApi.create({
-          name: tpl.name || '',
-          tier: tpl.tier || 'Executive',
-          pricePerHead: tpl.pricePerHead || 2000,
-          costPerHead: tpl.costPerHead || 1500,
-          description: tpl.description || '',
-          includedItems: tpl.includedItems || [],
-          status: 'Active',
-        });
-      }
-      await loadPackages();
-      showToast('Standard Pakistani banquet menus loaded into system.');
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to load templates.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const openCreateModal = () => {
     setEditingPackage(null);
     setFormName('');
-    setFormTier('Executive');
     setFormPricePerHead('');
     setFormDescription('');
     setFormDishes([]);
@@ -181,9 +74,8 @@ export const MenuModule: React.FC = () => {
   const openEditModal = (pkg: MenuPackage) => {
     setEditingPackage(pkg);
     setFormName(pkg.name);
-    setFormTier(pkg.tier || 'Executive');
     setFormPricePerHead(String(pkg.pricePerHead));
-    setFormDescription(pkg.description || '');
+    setFormDescription(pkg.description);
     setFormDishes(pkg.includedItems || []);
     setDishInput('');
     setFormStatus(pkg.status);
@@ -219,7 +111,7 @@ export const MenuModule: React.FC = () => {
     }
   };
 
-  const handleSavePackage = async (e: React.FormEvent) => {
+  const handleSavePackage = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formName.trim()) {
@@ -233,52 +125,46 @@ export const MenuModule: React.FC = () => {
       return;
     }
 
-    setActionLoading(true);
-    try {
-      if (editingPackage) {
-        // Update
-        const updated = await menuPackagesApi.update(editingPackage.id, {
-          name: formName.trim(),
-          tier: formTier,
-          pricePerHead: priceNum,
-          description: formDescription.trim(),
-          includedItems: formDishes,
-          status: formStatus,
-        });
-        setPackages((prev) =>
-          prev.map((p) => (p.id === editingPackage.id ? updated : p))
-        );
-        showToast(`Menu package "${formName.trim()}" updated successfully.`);
-      } else {
-        // Create new
-        const created = await menuPackagesApi.create({
-          name: formName.trim(),
-          tier: formTier,
-          pricePerHead: priceNum,
-          description: formDescription.trim(),
-          includedItems: formDishes,
-          status: formStatus,
-        });
-        setPackages((prev) => [...prev, created]);
-        showToast(`New menu package "${formName.trim()}" created successfully.`);
-      }
-      closeModal();
-    } catch (err: any) {
-      setFormError(err?.message || 'Failed to save menu package.');
-    } finally {
-      setActionLoading(false);
+    if (editingPackage) {
+      // Update
+      setPackages((prev) =>
+        prev.map((p) =>
+          p.id === editingPackage.id
+            ? {
+                ...p,
+                name: formName.trim(),
+                pricePerHead: priceNum,
+                description: formDescription.trim(),
+                includedItems: formDishes,
+                status: formStatus,
+              }
+            : p
+        )
+      );
+      showToast(`Menu package "${formName.trim()}" updated successfully.`);
+    } else {
+      // Create new
+      const newPackage: MenuPackage = {
+        id: `pkg-${Date.now()}`,
+        packageCode: `PKG-${String(packages.length + 1).padStart(2, '0')}`,
+        name: formName.trim(),
+        pricePerHead: priceNum,
+        description: formDescription.trim(),
+        includedItems: formDishes,
+        status: formStatus,
+      };
+
+      setPackages((prev) => [...prev, newPackage]);
+      showToast(`New menu package "${formName.trim()}" created successfully.`);
     }
+
+    closeModal();
   };
 
-  const handleDeletePackage = async (id: string, name: string) => {
+  const handleDeletePackage = (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete package "${name}"?`)) {
-      try {
-        await menuPackagesApi.delete(id);
-        setPackages((prev) => prev.filter((p) => p.id !== id));
-        showToast(`Package "${name}" removed.`);
-      } catch (err: any) {
-        showToast(err?.message || 'Failed to delete package.');
-      }
+      setPackages((prev) => prev.filter((p) => p.id !== id));
+      showToast(`Package "${name}" removed.`);
     }
   };
 
@@ -326,39 +212,39 @@ export const MenuModule: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/70">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-bold !text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
               Menu &amp; Catering Management
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 !text-slate-700 text-xs font-mono font-semibold border border-slate-200">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-mono font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00685f]"></span>
               CULINARY SERVICES
             </span>
           </div>
-          <p className="text-xs !text-slate-500 mt-0.5">
-            Configure food packages, dishes, per-head pricing, and substitutions. Live changes sync with the Booking System.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Configure food packages, per-head pricing, and dish catalogs.
           </p>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {packages.length === 0 && (
+          {packages.length > 0 && (
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={handleSeedDefaults}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-50 border border-teal-200 !text-teal-700 hover:bg-teal-100 text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              onClick={handleResetToEmpty}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 !text-teal-600" />
-              <span>Load Pakistani Standard Menus</span>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset to Empty</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 !text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Create Menu Package</span>
+            <span>+ Create Menu Package</span>
           </button>
         </div>
       </div>
@@ -366,55 +252,55 @@ export const MenuModule: React.FC = () => {
       {/* Small Metrics Bar with placeholders [--] */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Metric 1: Total Packages */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold !text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Total Packages
             </span>
-            <div className="text-2xl font-bold font-mono !text-slate-900 tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
+            <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
               {totalPackagesCount === 0 ? '[--]' : totalPackagesCount}
             </div>
-            <span className="text-[10px] !text-slate-400 font-mono mt-0.5 block">
+            <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
               [Configured Menus]
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center !text-teal-600">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-[#00685f]">
             <Utensils className="w-5 h-5" />
           </div>
         </div>
 
         {/* Metric 2: Total Dishes */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold !text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Total Dishes
             </span>
-            <div className="text-2xl font-bold font-mono !text-slate-900 tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
+            <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
               {totalPackagesCount === 0 ? '[--]' : totalUniqueDishes}
             </div>
-            <span className="text-[10px] !text-slate-400 font-mono mt-0.5 block">
+            <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
               [Cataloged Recipes]
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center !text-amber-600">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
             <ChefHat className="w-5 h-5" />
           </div>
         </div>
 
         {/* Metric 3: Avg Price / Head */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold !text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Avg Price / Head
             </span>
-            <div className="text-2xl font-bold font-mono !text-teal-700 tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
+            <div className="text-2xl font-bold font-mono text-[#00685f] tracking-tight mt-1 font-['Plus_Jakarta_Sans']">
               {avgPricePerHead === null ? '[--]' : `Rs. ${avgPricePerHead.toLocaleString('en-PK')}`}
             </div>
-            <span className="text-[10px] !text-slate-400 font-mono mt-0.5 block">
+            <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
               [Per-Guest Baseline]
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center !text-blue-600">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
             <Coins className="w-5 h-5" />
           </div>
         </div>
@@ -422,24 +308,24 @@ export const MenuModule: React.FC = () => {
 
       {/* Filter and Search Bar (Active when packages > 0) */}
       {packages.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200/80 shadow-xs">
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 !text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by package name, dish, or item..."
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-800 placeholder:!text-slate-400 focus:outline-none focus:bg-white focus:border-teal-500"
+              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
             />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <SlidersHorizontal className="w-3.5 h-3.5 !text-slate-400" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-700 focus:outline-none cursor-pointer"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="All">All Packages</option>
               <option value="Active">Active Only</option>
@@ -452,16 +338,16 @@ export const MenuModule: React.FC = () => {
       {/* Main Section: Data Grid for Packages OR Large Centered Empty State */}
       {packages.length === 0 ? (
         /* Large Centered Empty State */
-        <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm py-20 px-6 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 rounded-3xl bg-teal-50 border border-teal-100 flex items-center justify-center !text-teal-600 shadow-sm mb-4">
+        <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xs py-20 px-6 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 rounded-3xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00685f] shadow-sm mb-4">
             <ChefHat className="w-10 h-10 stroke-[1.5]" />
           </div>
 
-          <h2 className="text-xl font-bold !text-slate-900 font-['Plus_Jakarta_Sans'] tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 font-['Plus_Jakarta_Sans'] tracking-tight">
             No menu packages found. Create a package to start serving your guests.
           </h2>
 
-          <p className="text-xs !text-slate-500 max-w-md mt-2 leading-relaxed">
+          <p className="text-xs text-slate-500 max-w-md mt-2 leading-relaxed">
             Create custom culinary packages, establish per-head plate tariffs, and catalog dishes for wedding receptions, banquets, and corporate dinners.
           </p>
 
@@ -469,31 +355,31 @@ export const MenuModule: React.FC = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 !text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Create Menu Package</span>
+              <span>+ Create Menu Package</span>
             </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3 !text-slate-400 text-xs font-mono">
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3 text-slate-400 text-xs font-mono">
             <span>packages: []</span>
             <span>•</span>
             <span>[Status: Empty Menu Catalog]</span>
           </div>
         </div>
       ) : filteredPackages.length === 0 ? (
-        <div className="w-full bg-white rounded-2xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center gap-2">
-          <Utensils className="w-8 h-8 !text-slate-300" />
-          <h3 className="text-sm font-bold !text-slate-700">No matching menu packages</h3>
-          <p className="text-xs !text-slate-400">Try modifying your search or status filter.</p>
+        <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-12 text-center flex flex-col items-center justify-center gap-2">
+          <Utensils className="w-8 h-8 text-slate-300" />
+          <h3 className="text-sm font-bold text-slate-700">No matching menu packages</h3>
+          <p className="text-xs text-slate-400">Try modifying your search or status filter.</p>
           <button
             type="button"
             onClick={() => {
               setSearchQuery('');
               setStatusFilter('All');
             }}
-            className="mt-2 text-xs font-semibold !text-teal-600 hover:underline"
+            className="mt-2 text-xs font-semibold text-[#00685f] hover:underline"
           >
             Clear filters
           </button>
@@ -507,25 +393,25 @@ export const MenuModule: React.FC = () => {
             return (
               <div
                 key={pkg.id}
-                className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-teal-300 transition-all duration-200 flex flex-col overflow-hidden"
+                className="group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-teal-200 transition-all duration-200 flex flex-col overflow-hidden"
               >
                 {/* Card Top Banner */}
-                <div className="p-5 pb-4 border-b border-slate-200/60 bg-slate-50 flex flex-col gap-2">
+                <div className="p-5 pb-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-teal-50/30 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-white border border-slate-300 !text-slate-800 shadow-sm">
+                    <span className="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shadow-2xs">
                       [{pkg.packageCode || 'PKG-01'}]
                     </span>
 
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                         isActive
-                          ? 'bg-emerald-100 !text-emerald-800 border-emerald-300'
-                          : 'bg-slate-200 !text-slate-700 border-slate-300'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          isActive ? 'bg-emerald-600' : 'bg-slate-500'
+                          isActive ? 'bg-emerald-600' : 'bg-slate-400'
                         }`}
                       ></span>
                       <span>{pkg.status}</span>
@@ -533,30 +419,30 @@ export const MenuModule: React.FC = () => {
                   </div>
 
                   <div className="flex items-baseline justify-between gap-2 mt-1">
-                    <h3 className="text-lg font-bold !text-slate-900 tracking-tight group-hover:!text-teal-700 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans'] group-hover:text-teal-800 transition-colors">
                       {pkg.name}
                     </h3>
                     <div className="text-right">
-                      <span className="text-lg font-mono font-bold !text-teal-700">
+                      <span className="text-lg font-mono font-bold text-[#00685f]">
                         Rs. {(pkg.pricePerHead || 0).toLocaleString('en-PK')}
                       </span>
-                      <span className="text-[11px] !text-slate-600 font-sans"> / head</span>
+                      <span className="text-[11px] text-slate-500 font-sans"> / head</span>
                     </div>
                   </div>
 
                   {pkg.description && (
-                    <p className="text-xs !text-slate-600 line-clamp-2 mt-0.5">
+                    <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">
                       {pkg.description}
                     </p>
                   )}
                 </div>
 
                 {/* Card Body: Included Items / Dishes Tags */}
-                <div className="p-5 flex flex-col gap-3 flex-1 justify-between bg-white">
+                <div className="p-5 flex flex-col gap-3 flex-1 justify-between">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold !text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                        <Tag className="w-3 h-3 !text-teal-600" />
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <Tag className="w-3 h-3 text-[#00685f]" />
                         Included Dishes ({pkg.includedItems.length})
                       </span>
                     </div>
@@ -566,14 +452,14 @@ export const MenuModule: React.FC = () => {
                         pkg.includedItems.map((dish, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-50 border border-teal-200 text-[11px] font-medium !text-teal-900"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-50 border border-teal-200/80 text-[11px] font-medium text-teal-900"
                           >
-                            <ChefHat className="w-3 h-3 !text-teal-600" />
+                            <ChefHat className="w-3 h-3 text-[#00685f]" />
                             <span>{dish}</span>
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs !text-slate-400 italic">
+                        <span className="text-xs text-slate-400 italic">
                           No specific dishes listed.
                         </span>
                       )}
@@ -582,7 +468,7 @@ export const MenuModule: React.FC = () => {
 
                   {/* Card Actions Footer */}
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
-                    <span className="text-[10px] font-mono !text-slate-400">
+                    <span className="text-[10px] font-mono text-slate-400">
                       ID: {pkg.id.slice(-6)}
                     </span>
 
@@ -590,7 +476,7 @@ export const MenuModule: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openEditModal(pkg)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 !text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
                         title="Edit Package"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -600,7 +486,7 @@ export const MenuModule: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDeletePackage(pkg.id, pkg.name)}
-                        className="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 !text-rose-600 transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
                         title="Delete Package"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -614,21 +500,21 @@ export const MenuModule: React.FC = () => {
         </div>
       )}
 
-      {/* "Create Menu Package" / Edit Modal (Left as is, it's mostly fine) */}
+      {/* "Create Menu Package" / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center !text-teal-600">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-[#00685f]">
                   <ChefHat className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold !text-slate-900 font-['Plus_Jakarta_Sans']">
+                  <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
                     {editingPackage ? 'Edit Menu Package' : 'Create Menu Package'}
                   </h3>
-                  <p className="text-[11px] !text-slate-500">
+                  <p className="text-[11px] text-slate-500">
                     Define food package name, per-head rate, and cataloged dishes.
                   </p>
                 </div>
@@ -637,7 +523,7 @@ export const MenuModule: React.FC = () => {
               <button
                 type="button"
                 onClick={closeModal}
-                className="w-8 h-8 rounded-lg flex items-center justify-center !text-slate-400 hover:!text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -646,14 +532,14 @@ export const MenuModule: React.FC = () => {
             {/* Modal Body Form */}
             <form onSubmit={handleSavePackage} className="overflow-y-auto p-6 flex flex-col gap-4 text-xs">
               {formError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 !text-rose-700 text-xs font-medium">
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                   {formError}
                 </div>
               )}
 
               {/* Package Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold !text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Package Name <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -661,18 +547,18 @@ export const MenuModule: React.FC = () => {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="[Enter Package Name e.g., Royal Dinner]"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-900 placeholder:!text-slate-400 focus:outline-none focus:bg-white focus:border-teal-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                   required
                 />
               </div>
 
               {/* Price Per Head */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold !text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Price Per Head (PKR / Rs.) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Coins className="w-4 h-4 !text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Coins className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="number"
                     min="1"
@@ -680,7 +566,7 @@ export const MenuModule: React.FC = () => {
                     value={formPricePerHead}
                     onChange={(e) => setFormPricePerHead(e.target.value)}
                     placeholder="[Enter Price Per Head in Rs.]"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-900 placeholder:!text-slate-400 focus:outline-none focus:bg-white focus:border-teal-500"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                     required
                   />
                 </div>
@@ -688,7 +574,7 @@ export const MenuModule: React.FC = () => {
 
               {/* Description */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-semibold !text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Description
                 </label>
                 <textarea
@@ -696,31 +582,31 @@ export const MenuModule: React.FC = () => {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="[Enter brief description e.g., Traditional 5-course Mughlai dinner with live BBQ and seasonal desserts]"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-900 placeholder:!text-slate-400 focus:outline-none focus:bg-white focus:border-teal-500 resize-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] resize-none"
                 />
               </div>
 
               {/* Included Items / Dishes (Tag-input field) */}
               <div className="flex flex-col gap-2 pt-1">
-                <label className="font-semibold !text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Included Items / Dishes
                 </label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <ChefHat className="w-4 h-4 !text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <ChefHat className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={dishInput}
                       onChange={(e) => setDishInput(e.target.value)}
                       onKeyDown={handleKeyDownDish}
                       placeholder="[Add dishes e.g., Chicken Biryani, Mutton Karahi]"
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-900 placeholder:!text-slate-400 focus:outline-none focus:bg-white focus:border-teal-500"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleAddDish(dishInput)}
-                    className="px-3.5 py-2 rounded-lg bg-teal-50 border border-teal-200 !text-teal-700 hover:bg-teal-100 font-semibold text-xs transition-colors shrink-0 cursor-pointer"
+                    className="px-3.5 py-2 rounded-lg bg-teal-50 border border-teal-200 text-[#00685f] hover:bg-teal-100 font-semibold text-xs transition-colors shrink-0 cursor-pointer"
                   >
                     + Add Dish
                   </button>
@@ -729,20 +615,20 @@ export const MenuModule: React.FC = () => {
                 {/* Tag Chips Container */}
                 <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-lg bg-slate-50 border border-slate-200">
                   {formDishes.length === 0 ? (
-                    <span className="text-[11px] !text-slate-400 italic">
+                    <span className="text-[11px] text-slate-400 italic">
                       No dishes added yet. Type a dish above and press Enter, or pick suggestions below.
                     </span>
                   ) : (
                     formDishes.map((dish, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 !text-slate-800 text-xs shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-800 text-xs shadow-2xs"
                       >
                         <span>{dish}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveDish(idx)}
-                          className="!text-slate-400 hover:!text-rose-600 transition-colors"
+                          className="text-slate-400 hover:text-rose-600 transition-colors"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -753,7 +639,7 @@ export const MenuModule: React.FC = () => {
 
                 {/* Quick Suggestion Pills */}
                 <div className="flex flex-col gap-1 mt-1">
-                  <span className="text-[10px] uppercase font-bold !text-slate-400 tracking-wider">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Quick Suggestion Chips
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -765,8 +651,8 @@ export const MenuModule: React.FC = () => {
                         disabled={formDishes.includes(sug)}
                         className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
                           formDishes.includes(sug)
-                            ? 'bg-slate-100 !text-slate-400 border-slate-200 cursor-not-allowed'
-                            : 'bg-white hover:bg-teal-50 !text-slate-700 hover:!text-teal-700 border-slate-200 hover:border-teal-300'
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                            : 'bg-white hover:bg-teal-50 text-slate-700 hover:text-[#00685f] border-slate-200 hover:border-teal-200'
                         }`}
                       >
                         + {sug}
@@ -778,13 +664,13 @@ export const MenuModule: React.FC = () => {
 
               {/* Status (Dropdown: Active, Inactive) */}
               <div className="flex flex-col gap-1.5 pt-1">
-                <label className="font-semibold !text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Status <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formStatus}
                   onChange={(e) => setFormStatus(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs !text-slate-900 focus:outline-none focus:bg-white focus:border-teal-500 cursor-pointer"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] cursor-pointer"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
@@ -796,13 +682,13 @@ export const MenuModule: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 rounded-lg border border-slate-300 !text-slate-700 hover:bg-slate-100 font-semibold text-xs transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold text-xs transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 !text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white font-semibold text-xs shadow-sm transition-colors cursor-pointer"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
                   <span>{editingPackage ? 'Save Changes' : 'Save Package'}</span>

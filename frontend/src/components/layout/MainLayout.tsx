@@ -1,458 +1,247 @@
-import { ThemeProvider } from "../../context/ThemeContext";
-import React, { useState, useEffect } from "react";
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
-import { Dashboard } from "../dashboard/Dashboard";
-import { BookingsModule } from "../modules/BookingsModule";
-import { HallsModule } from "../modules/HallsModule";
-import { CustomersModule } from "../modules/CustomersModule";
-import { MenuModule } from "../modules/MenuModule";
-import { InventoryModule } from "../modules/InventoryModule";
-import { PaymentsModule } from "../modules/PaymentsModule";
-import { ExpensesModule } from "../modules/ExpensesModule";
-import { ReportsModule } from "../modules/ReportsModule";
-import { SettingsModule } from "../modules/SettingsModule";
-import { FBRModule } from "../modules/FBRModule";
-import { CalendarModule } from "../modules/CalendarModule";
-import { FloorStaffTabletView } from "../modules/FloorStaffTabletView";
-import { EventsModule } from "../modules/EventsModule";
-import { StaffVendorsModule } from "../modules/StaffVendorsModule";
-import { AuditLogsModule } from "../modules/AuditLogsModule";
-import { CardStudioModule } from "../modules/CardStudioModule";
-import { FeedbackReviewsModule } from "../modules/FeedbackReviewsModule";
-import { AdminExecutiveOverview } from "../dashboard/AdminExecutiveOverview";
-import { AdminUserManagement } from "../admin/AdminUserManagement";
-import { AdminPeriodicClosings } from "../admin/AdminPeriodicClosings";
-import { ManagerEventsOverview } from "../manager/ManagerEventsOverview";
-import { ManagerDutyRosters } from "../manager/ManagerDutyRosters";
-import { ManagerAssetRequisitions } from "../manager/ManagerAssetRequisitions";
-import { ManagerLiveChecklist } from "../manager/ManagerLiveChecklist";
-import { ManagerDepositSettlement } from "../manager/ManagerDepositSettlement";
-import { KitchenDisplayScreen } from "../kitchen/KitchenDisplayScreen";
-import { KitchenPantryInventory } from "../kitchen/KitchenPantryInventory";
-import { KitchenRecipeManager } from "../kitchen/KitchenRecipeManager";
-import { KitchenFormulaCalculator } from "../kitchen/KitchenFormulaCalculator";
-import { WaiterHallTableMonitoring } from "../waiter/WaiterHallTableMonitoring";
-import { WaiterRefillDispatcher } from "../waiter/WaiterRefillDispatcher";
-import { WaiterOvertimeTrigger } from "../waiter/WaiterOvertimeTrigger";
-import { VendorMasterDirectory } from "../vendors/VendorMasterDirectory";
-import { VendorContractorLabor } from "../vendors/VendorContractorLabor";
-import { VendorPurchaseOrdersGRN } from "../vendors/VendorPurchaseOrdersGRN";
-import { VendorTradePayables } from "../vendors/VendorTradePayables";
-import { FinanceExecutiveOverview } from "../finance/FinanceExecutiveOverview";
-import { FinanceGeneralLedger } from "../finance/FinanceGeneralLedger";
-import { FinanceReceivablesCollector } from "../finance/FinanceReceivablesCollector";
-import { FinanceAccountsPayable } from "../finance/FinanceAccountsPayable";
-import { FinanceProfitLossTax } from "../finance/FinanceProfitLossTax";
-import { PortalModulePlaceholder } from "../common/PortalModulePlaceholder";
-import { NavModuleId, AuthUser, PortalType, Booking } from "../../types";
-import { PORTAL_CONFIGS } from "../../config/portals";
+import React, { useState, useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { Sidebar, ROLE_NAV_ITEMS } from './Sidebar';
+import { Topbar } from './Topbar';
+import { HallsRegistryPage } from '../modules/HallsRegistryPage';
+import { BookingsManagementPage } from '../modules/BookingsManagementPage';
+import { ManagerEventSettlementPage } from '../modules/ManagerEventSettlementPage';
+import { KitchenPortalPage } from '../modules/KitchenPortalPage';
+import { FloorCommandPage } from '../modules/FloorCommandPage';
+import { MenuPackagesPage } from '../modules/MenuPackagesPage';
+import { MasterCalendarPage } from '../modules/MasterCalendarPage';
+import { UserManagementPage } from '../modules/UserManagementPage';
+import { SettingsConfigurationPage } from '../modules/SettingsConfigurationPage';
+import { StaffRostersPage } from '../modules/StaffRostersPage';
+import { InvoicesBillingPage } from '../modules/InvoicesBillingPage';
+import { ExpensesManagementPage } from '../modules/ExpensesManagementPage';
+import { FinancialReportsPage } from '../modules/FinancialReportsPage';
+import { AdminExecutiveDashboard } from '../dashboard/AdminExecutiveDashboard';
+import { AccountsDashboard } from '../dashboard/AccountsDashboard';
+import { ManagerDashboard } from '../dashboard/ManagerDashboard';
+import { KitchenDashboard } from '../dashboard/KitchenDashboard';
+import type { UserRole } from '../auth/LoginScreen';
 
 interface MainLayoutProps {
-  currentUser?: AuthUser | null;
-  onLogout?: () => void;
+  activeRole: UserRole;
+  userIdentifier: string;
+  onSignOut: () => void;
 }
 
+const ROLE_SHORTCUT_DESCRIPTIONS: Record<UserRole, Record<string, string>> = {
+  Admin: {
+    'halls-registry': 'Configure halls, capacities, and venue amenities.',
+    bookings: 'Review and manage event reservations.',
+    'master-calendar': 'View hall availability across all dates.',
+    'menu-packages': 'Maintain catering menus and package tiers.',
+    'financial-reports': 'Review revenue, expense, and profitability summaries.',
+    users: 'Manage staff accounts and role permissions.',
+    settings: 'Configure organization profile, tax compliance, and system preferences.',
+  },
+  Manager: {
+    bookings: 'Review and manage event reservations and contracts.',
+    'master-calendar': 'View hall availability and block maintenance dates.',
+    'assigned-events': 'View events assigned to your supervision and live execution.',
+    'table-monitoring': 'Track live banquet table status and guest seating.',
+    'refill-dispatcher': 'Dispatch food and beverage refill requests to the kitchen.',
+    'overtime-request': 'Submit and track event overtime extension requests.',
+    'halls-registry': 'Configure halls, capacities, and venue amenities.',
+    'menu-packages': 'Maintain catering menus and per-head package tiers.',
+    'staff-rosters': 'Coordinate floor shifts and duty allocations.',
+    'final-settlement': 'Record post-event charges and finalize billing settlements.',
+    users: 'Manage staff accounts and system roles.',
+    settings: 'Configure business profile and operational preferences.',
+  },
+  Kitchen: {
+    'kitchen-display': 'Manage live floor requests and active cooking stations.',
+    'pantry-inventory': 'Track raw ingredient stock levels and log kitchen usage.',
+  },
+  Accounts: {
+    invoices: 'Issue client invoices and monitor billing status.',
+    expenses: 'Record operational and vendor expenses.',
+    'financial-reports': 'Access revenue and financial summaries.',
+  },
+};
+
 export const MainLayout: React.FC<MainLayoutProps> = ({
-  currentUser,
-  onLogout,
+  activeRole,
+  userIdentifier,
+  onSignOut,
 }) => {
-  // Resolve user role to initial portal
-  const resolveInitialPortal = (): PortalType => {
-    switch (currentUser?.role) {
-      case "admin":
-        return "admin";
-      case "manager":
-        return "manager";
-      case "kitchen":
-        return "kitchen";
-      case "waiter":
-        return "waiter";
-      case "accountant":
-        return "finance";
-      default:
-        return "admin";
-    }
+  const getDefaultNavId = (role: UserRole): string => {
+    if (role === 'Kitchen') return 'kitchen-display';
+    return 'dashboard';
   };
 
-  // Allowed portals for current user (RBAC)
-  const allowedPortals: PortalType[] = React.useMemo(() => {
-    if (!currentUser)
-      return ["admin", "manager", "kitchen", "waiter", "vendors", "finance"];
-    if (currentUser.role === "admin") {
-      return ["admin", "manager", "kitchen", "waiter", "vendors", "finance"];
-    }
-    if (currentUser.role === "manager") {
-      return ["manager", "kitchen", "waiter", "vendors", "finance"];
-    }
-    if (currentUser.role === "kitchen") {
-      return ["kitchen"];
-    }
-    if (currentUser.role === "waiter") {
-      return ["waiter"];
-    }
-    if (currentUser.role === "accountant") {
-      return ["finance"];
-    }
-    return ["admin"];
-  }, [currentUser]);
-
-  const [activePortal, setActivePortal] = useState<PortalType>(() => {
-    if (typeof window !== "undefined") {
-      const p = window.location.pathname;
-      if (p === "/admin/fbr" || p === "/fbr") {
-        return "admin";
-      }
-    }
-    return resolveInitialPortal();
-  });
-  const [activeModule, setActiveModule] = useState<NavModuleId>(() => {
-    if (typeof window !== "undefined") {
-      const p = window.location.pathname;
-      if (p === "/admin/fbr" || p === "/fbr") return "admin-fbr";
-      if (p === "/admin/settings" || p === "/settings") return "settings";
-    }
-    const p = resolveInitialPortal();
-    return PORTAL_CONFIGS[p]?.defaultModule || "dashboard";
-  });
-
-  const [bookingPreload, setBookingPreload] = useState<{
-    hallName?: string;
-    date?: string;
-    startTime?: string;
-    endTime?: string;
-  } | null>(null);
-
-  const [managerBookingContext, setManagerBookingContext] =
-    useState<Booking | null>(null);
-
+  const [activeNavId, setActiveNavId] = useState<string>(() => getDefaultNavId(activeRole));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname;
-      if (path === "/admin/fbr" || path === "/fbr") {
-        setActivePortal("admin");
-        setActiveModule("admin-fbr");
-      } else if (path === "/admin/settings" || path === "/settings") {
-        setActiveModule("settings");
-      }
-    };
+    setActiveNavId(getDefaultNavId(activeRole));
+  }, [activeRole]);
 
-    handlePopState();
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  // Handle portal switch
-  const handleSelectPortal = (newPortal: PortalType) => {
-    if (!allowedPortals.includes(newPortal)) return;
-    setActivePortal(newPortal);
-    const targetModule =
-      PORTAL_CONFIGS[newPortal]?.defaultModule || "dashboard";
-    setActiveModule(targetModule);
-  };
-
-  const renderActiveModule = () => {
-    switch (activeModule) {
-      // -------------------------------------------------------------
-      // Shared & Admin Modules
-      // -------------------------------------------------------------
-      case "admin-overview":
-        return (
-          <AdminExecutiveOverview
-            onNavigateToModule={(mod) => setActiveModule(mod as NavModuleId)}
-            onOpenCreateBooking={() => setActiveModule("bookings")}
-          />
-        );
-
-      case "dashboard":
-        return (
-          <Dashboard
-            onNavigateToModule={(mod) => setActiveModule(mod as NavModuleId)}
-            onOpenCreateBooking={() => setActiveModule("bookings")}
-          />
-        );
-
-      case "admin-halls":
-      case "halls":
-        return <HallsModule />;
-
-      case "admin-bookings":
-      case "bookings":
-        return (
-          <BookingsModule
-            key={
-              managerBookingContext
-                ? `edit-${managerBookingContext.id}`
-                : bookingPreload
-                ? `preload-${bookingPreload.hallName || ""}-${bookingPreload.date || ""}-${bookingPreload.startTime || ""}`
-                : "bookings-table"
-            }
-            initialCreateData={bookingPreload}
-            initialBooking={managerBookingContext}
-            initialMode={managerBookingContext ? "create" : bookingPreload ? "create" : "table"}
-          />
-        );
-
-      case "calendar":
-        return (
-          <CalendarModule
-            onOpenCreate={(preload) => {
-              setBookingPreload(preload || null);
-              setActiveModule("bookings");
-            }}
-          />
-        );
-
-      case "customers":
-        return <CustomersModule />;
-
-      case "card-studio":
-        return <CardStudioModule />;
-
-      case "feedback":
-        return <FeedbackReviewsModule />;
-
-      case "admin-fbr":
-        return <FBRModule />;
-
-      case "settings":
-        return <SettingsModule />;
-
-      case "admin-audit":
-      case "audit-logs":
-        return <AuditLogsModule />;
-
-      case "admin-users":
-        return <AdminUserManagement currentUser={currentUser} />;
-
-      case "admin-closings":
-        return <AdminPeriodicClosings />;
-
-      // -------------------------------------------------------------
-      // Manager Portal Modules
-      // -------------------------------------------------------------
-      case "manager-overview":
-        return (
-          <ManagerEventsOverview
-            onNavigateToTab={(tabId, booking) => {
-              if (booking) setManagerBookingContext(booking);
-              setActiveModule(tabId as NavModuleId);
-            }}
-          />
-        );
-
-      case "manager-kitchen-refills":
-        return (
-          <WaiterRefillDispatcher
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-            callerRole="Manager"
-            currentUser={currentUser}
-            initialBooking={managerBookingContext}
-          />
-        );
-
-      case "events":
-        return <EventsModule />;
-
-      case "manager-decor":
-        return (
-          <ManagerAssetRequisitions initialBooking={managerBookingContext} />
-        );
-
-      case "manager-roster":
-        return <ManagerDutyRosters initialBooking={managerBookingContext} />;
-
-      case "manager-readiness":
-        return <ManagerLiveChecklist initialBooking={managerBookingContext} />;
-
-      case "manager-assets":
-        return (
-          <ManagerDepositSettlement initialBooking={managerBookingContext} />
-        );
-
-      // -------------------------------------------------------------
-      // Kitchen & Chef Modules
-      // -------------------------------------------------------------
-      case "kitchen-kds":
-        return <KitchenDisplayScreen />;
-
-      case "kitchen-menu":
-        return <KitchenRecipeManager />;
-
-      case "menu":
-        return <MenuModule />;
-
-      case "kitchen-stock":
-        return <KitchenPantryInventory initialView="inventory" />;
-
-      case "inventory":
-        return <InventoryModule />;
-
-      case "kitchen-calculator":
-        return <KitchenFormulaCalculator />;
-
-      case "kitchen-reorder":
-        return <KitchenPantryInventory initialView="orders" />;
-
-      // -------------------------------------------------------------
-      // Waiter Kiosk Modules
-      // -------------------------------------------------------------
-      case "waiter-kiosk":
-      case "waiter-tables":
-      case "staff":
-        return (
-          <WaiterHallTableMonitoring
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "waiter-refills":
-        return (
-          <WaiterRefillDispatcher
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "waiter-overtime":
-        return (
-          <WaiterOvertimeTrigger
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-            currentUser={currentUser}
-          />
-        );
-
-      // -------------------------------------------------------------
-      // Vendors & Suppliers Modules (Phase 6)
-      // -------------------------------------------------------------
-      case "vendors-directory":
-      case "vendors":
-        return (
-          <VendorMasterDirectory
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "vendors-labor":
-        return (
-          <VendorContractorLabor
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "vendors-deliveries":
-        return (
-          <VendorPurchaseOrdersGRN
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "vendors-payables":
-        return (
-          <VendorTradePayables
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      // -------------------------------------------------------------
-      // Financial Accounting Modules (Phase 7)
-      // -------------------------------------------------------------
-      case "finance-overview":
-      case "reports":
-        return (
-          <FinanceExecutiveOverview
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "finance-ledger":
-        return (
-          <FinanceGeneralLedger
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "finance-receivables":
-      case "payments":
-        return (
-          <FinanceReceivablesCollector
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "finance-payables":
-        return (
-          <FinanceAccountsPayable
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      case "finance-expenses":
-      case "expenses":
-        return <ExpensesModule />;
-
-      case "finance-statements":
-        return (
-          <FinanceProfitLossTax
-            onNavigateToTab={(tabId) => setActiveModule(tabId as NavModuleId)}
-          />
-        );
-
-      default:
-        return (
-          <Dashboard
-            onNavigateToModule={(mod) => setActiveModule(mod as NavModuleId)}
-            onOpenCreateBooking={() => setActiveModule("bookings")}
-          />
-        );
-    }
-  };
+  const navItems = ROLE_NAV_ITEMS[activeRole];
+  const activeItem = navItems.find((item) => item.id === activeNavId) || navItems[0];
+  const shortcutItems = navItems.filter((item) => item.id !== 'dashboard');
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen bg-[#0b1120] text-slate-100 flex flex-col antialiased selection:bg-teal-900/50 selection:text-teal-200 font-['Plus_Jakarta_Sans',sans-serif]">
-        {/* Sidebar with Navigation Links Dynamically Contextualized to Active Portal */}
-        <Sidebar
-          activePortal={activePortal}
-          activeModule={activeModule}
-          onSelectModule={setActiveModule}
-          isOpenMobile={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
-          onSelectPortal={handleSelectPortal}
-          allowedPortals={allowedPortals}
-          currentUser={currentUser}
+    <div className="min-h-screen bg-gray-50 text-slate-900 flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900">
+      <Sidebar
+        activeRole={activeRole}
+        activeNavId={activeNavId}
+        onSelectNav={setActiveNavId}
+        isOpenMobile={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
+      />
+
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <Topbar
+          user={{ identifier: userIdentifier, role: activeRole }}
+          activeLabel={activeItem.label}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          onSignOut={onSignOut}
         />
 
-        {/* Main Column */}
-        <div className="lg:pl-64 flex flex-col min-h-screen transition-all overflow-x-hidden min-w-0">
-          {/* Topbar with 6 Portal Tabs, Global Search, and Profile Console */}
-          <Topbar
-            onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            searchValue={globalSearch}
-            onSearchChange={setGlobalSearch}
-            activeModule={activeModule}
-            onSelectModule={setActiveModule}
-            onSelectTabletView={() => {
-              setActivePortal("waiter");
-              setActiveModule("waiter-kiosk");
-            }}
-            currentUser={currentUser}
-            onLogout={onLogout}
-            activePortal={activePortal}
-            onSelectPortal={handleSelectPortal}
-            allowedPortals={allowedPortals}
-          />
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          {activeRole === 'Admin' && activeNavId === 'dashboard' ? (
+            <AdminExecutiveDashboard />
+          ) : activeRole === 'Admin' && activeNavId === 'halls-registry' ? (
+            <HallsRegistryPage />
+          ) : activeRole === 'Admin' && activeNavId === 'bookings' ? (
+            <BookingsManagementPage />
+          ) : activeRole === 'Admin' && activeNavId === 'master-calendar' ? (
+            <MasterCalendarPage />
+          ) : activeRole === 'Admin' && activeNavId === 'menu-packages' ? (
+            <MenuPackagesPage />
+          ) : activeRole === 'Admin' && activeNavId === 'financial-reports' ? (
+            <FinancialReportsPage />
+          ) : activeRole === 'Admin' && activeNavId === 'users' ? (
+            <UserManagementPage />
+          ) : activeRole === 'Admin' && activeNavId === 'settings' ? (
+            <SettingsConfigurationPage />
+          ) : activeRole === 'Manager' && activeNavId === 'dashboard' ? (
+            <ManagerDashboard onNavigate={setActiveNavId} />
+          ) : activeRole === 'Manager' && activeNavId === 'bookings' ? (
+            <BookingsManagementPage />
+          ) : activeRole === 'Manager' && activeNavId === 'master-calendar' ? (
+            <MasterCalendarPage />
+          ) : activeRole === 'Manager' && activeNavId === 'assigned-events' ? (
+            <ManagerEventSettlementPage initialView="list" />
+          ) : activeRole === 'Manager' && activeNavId === 'table-monitoring' ? (
+            <FloorCommandPage view="tables" />
+          ) : activeRole === 'Manager' && activeNavId === 'refill-dispatcher' ? (
+            <FloorCommandPage view="refill" />
+          ) : activeRole === 'Manager' && activeNavId === 'overtime-request' ? (
+            <FloorCommandPage view="overtime" />
+          ) : activeRole === 'Manager' && activeNavId === 'halls-registry' ? (
+            <HallsRegistryPage />
+          ) : activeRole === 'Manager' && activeNavId === 'menu-packages' ? (
+            <MenuPackagesPage />
+          ) : activeRole === 'Manager' && activeNavId === 'staff-rosters' ? (
+            <StaffRostersPage />
+          ) : activeRole === 'Manager' && activeNavId === 'final-settlement' ? (
+            <ManagerEventSettlementPage initialView="settlement" />
+          ) : activeRole === 'Manager' && activeNavId === 'users' ? (
+            <UserManagementPage />
+          ) : activeRole === 'Manager' && activeNavId === 'settings' ? (
+            <SettingsConfigurationPage />
+          ) : activeRole === 'Kitchen' && activeNavId === 'dashboard' ? (
+            <KitchenDashboard onNavigate={setActiveNavId} />
+          ) : activeRole === 'Kitchen' && activeNavId === 'kitchen-display' ? (
+            <KitchenPortalPage view="kds" />
+          ) : activeRole === 'Kitchen' && activeNavId === 'pantry-inventory' ? (
+            <KitchenPortalPage view="pantry" />
+          ) : activeRole === 'Accounts' && activeNavId === 'dashboard' ? (
+            <AccountsDashboard />
+          ) : activeRole === 'Accounts' && activeNavId === 'invoices' ? (
+            <InvoicesBillingPage />
+          ) : activeRole === 'Accounts' && activeNavId === 'expenses' ? (
+            <ExpensesManagementPage />
+          ) : activeRole === 'Accounts' && activeNavId === 'financial-reports' ? (
+            <FinancialReportsPage />
+          ) : activeNavId === 'dashboard' ? (
+            <div className="space-y-8">
+              {/* Role Portal Placeholder Card */}
+              <div className="bg-white rounded-xl border border-slate-200/90 p-6 sm:p-8">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
+                  {activeRole} Portal
+                </h1>
+                <p className="text-sm text-slate-500 mt-2">
+                  Welcome to the {activeRole} workspace.
+                </p>
+              </div>
 
-          {/* Main Content Area */}
-          <main className="relative pt-16 bg-[#0b1120] flex-1 overflow-x-hidden min-w-0">
-            <div className="w-full max-w-full px-3 sm:px-6 lg:px-8 py-5 sm:py-6 overflow-x-hidden min-w-0">
-              {renderActiveModule()}
+              {/* Role-Specific Shortcut Cards */}
+              <div>
+                <h2 className="text-xs font-medium text-slate-500 mb-3">
+                  Quick Shortcuts
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {shortcutItems.map((item) => {
+                    const Icon = item.icon;
+                    const description =
+                      ROLE_SHORTCUT_DESCRIPTIONS[activeRole]?.[item.id] ||
+                      `Open ${item.label}.`;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setActiveNavId(item.id)}
+                        className="group bg-white rounded-xl border border-slate-200/90 hover:border-teal-600/40 p-5 text-left transition-colors cursor-pointer flex flex-col justify-between gap-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-slate-50 group-hover:bg-teal-50 text-slate-500 group-hover:text-teal-700 flex items-center justify-center shrink-0 transition-colors">
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-700 transition-colors shrink-0 mt-1" />
+                        </div>
+
+                        <div>
+                          <div className="text-sm font-medium text-slate-900 group-hover:text-teal-800 transition-colors">
+                            {item.label}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                            {description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </main>
-        </div>
+          ) : (
+            /* Clean Empty-State Placeholder for Selected Sidebar Section */
+            <div className="bg-white rounded-xl border border-slate-200/90 p-8 sm:p-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                  <activeItem.icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
+                    {activeItem.label}
+                  </h1>
+                  <p className="text-xs text-slate-500">
+                    {activeRole} Portal
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-start gap-4">
+                <p className="text-sm text-slate-500">
+                  No records available in {activeItem.label} yet.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveNavId('dashboard')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <span>Back to {activeRole} Portal</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
-    </ThemeProvider>
+    </div>
   );
 };
