@@ -8,7 +8,9 @@ import {
   Trash2,
   ArrowLeft,
   X,
+  Printer,
 } from 'lucide-react';
+import { SEED_BOOKINGS } from '../../data/seedData';
 
 interface BookingItem {
   id: string;
@@ -18,11 +20,16 @@ interface BookingItem {
   cnic: string;
   eventType: string;
   hallName: string;
+  bookingType?: 'Full Hall' | 'Half Hall (Section A)' | 'Half Hall (Section B)';
   eventDate: string;
   guestCount: string;
   seatingArrangement: string;
+  includeMenuPackage?: boolean;
   menuPackage: string;
   dietaryInstructions: string;
+  customRequests?: string;
+  includeDjSound?: boolean;
+  includeStageDecor?: boolean;
   startTime: string;
   endTime: string;
   extraHours: number;
@@ -35,11 +42,11 @@ interface BookingItem {
 }
 
 export const BookingsManagementPage: React.FC = () => {
-  // Strictly empty initial state — no hardcoded dummy data
-  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [bookings, setBookings] = useState<BookingItem[]>(SEED_BOOKINGS);
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingBooking, setViewingBooking] = useState<BookingItem | null>(null);
+  const [receiptBooking, setReceiptBooking] = useState<BookingItem | null>(null);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,11 +61,18 @@ export const BookingsManagementPage: React.FC = () => {
   const [cnic, setCnic] = useState('');
   const [eventType, setEventType] = useState('');
   const [hallName, setHallName] = useState('');
+  const [bookingType, setBookingType] = useState<
+    'Full Hall' | 'Half Hall (Section A)' | 'Half Hall (Section B)'
+  >('Full Hall');
   const [eventDate, setEventDate] = useState('');
   const [guestCount, setGuestCount] = useState('');
   const [seatingArrangement, setSeatingArrangement] = useState('');
+  const [includeMenuPackage, setIncludeMenuPackage] = useState(true);
   const [menuPackage, setMenuPackage] = useState('');
   const [dietaryInstructions, setDietaryInstructions] = useState('');
+  const [customRequests, setCustomRequests] = useState('');
+  const [includeDjSound, setIncludeDjSound] = useState(false);
+  const [includeStageDecor, setIncludeStageDecor] = useState(false);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [extraHours, setExtraHours] = useState('');
@@ -74,11 +88,16 @@ export const BookingsManagementPage: React.FC = () => {
     setCnic('');
     setEventType('');
     setHallName('');
+    setBookingType('Full Hall');
     setEventDate('');
     setGuestCount('');
     setSeatingArrangement('');
+    setIncludeMenuPackage(true);
     setMenuPackage('');
     setDietaryInstructions('');
+    setCustomRequests('');
+    setIncludeDjSound(false);
+    setIncludeStageDecor(false);
     setStartTime('');
     setEndTime('');
     setExtraHours('');
@@ -100,11 +119,16 @@ export const BookingsManagementPage: React.FC = () => {
     setCnic(item.cnic);
     setEventType(item.eventType);
     setHallName(item.hallName);
+    setBookingType(item.bookingType ?? 'Full Hall');
     setEventDate(item.eventDate);
     setGuestCount(item.guestCount);
     setSeatingArrangement(item.seatingArrangement);
+    setIncludeMenuPackage(item.includeMenuPackage ?? true);
     setMenuPackage(item.menuPackage);
     setDietaryInstructions(item.dietaryInstructions);
+    setCustomRequests(item.customRequests ?? '');
+    setIncludeDjSound(item.includeDjSound ?? false);
+    setIncludeStageDecor(item.includeStageDecor ?? false);
     setStartTime(item.startTime);
     setEndTime(item.endTime);
     setExtraHours(item.extraHours ? String(item.extraHours) : '');
@@ -128,11 +152,10 @@ export const BookingsManagementPage: React.FC = () => {
     advancePayment.trim() !== '' ||
     (extraHours.trim() !== '' && ratePerHour.trim() !== '');
 
-  const handleSaveBooking = (e: React.FormEvent) => {
-    e.preventDefault();
+  const persistBooking = (): BookingItem | null => {
     if (!fullName.trim()) {
       setFormError('Customer Full Name is required.');
-      return;
+      return null;
     }
 
     const derivedPaymentStatus: BookingItem['paymentStatus'] =
@@ -143,63 +166,118 @@ export const BookingsManagementPage: React.FC = () => {
         : 'Unpaid';
 
     if (editingId) {
+      let updatedRecord: BookingItem | null = null;
       setBookings((prev) =>
-        prev.map((b) =>
-          b.id === editingId
-            ? {
-                ...b,
-                customerName: fullName.trim(),
-                phone: phone.trim() || '[--]',
-                cnic: cnic.trim() || '[--]',
-                eventType: eventType || '[--]',
-                hallName: hallName || '[--]',
-                eventDate: eventDate || '[--]',
-                guestCount: guestCount || '[--]',
-                seatingArrangement: seatingArrangement.trim() || '[--]',
-                menuPackage: menuPackage || '[--]',
-                dietaryInstructions: dietaryInstructions.trim(),
-                startTime: startTime || '[--]',
-                endTime: endTime || '[--]',
-                extraHours: parsedExtraHours,
-                ratePerHour: parsedRatePerHour,
-                totalAmount: grandTotal,
-                advancePayment: parsedAdvance,
-                remainingBalance,
-                paymentStatus: derivedPaymentStatus,
-              }
-            : b
-        )
+        prev.map((b) => {
+          if (b.id !== editingId) return b;
+          updatedRecord = {
+            ...b,
+            customerName: fullName.trim(),
+            phone: phone.trim() || '[--]',
+            cnic: cnic.trim() || '[--]',
+            eventType: eventType || '[--]',
+            hallName: hallName || '[--]',
+            bookingType,
+            eventDate: eventDate || '[--]',
+            guestCount: guestCount || '[--]',
+            seatingArrangement: seatingArrangement.trim() || '[--]',
+            includeMenuPackage,
+            menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+            dietaryInstructions: dietaryInstructions.trim(),
+            customRequests: customRequests.trim(),
+            includeDjSound,
+            includeStageDecor,
+            startTime: startTime || '[--]',
+            endTime: endTime || '[--]',
+            extraHours: parsedExtraHours,
+            ratePerHour: parsedRatePerHour,
+            totalAmount: grandTotal,
+            advancePayment: parsedAdvance,
+            remainingBalance,
+            paymentStatus: derivedPaymentStatus,
+          };
+          return updatedRecord;
+        })
       );
-    } else {
-      const nextIndex = bookings.length + 1;
-      const newBooking: BookingItem = {
-        id: `bk-${Date.now()}`,
-        bookingId: `BK-${String(nextIndex).padStart(4, '0')}`,
-        customerName: fullName.trim(),
-        phone: phone.trim() || '[--]',
-        cnic: cnic.trim() || '[--]',
-        eventType: eventType || '[--]',
-        hallName: hallName || '[--]',
-        eventDate: eventDate || '[--]',
-        guestCount: guestCount || '[--]',
-        seatingArrangement: seatingArrangement.trim() || '[--]',
-        menuPackage: menuPackage || '[--]',
-        dietaryInstructions: dietaryInstructions.trim(),
-        startTime: startTime || '[--]',
-        endTime: endTime || '[--]',
-        extraHours: parsedExtraHours,
-        ratePerHour: parsedRatePerHour,
-        totalAmount: grandTotal,
-        advancePayment: parsedAdvance,
-        remainingBalance,
-        status: 'Pending',
-        paymentStatus: derivedPaymentStatus,
-      };
-      setBookings((prev) => [newBooking, ...prev]);
+      return (
+        updatedRecord ?? {
+          id: editingId,
+          bookingId: bookings.find((b) => b.id === editingId)?.bookingId || '[--]',
+          customerName: fullName.trim(),
+          phone: phone.trim() || '[--]',
+          cnic: cnic.trim() || '[--]',
+          eventType: eventType || '[--]',
+          hallName: hallName || '[--]',
+          bookingType,
+          eventDate: eventDate || '[--]',
+          guestCount: guestCount || '[--]',
+          seatingArrangement: seatingArrangement.trim() || '[--]',
+          includeMenuPackage,
+          menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+          dietaryInstructions: dietaryInstructions.trim(),
+          customRequests: customRequests.trim(),
+          includeDjSound,
+          includeStageDecor,
+          startTime: startTime || '[--]',
+          endTime: endTime || '[--]',
+          extraHours: parsedExtraHours,
+          ratePerHour: parsedRatePerHour,
+          totalAmount: grandTotal,
+          advancePayment: parsedAdvance,
+          remainingBalance,
+          status: bookings.find((b) => b.id === editingId)?.status || 'Pending',
+          paymentStatus: derivedPaymentStatus,
+        }
+      );
     }
 
+    const nextIndex = bookings.length + 1;
+    const newBooking: BookingItem = {
+      id: `bk-${Date.now()}`,
+      bookingId: `BK-${String(nextIndex).padStart(4, '0')}`,
+      customerName: fullName.trim(),
+      phone: phone.trim() || '[--]',
+      cnic: cnic.trim() || '[--]',
+      eventType: eventType || '[--]',
+      hallName: hallName || '[--]',
+      bookingType,
+      eventDate: eventDate || '[--]',
+      guestCount: guestCount || '[--]',
+      seatingArrangement: seatingArrangement.trim() || '[--]',
+      includeMenuPackage,
+      menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+      dietaryInstructions: dietaryInstructions.trim(),
+      customRequests: customRequests.trim(),
+      includeDjSound,
+      includeStageDecor,
+      startTime: startTime || '[--]',
+      endTime: endTime || '[--]',
+      extraHours: parsedExtraHours,
+      ratePerHour: parsedRatePerHour,
+      totalAmount: grandTotal,
+      advancePayment: parsedAdvance,
+      remainingBalance,
+      status: 'Pending',
+      paymentStatus: derivedPaymentStatus,
+    };
+    setBookings((prev) => [newBooking, ...prev]);
+    return newBooking;
+  };
+
+  const handleSaveBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    const saved = persistBooking();
+    if (!saved) return;
     resetForm();
     setViewMode('list');
+  };
+
+  const handleSaveAndPrintReceipt = () => {
+    const saved = persistBooking();
+    if (!saved) return;
+    resetForm();
+    setViewMode('list');
+    setReceiptBooking(saved);
   };
 
   const handleDeleteBooking = (id: string) => {
@@ -344,7 +422,7 @@ export const BookingsManagementPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-gray-900 pb-4 border-b border-gray-100">
               2. Event &amp; Venue Details
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
               <div>
                 <label
                   htmlFor="booking-event-type"
@@ -381,6 +459,36 @@ export const BookingsManagementPage: React.FC = () => {
                   <option value="">[--]</option>
                 </select>
               </div>
+
+              <div>
+                <label
+                  htmlFor="booking-type"
+                  className="block text-xs font-medium text-gray-700 mb-1.5"
+                >
+                  Booking Type <span className="text-red-600">*</span>
+                </label>
+                <select
+                  id="booking-type"
+                  required
+                  value={bookingType}
+                  onChange={(e) =>
+                    setBookingType(
+                      e.target.value as
+                        | 'Full Hall'
+                        | 'Half Hall (Section A)'
+                        | 'Half Hall (Section B)'
+                    )
+                  }
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
+                >
+                  <option value="Full Hall">Full Hall</option>
+                  <option value="Half Hall (Section A)">Half Hall (Section A)</option>
+                  <option value="Half Hall (Section B)">Half Hall (Section B)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
 
               <div>
                 <label
@@ -433,30 +541,99 @@ export const BookingsManagementPage: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Additional Services Sub-section */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                Additional Services
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="flex items-center justify-between p-3.5 rounded-lg border border-gray-200 bg-gray-50/50 hover:border-teal-700/40 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includeDjSound}
+                      onChange={(e) => setIncludeDjSound(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-teal-700 focus:ring-teal-700/20 cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-gray-800">
+                      Include DJ &amp; Sound System
+                    </span>
+                  </div>
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-lg border border-gray-200 bg-gray-50/50 hover:border-teal-700/40 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={includeStageDecor}
+                      onChange={(e) => setIncludeStageDecor(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-teal-700 focus:ring-teal-700/20 cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-gray-800">
+                      Include Stage/Decor Services
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
           </section>
 
           {/* Section 3: Menu & Catering */}
           <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 pb-4 border-b border-gray-100">
-              3. Menu &amp; Catering
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-gray-900">
+                3. Menu &amp; Catering
+              </h2>
+              <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                <span className="text-xs font-medium text-gray-700">
+                  Include Hall Menu Package
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeMenuPackage}
+                  onClick={() => {
+                    const next = !includeMenuPackage;
+                    setIncludeMenuPackage(next);
+                    if (!next) setMenuPackage('');
+                  }}
+                  className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-700/20 ${
+                    includeMenuPackage ? 'bg-teal-700' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      includeMenuPackage ? 'translate-x-4.5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </label>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-              <div>
-                <label
-                  htmlFor="booking-menu"
-                  className="block text-xs font-medium text-gray-700 mb-1.5"
-                >
-                  Menu Package
-                </label>
-                <select
-                  id="booking-menu"
-                  value={menuPackage}
-                  onChange={(e) => setMenuPackage(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
-                >
-                  <option value="">[--]</option>
-                </select>
-              </div>
+              {includeMenuPackage ? (
+                <div>
+                  <label
+                    htmlFor="booking-menu"
+                    className="block text-xs font-medium text-gray-700 mb-1.5"
+                  >
+                    Menu Package
+                  </label>
+                  <select
+                    id="booking-menu"
+                    value={menuPackage}
+                    onChange={(e) => setMenuPackage(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
+                  >
+                    <option value="">[--]</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="md:col-span-2 rounded-lg border border-dashed border-gray-200 bg-gray-50/70 px-4 py-3 text-xs text-gray-500">
+                  Hall menu package is disabled. Customer will arrange their own catering.
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <label
@@ -467,10 +644,27 @@ export const BookingsManagementPage: React.FC = () => {
                 </label>
                 <textarea
                   id="booking-dietary"
-                  rows={3}
+                  rows={2}
                   value={dietaryInstructions}
                   onChange={(e) => setDietaryInstructions(e.target.value)}
                   placeholder="[--]"
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 resize-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label
+                  htmlFor="booking-custom-requests"
+                  className="block text-xs font-medium text-gray-700 mb-1.5"
+                >
+                  Special Custom Requests / Add-ons
+                </label>
+                <textarea
+                  id="booking-custom-requests"
+                  rows={3}
+                  value={customRequests}
+                  onChange={(e) => setCustomRequests(e.target.value)}
+                  placeholder="e.g., Need 50 extra chairs, special VIP sofa for stage, sugar-free desserts, etc."
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 resize-none"
                 />
               </div>
@@ -618,7 +812,7 @@ export const BookingsManagementPage: React.FC = () => {
           </section>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={() => {
@@ -628,6 +822,14 @@ export const BookingsManagementPage: React.FC = () => {
               className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors cursor-pointer"
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAndPrintReceipt}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-teal-700 bg-white hover:bg-teal-50 text-teal-700 text-sm font-medium transition-colors cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Save &amp; Print Receipt</span>
             </button>
             <button
               type="submit"
@@ -806,6 +1008,15 @@ export const BookingsManagementPage: React.FC = () => {
                       <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
+                          onClick={() => setReceiptBooking(booking)}
+                          aria-label="Print receipt"
+                          title="Print Receipt"
+                          className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-teal-50 hover:border-teal-200 text-gray-600 hover:text-teal-700 transition-colors cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setViewingBooking(booking)}
                           aria-label="View booking"
                           className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-teal-700 transition-colors cursor-pointer"
@@ -897,7 +1108,19 @@ export const BookingsManagementPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex justify-end">
+            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = viewingBooking;
+                  setViewingBooking(null);
+                  setReceiptBooking(current);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-teal-700 bg-white hover:bg-teal-50 text-teal-700 text-xs font-medium cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Receipt</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setViewingBooking(null)}
@@ -909,6 +1132,233 @@ export const BookingsManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* A5 Printable Receipt Modal */}
+      {receiptBooking && (() => {
+        const extraTimeCharge =
+          (receiptBooking.extraHours || 0) * (receiptBooking.ratePerHour || 0);
+        const extraServicesList: string[] = [];
+        if (receiptBooking.includeDjSound) extraServicesList.push('DJ & Sound');
+        if (receiptBooking.includeStageDecor) extraServicesList.push('Stage/Decor');
+        if (receiptBooking.extraHours > 0) {
+          extraServicesList.push(`${receiptBooking.extraHours}h Extra Time`);
+        }
+        const extraServicesLabel =
+          extraServicesList.length > 0
+            ? extraTimeCharge > 0
+              ? `${extraServicesList.join(', ')} (Rs. ${extraTimeCharge.toLocaleString('en-PK')})`
+              : extraServicesList.join(', ')
+            : '[--]';
+
+        const menuDisplay =
+          receiptBooking.includeMenuPackage === false ||
+          receiptBooking.menuPackage === 'Customer Own' ||
+          receiptBooking.menuPackage === 'Own Catering (No Package)'
+            ? 'Customer Own'
+            : receiptBooking.menuPackage || '[--]';
+
+        const timeSlot =
+          receiptBooking.startTime &&
+          receiptBooking.startTime !== '[--]' &&
+          receiptBooking.endTime &&
+          receiptBooking.endTime !== '[--]'
+            ? `${receiptBooking.startTime} - ${receiptBooking.endTime}`
+            : '[--]';
+
+        const receiptDate = new Date().toISOString().slice(0, 10);
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-[1px] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Booking Receipt"
+          >
+            <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-[560px] overflow-hidden my-auto">
+              {/* Printable A5 Receipt Sheet */}
+              <div className="printable-receipt-area bg-white p-7 text-gray-900">
+                {/* Header */}
+                <div className="text-center pb-4 border-b border-gray-200">
+                  <h2 className="text-lg font-bold tracking-tight text-gray-900 font-['Plus_Jakarta_Sans']">
+                    [System Name]
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">Address: [--]</p>
+                  <p className="text-xs text-gray-500">Contact: [--]</p>
+                  <div className="mt-2.5 inline-block px-3 py-0.5 rounded border border-gray-200 bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-700">
+                    Booking Receipt
+                  </div>
+                </div>
+
+                {/* Receipt Details */}
+                <div className="grid grid-cols-3 gap-3 py-3.5 border-b border-gray-100 text-xs">
+                  <div>
+                    <p className="text-[11px] text-gray-400">Receipt #</p>
+                    <p className="font-mono font-semibold text-gray-900 mt-0.5">
+                      {receiptBooking.bookingId && receiptBooking.bookingId !== '[--]'
+                        ? `RCP-${receiptBooking.bookingId}`
+                        : '[--]'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[11px] text-gray-400">Date</p>
+                    <p className="font-mono font-medium text-gray-900 mt-0.5">
+                      {receiptDate}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-gray-400">Booking Ref</p>
+                    <p className="font-mono font-semibold text-gray-900 mt-0.5">
+                      {receiptBooking.bookingId || '[--]'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className="py-3.5 border-b border-gray-100">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                    Customer Details
+                  </h3>
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <p className="text-[11px] text-gray-500">Name</p>
+                      <p className="font-medium text-gray-900 mt-0.5">
+                        {receiptBooking.customerName || '[--]'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Phone</p>
+                      <p className="font-mono text-gray-900 mt-0.5">
+                        {receiptBooking.phone || '[--]'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">CNIC</p>
+                      <p className="font-mono text-gray-900 mt-0.5">
+                        {receiptBooking.cnic || '[--]'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event Details */}
+                <div className="py-3.5 border-b border-gray-100">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                    Event Details
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <p className="text-[11px] text-gray-500">Hall Name</p>
+                      <p className="font-medium text-gray-900 mt-0.5">
+                        {receiptBooking.hallName || '[--]'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Event Date</p>
+                      <p className="font-mono text-gray-900 mt-0.5">
+                        {receiptBooking.eventDate || '[--]'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Time (Slot)</p>
+                      <p className="font-mono text-gray-900 mt-0.5">{timeSlot}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Seating Type</p>
+                      <p className="font-medium text-gray-900 mt-0.5">
+                        {receiptBooking.bookingType || receiptBooking.seatingArrangement || '[--]'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Guest Count</p>
+                      <p className="font-mono text-gray-900 mt-0.5">
+                        {receiptBooking.guestCount || '[--]'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Breakdown */}
+                <div className="py-3.5 border-b border-gray-200">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2.5">
+                    Financial Breakdown
+                  </h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Hall Rent</span>
+                      <span className="font-mono text-gray-900">[--]</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Menu Package</span>
+                      <span className="font-medium text-gray-900">{menuDisplay}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-gray-600">
+                        Extra Services (DJ/Decor/Extra Time)
+                      </span>
+                      <span className="font-mono text-gray-900 text-right">
+                        {extraServicesLabel}
+                      </span>
+                    </div>
+
+                    <div className="pt-2.5 mt-2.5 border-t border-gray-100 space-y-1.5">
+                      <div className="flex items-center justify-between font-semibold text-gray-900">
+                        <span>Total Amount</span>
+                        <span className="font-mono tabular-nums">
+                          {receiptBooking.totalAmount > 0
+                            ? `Rs. ${receiptBooking.totalAmount.toLocaleString('en-PK')}`
+                            : '[--]'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-700">
+                        <span>Advance Paid</span>
+                        <span className="font-mono tabular-nums">
+                          {receiptBooking.advancePayment > 0
+                            ? `Rs. ${receiptBooking.advancePayment.toLocaleString('en-PK')}`
+                            : '[--]'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-dashed border-gray-200 font-bold text-gray-900 text-sm">
+                        <span>Balance Due</span>
+                        <span className="font-mono tabular-nums">
+                          {receiptBooking.totalAmount > 0 || receiptBooking.remainingBalance > 0
+                            ? `Rs. ${receiptBooking.remainingBalance.toLocaleString('en-PK')}`
+                            : '[--]'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="pt-4 text-center">
+                  <p className="text-xs font-medium text-gray-700">
+                    Thank you for booking with us!
+                  </p>
+                </div>
+              </div>
+
+              {/* Modal Action Bar (Hidden in Print) */}
+              <div className="no-print px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setReceiptBooking(null)}
+                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

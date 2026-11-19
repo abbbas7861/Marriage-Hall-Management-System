@@ -10,6 +10,7 @@ import {
   Building2,
   Users,
 } from 'lucide-react';
+import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
 
 interface AssignedEvent {
   id: string;
@@ -30,8 +31,7 @@ interface ManagerEventSettlementPageProps {
 export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProps> = ({
   initialView = 'list',
 }) => {
-  // Strictly empty initial arrays — no hardcoded fake data
-  const [events] = useState<AssignedEvent[]>([]);
+  const [events] = useState<AssignedEvent[]>(SEED_ASSIGNED_EVENTS);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [viewMode, setViewMode] = useState<'list' | 'settlement'>(initialView);
   const [selectedEvent, setSelectedEvent] = useState<AssignedEvent | null>(null);

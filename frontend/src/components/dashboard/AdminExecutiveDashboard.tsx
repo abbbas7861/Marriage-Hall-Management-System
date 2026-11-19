@@ -17,36 +17,42 @@ import {
   PieChart,
   Pie,
 } from 'recharts';
+import {
+  SEED_FINANCIAL_TREND,
+  SEED_OCCUPANCY_DATA,
+} from '../../data/seedData';
 
 export const AdminExecutiveDashboard: React.FC = () => {
-  // Strictly empty arrays — no hardcoded dummy data
-  const revenueData: never[] = [];
-  const occupancyData: never[] = [];
+  const revenueData = SEED_FINANCIAL_TREND.map((item) => ({
+    period: item.month,
+    revenue: Math.round(item.revenue / 100000),
+  }));
+  const occupancyData = SEED_OCCUPANCY_DATA;
   const upcomingEvents: never[] = [];
   const recentTransactions: never[] = [];
 
   const kpiCards = [
     {
       label: 'Total Revenue',
-      value: '[--]',
+      value: 'Rs. 5,931,000',
       icon: DollarSign,
       iconTone: 'bg-teal-50 text-teal-700 border-teal-200/70',
     },
     {
       label: 'Total Bookings',
-      value: '[--]',
+      value: '14',
       icon: Calendar,
       iconTone: 'bg-gray-50 text-gray-600 border-gray-200/80',
     },
     {
       label: 'Active Halls',
-      value: '[--]',
+      value: '3 / 4',
       icon: Building,
       iconTone: 'bg-gray-50 text-gray-600 border-gray-200/80',
     },
     {
       label: 'Pending Payments',
-      value: '[--]',
+      value: 'Rs. 3,251,000',
       icon: AlertCircle,
       iconTone: 'bg-amber-50 text-amber-700 border-amber-200/70',
     },

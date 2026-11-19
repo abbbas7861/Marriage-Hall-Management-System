@@ -15,6 +15,9 @@ import { StaffRostersPage } from '../modules/StaffRostersPage';
 import { InvoicesBillingPage } from '../modules/InvoicesBillingPage';
 import { ExpensesManagementPage } from '../modules/ExpensesManagementPage';
 import { FinancialReportsPage } from '../modules/FinancialReportsPage';
+import { EventControlCenterPage } from '../modules/EventControlCenterPage';
+import { KitchenRequisitionsPage } from '../modules/KitchenRequisitionsPage';
+import { EventProfitabilityTrackerPage } from '../modules/EventProfitabilityTrackerPage';
 import { AdminExecutiveDashboard } from '../dashboard/AdminExecutiveDashboard';
 import { AccountsDashboard } from '../dashboard/AccountsDashboard';
 import { ManagerDashboard } from '../dashboard/ManagerDashboard';
@@ -69,6 +72,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   const getDefaultNavId = (role: UserRole): string => {
     if (role === 'Kitchen') return 'kitchen-display';
+    if (role === 'Manager') return 'event-control-center';
     return 'dashboard';
   };
 
@@ -99,6 +103,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           activeLabel={activeItem.label}
           onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
           onSignOut={onSignOut}
+          onNavigate={setActiveNavId}
         />
 
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
@@ -118,6 +123,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <UserManagementPage />
           ) : activeRole === 'Admin' && activeNavId === 'settings' ? (
             <SettingsConfigurationPage />
+          ) : activeRole === 'Manager' && activeNavId === 'event-control-center' ? (
+            <EventControlCenterPage />
           ) : activeRole === 'Manager' && activeNavId === 'dashboard' ? (
             <ManagerDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Manager' && activeNavId === 'bookings' ? (
@@ -148,10 +155,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <KitchenDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Kitchen' && activeNavId === 'kitchen-display' ? (
             <KitchenPortalPage view="kds" />
+          ) : activeRole === 'Kitchen' && activeNavId === 'event-requisitions' ? (
+            <KitchenRequisitionsPage />
           ) : activeRole === 'Kitchen' && activeNavId === 'pantry-inventory' ? (
             <KitchenPortalPage view="pantry" />
           ) : activeRole === 'Accounts' && activeNavId === 'dashboard' ? (
             <AccountsDashboard />
+          ) : activeRole === 'Accounts' && activeNavId === 'event-tracker' ? (
+            <EventProfitabilityTrackerPage />
           ) : activeRole === 'Accounts' && activeNavId === 'invoices' ? (
             <InvoicesBillingPage />
           ) : activeRole === 'Accounts' && activeNavId === 'expenses' ? (

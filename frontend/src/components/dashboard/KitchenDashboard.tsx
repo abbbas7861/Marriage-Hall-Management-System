@@ -6,6 +6,10 @@ import {
   Clock,
   RefreshCw,
 } from 'lucide-react';
+import {
+  SEED_KDS_REQUESTS,
+  SEED_PANTRY_INGREDIENTS,
+} from '../../data/seedData';
 
 interface PendingKdsItem {
   id: string;
@@ -28,9 +32,21 @@ interface KitchenDashboardProps {
 export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
   onNavigate,
 }) => {
-  // Strictly empty arrays — zero hardcoded dummy data
-  const pendingRequests: PendingKdsItem[] = [];
-  const lowStockItems: LowStockIngredient[] = [];
+  const pendingRequests: PendingKdsItem[] = SEED_KDS_REQUESTS.map((r) => ({
+    id: r.id,
+    tableNo: r.location,
+    item: `${r.itemName} (×${r.quantity})`,
+    time: r.requestedAt,
+    status: r.status === 'new' ? 'New' : r.status === 'preparing' ? 'Preparing' : 'Ready',
+  }));
+
+  const lowStockItems: LowStockIngredient[] = SEED_PANTRY_INGREDIENTS.filter(
+    (item) => item.currentStock <= item.minThreshold
+  ).map((item) => ({
+    id: item.id,
+    name: item.name,
+    currentStock: `${item.currentStock} ${item.unit}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -56,7 +72,7 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            {pendingRequests.length}
           </p>
         </div>
 
@@ -70,7 +86,7 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            {lowStockItems.length}
           </p>
         </div>
 
@@ -84,7 +100,7 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            {SEED_PANTRY_INGREDIENTS.length}
           </p>
         </div>
       </div>

@@ -1,0 +1,588 @@
+import type { UserRole } from '../components/auth/LoginScreen';
+
+export const SEED_HALLS = [
+  {
+    id: 'HALL-01',
+    name: 'Royal Grand Hall',
+    capacity: 800,
+    baseRent: 280000,
+    location: 'Main Boulevard, Ground Floor',
+    facilities: ['AC', 'Parking', 'Stage', 'Bridal Room'],
+    status: 'Active' as const,
+  },
+  {
+    id: 'HALL-02',
+    name: 'Emerald Marquee',
+    capacity: 600,
+    baseRent: 220000,
+    location: 'East Wing Lawn',
+    facilities: ['AC', 'Parking', 'Stage'],
+    status: 'Active' as const,
+  },
+  {
+    id: 'HALL-03',
+    name: 'Crystal Banquet',
+    capacity: 400,
+    baseRent: 165000,
+    location: 'First Floor, North Tower',
+    facilities: ['AC', 'Stage', 'Bridal Room'],
+    status: 'Active' as const,
+  },
+  {
+    id: 'HALL-04',
+    name: 'Pearl Garden Lawn',
+    capacity: 500,
+    baseRent: 145000,
+    location: 'West Courtyard',
+    facilities: ['Parking', 'Stage'],
+    status: 'Under Maintenance' as const,
+  },
+];
+
+export const SEED_BOOKINGS = [
+  {
+    id: '1',
+    bookingId: 'BK-2026-101',
+    customerName: 'Usman Tariq',
+    phone: '+92 300 4128890',
+    cnic: '35202-4419821-3',
+    eventType: 'Barat',
+    hallName: 'Royal Grand Hall',
+    eventDate: '2026-11-19',
+    guestCount: '650',
+    seatingArrangement: 'Round Tables + VIP Sofa Lounge',
+    menuPackage: 'Royal Shadi Buffet',
+    dietaryInstructions: 'Separate sugar-free dessert counter',
+    startTime: '19:00',
+    endTime: '23:00',
+    extraHours: 1,
+    ratePerHour: 25000,
+    totalAmount: 1930000,
+    advancePayment: 1200000,
+    remainingBalance: 730000,
+    status: 'Confirmed' as const,
+    paymentStatus: 'Partial' as const,
+  },
+  {
+    id: '2',
+    bookingId: 'BK-2026-102',
+    customerName: 'Ayesha Kamran',
+    phone: '+92 321 9845120',
+    cnic: '35201-8834120-2',
+    eventType: 'Walima',
+    hallName: 'Emerald Marquee',
+    eventDate: '2026-11-20',
+    guestCount: '480',
+    seatingArrangement: 'Banquet Clusters',
+    menuPackage: 'Executive Walima Menu',
+    dietaryInstructions: 'Low-spice mutton karahi for head table',
+    startTime: '13:00',
+    endTime: '17:00',
+    extraHours: 0,
+    ratePerHour: 20000,
+    totalAmount: 1180000,
+    advancePayment: 1180000,
+    remainingBalance: 0,
+    status: 'Confirmed' as const,
+    paymentStatus: 'Paid' as const,
+  },
+  {
+    id: '3',
+    bookingId: 'BK-2026-103',
+    customerName: 'Bilal Mahmood',
+    phone: '+92 333 7710945',
+    cnic: '35202-1190432-7',
+    eventType: 'Mehndi',
+    hallName: 'Crystal Banquet',
+    eventDate: '2026-11-22',
+    guestCount: '320',
+    seatingArrangement: 'Mehndi Lounge & Dance Floor',
+    menuPackage: 'Classic Mehndi Feast',
+    dietaryInstructions: 'Live gol gappay & jalebi station',
+    startTime: '20:00',
+    endTime: '23:30',
+    extraHours: 0,
+    ratePerHour: 18000,
+    totalAmount: 741000,
+    advancePayment: 300000,
+    remainingBalance: 441000,
+    status: 'Pending' as const,
+    paymentStatus: 'Partial' as const,
+  },
+  {
+    id: '4',
+    bookingId: 'BK-2026-104',
+    customerName: 'Dr. Salman Qureshi',
+    phone: '+92 301 5523901',
+    cnic: '35202-6620194-5',
+    eventType: 'Walima',
+    hallName: 'Royal Grand Hall',
+    eventDate: '2026-11-25',
+    guestCount: '720',
+    seatingArrangement: 'Royal Banquet Theater',
+    menuPackage: 'Royal Shadi Buffet',
+    dietaryInstructions: 'No nuts in kheer',
+    startTime: '19:30',
+    endTime: '23:30',
+    extraHours: 0,
+    ratePerHour: 25000,
+    totalAmount: 2080000,
+    advancePayment: 0,
+    remainingBalance: 2080000,
+    status: 'Pending' as const,
+    paymentStatus: 'Unpaid' as const,
+  },
+];
+
+export const SEED_MENU_PACKAGES = [
+  {
+    id: 'PKG-101',
+    name: 'Royal Shadi Buffet',
+    pricePerHead: 2500,
+    tier: 'Royal' as const,
+    dishes: [
+      'Mutton Qorma',
+      'Chicken Steam Roast',
+      'Sindhi Biryani',
+      'Live BBQ Platter',
+      'Roghni Naan',
+      'Shahi Tukray',
+      'Kashmiri Chai',
+    ],
+  },
+  {
+    id: 'PKG-102',
+    name: 'Executive Walima Menu',
+    pricePerHead: 2000,
+    tier: 'Executive' as const,
+    dishes: [
+      'Mutton Kunna',
+      'Chicken Malai Boti',
+      'Kabuli Pulao',
+      'Garlic Naan',
+      'Russian Salad',
+      'Gajar Halwa',
+      'Green Tea',
+    ],
+  },
+  {
+    id: 'PKG-103',
+    name: 'Classic Mehndi Feast',
+    pricePerHead: 1800,
+    tier: 'Budget' as const,
+    dishes: [
+      'Chicken Karahi',
+      'Seekh Kabab',
+      'Chicken Biryani',
+      'Live Jalebi',
+      'Dahi Bhallay',
+      'Naan & Raita',
+    ],
+  },
+];
+
+export const SEED_USERS: Array<{
+  id: string;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  status: 'Active' | 'Inactive';
+  lastLogin: string;
+}> = [
+  {
+    id: 'USR-101',
+    fullName: 'Hafiz Arshad Abbas',
+    email: 'admin@royalpalmmarquee.pk',
+    role: 'Admin',
+    status: 'Active',
+    lastLogin: '2026-11-19 09:15 AM',
+  },
+  {
+    id: 'USR-102',
+    fullName: 'Zainab Farooq',
+    email: 'manager@royalpalmmarquee.pk',
+    role: 'Manager',
+    status: 'Active',
+    lastLogin: '2026-11-19 08:40 AM',
+  },
+  {
+    id: 'USR-103',
+    fullName: 'Chef Rashid Mehmood',
+    email: 'kitchen@royalpalmmarquee.pk',
+    role: 'Kitchen',
+    status: 'Active',
+    lastLogin: '2026-11-19 07:55 AM',
+  },
+  {
+    id: 'USR-104',
+    fullName: 'Kamran Siddiqui',
+    email: 'accounts@royalpalmmarquee.pk',
+    role: 'Accounts',
+    status: 'Active',
+    lastLogin: '2026-11-18 06:20 PM',
+  },
+];
+
+export const SEED_ASSIGNED_EVENTS = [
+  {
+    id: 'EV-201',
+    customerName: 'Usman Tariq — Barat',
+    hallName: 'Royal Grand Hall',
+    eventDate: '2026-11-19',
+    eventTime: '07:00 PM - 11:00 PM',
+    status: 'Live' as const,
+    totalGuests: 650,
+    menuPackage: 'Royal Shadi Buffet',
+    baseHallRent: 280000,
+  },
+  {
+    id: 'EV-202',
+    customerName: 'Ayesha Kamran — Walima',
+    hallName: 'Emerald Marquee',
+    eventDate: '2026-11-20',
+    eventTime: '01:00 PM - 05:00 PM',
+    status: 'Setup' as const,
+    totalGuests: 480,
+    menuPackage: 'Executive Walima Menu',
+    baseHallRent: 220000,
+  },
+  {
+    id: 'EV-203',
+    customerName: 'Hassan Raza — Reception',
+    hallName: 'Crystal Banquet',
+    eventDate: '2026-11-17',
+    eventTime: '07:30 PM - 11:30 PM',
+    status: 'Concluded' as const,
+    totalGuests: 380,
+    menuPackage: 'Executive Walima Menu',
+    baseHallRent: 165000,
+  },
+];
+
+export const SEED_FLOOR_TABLES = [
+  { id: 'T-01', label: 'VIP Table 1', status: 'Occupied' as const, guestCount: 10 },
+  { id: 'T-02', label: 'VIP Table 2', status: 'Occupied' as const, guestCount: 10 },
+  { id: 'T-03', label: 'Table 3', status: 'Occupied' as const, guestCount: 8 },
+  { id: 'T-04', label: 'Table 4', status: 'Needs Cleaning' as const, guestCount: 8 },
+  { id: 'T-05', label: 'Table 5', status: 'Ready' as const, guestCount: 8 },
+  { id: 'T-06', label: 'Table 6', status: 'Occupied' as const, guestCount: 8 },
+  { id: 'T-07', label: 'Table 7', status: 'Needs Cleaning' as const, guestCount: 6 },
+  { id: 'T-08', label: 'Table 8', status: 'Ready' as const, guestCount: 8 },
+];
+
+export const SEED_REFILL_REQUESTS = [
+  {
+    id: 'RF-901',
+    table: 'VIP Table 1',
+    item: 'Naan',
+    quantity: 4,
+    status: 'Preparing' as const,
+    timestamp: '08:15 PM',
+  },
+  {
+    id: 'RF-902',
+    table: 'Table 4',
+    item: 'Water',
+    quantity: 6,
+    status: 'Preparing' as const,
+    timestamp: '08:18 PM',
+  },
+];
+
+export const SEED_KDS_REQUESTS = [
+  {
+    id: 'KDS-301',
+    location: 'VIP Table 1',
+    itemName: 'Roghni Naan Basket',
+    quantity: 4,
+    unit: 'baskets',
+    requestedAt: '08:15 PM',
+    status: 'new' as const,
+    notes: 'Serve piping hot',
+  },
+  {
+    id: 'KDS-302',
+    location: 'Buffet Station A',
+    itemName: 'Mutton Qorma Refill',
+    quantity: 2,
+    unit: 'chafers',
+    requestedAt: '08:10 PM',
+    status: 'preparing' as const,
+  },
+  {
+    id: 'KDS-303',
+    location: 'Table 6',
+    itemName: 'Sindhi Biryani Platter',
+    quantity: 3,
+    unit: 'platters',
+    requestedAt: '08:04 PM',
+    status: 'ready' as const,
+  },
+];
+
+export const SEED_PANTRY_INGREDIENTS = [
+  {
+    id: 'ING-501',
+    name: 'Basmati Sella Rice',
+    category: 'Grains & Rice',
+    currentStock: 180,
+    unit: 'kg',
+    minThreshold: 50,
+    pendingDelivery: false,
+  },
+  {
+    id: 'ING-502',
+    name: 'Fresh Mutton',
+    category: 'Meat & Poultry',
+    currentStock: 18,
+    unit: 'kg',
+    minThreshold: 40,
+    pendingDelivery: true,
+  },
+  {
+    id: 'ING-503',
+    name: 'Cooking Oil (Canola)',
+    category: 'Dairy & Oils',
+    currentStock: 25,
+    unit: 'liters',
+    minThreshold: 30,
+    pendingDelivery: true,
+  },
+  {
+    id: 'ING-504',
+    name: 'Whole Chicken',
+    category: 'Meat & Poultry',
+    currentStock: 95,
+    unit: 'kg',
+    minThreshold: 40,
+    pendingDelivery: false,
+  },
+];
+
+export const SEED_STAFF_ROSTER = [
+  {
+    id: 'RST-701',
+    staffName: 'Imran Ali',
+    role: 'Supervisor' as const,
+    assignedArea: 'Royal Grand Hall — Main',
+    shift: 'Evening' as const,
+    shiftTime: '04:00 PM - 12:00 AM',
+    status: 'Present' as const,
+  },
+  {
+    id: 'RST-702',
+    staffName: 'Waqas Ahmed',
+    role: 'Waiter' as const,
+    assignedArea: 'VIP Tables 1-2',
+    shift: 'Evening' as const,
+    shiftTime: '04:00 PM - 12:00 AM',
+    status: 'Present' as const,
+  },
+  {
+    id: 'RST-703',
+    staffName: 'Nadeem Akram',
+    role: 'Waiter' as const,
+    assignedArea: 'Tables 3-6',
+    shift: 'Evening' as const,
+    shiftTime: '04:00 PM - 12:00 AM',
+    status: 'Present' as const,
+  },
+  {
+    id: 'RST-704',
+    staffName: 'Sajid Hussain',
+    role: 'Cleaner' as const,
+    assignedArea: 'Buffet & Crockery Bay',
+    shift: 'Evening' as const,
+    shiftTime: '04:00 PM - 12:00 AM',
+    status: 'Present' as const,
+  },
+];
+
+export const SEED_INVOICES = [
+  {
+    id: 'INV-401',
+    bookingRef: 'BK-2026-101',
+    customerName: 'Usman Tariq',
+    totalAmount: 1930000,
+    paidAmount: 1200000,
+    balanceDue: 730000,
+    status: 'Partial' as const,
+    dueDate: '2026-11-19',
+    notes: 'Final balance due at event conclusion',
+  },
+  {
+    id: 'INV-402',
+    bookingRef: 'BK-2026-102',
+    customerName: 'Ayesha Kamran',
+    totalAmount: 1180000,
+    paidAmount: 1180000,
+    balanceDue: 0,
+    status: 'Paid' as const,
+    dueDate: '2026-11-20',
+  },
+  {
+    id: 'INV-403',
+    bookingRef: 'BK-2026-103',
+    customerName: 'Bilal Mahmood',
+    totalAmount: 741000,
+    paidAmount: 300000,
+    balanceDue: 441000,
+    status: 'Partial' as const,
+    dueDate: '2026-11-22',
+  },
+  {
+    id: 'INV-404',
+    bookingRef: 'BK-2026-104',
+    customerName: 'Dr. Salman Qureshi',
+    totalAmount: 2080000,
+    paidAmount: 0,
+    balanceDue: 2080000,
+    status: 'Unpaid' as const,
+    dueDate: '2026-11-25',
+  },
+];
+
+export const SEED_EXPENSES = [
+  {
+    id: 'EXP-301',
+    description: 'LESCO Commercial Electricity Bill',
+    category: 'Utilities' as const,
+    paidTo: 'LESCO',
+    date: '2026-11-12',
+    amount: 185000,
+    status: 'Paid' as const,
+  },
+  {
+    id: 'EXP-302',
+    description: 'Fresh Floral Stage & Entrance Decor',
+    category: 'Supplies' as const,
+    paidTo: 'Gulberg Florists',
+    date: '2026-11-18',
+    amount: 95000,
+    status: 'Paid' as const,
+  },
+  {
+    id: 'EXP-303',
+    description: 'Generator Diesel & Servicing',
+    category: 'Maintenance' as const,
+    paidTo: 'Al-Fatah Power Systems',
+    date: '2026-11-16',
+    amount: 64000,
+    status: 'Paid' as const,
+  },
+  {
+    id: 'EXP-304',
+    description: 'Banquet Floor Staff Overtime',
+    category: 'Staff' as const,
+    paidTo: 'Payroll Disbursement',
+    date: '2026-11-19',
+    amount: 42000,
+    status: 'Pending' as const,
+  },
+];
+
+export const SEED_FINANCIAL_TREND = [
+  { month: 'Jul', revenue: 3200000, expenses: 1450000 },
+  { month: 'Aug', revenue: 4100000, expenses: 1780000 },
+  { month: 'Sep', revenue: 3850000, expenses: 1620000 },
+  { month: 'Oct', revenue: 5400000, expenses: 2150000 },
+  { month: 'Nov', revenue: 5931000, expenses: 2290000 },
+];
+
+export const SEED_EXPENSE_BREAKDOWN = [
+  { name: 'Food & Catering', value: 1180000 },
+  { name: 'Utilities', value: 420000 },
+  { name: 'Staff Payroll', value: 390000 },
+  { name: 'Maintenance', value: 195000 },
+  { name: 'Decor & Supplies', value: 105000 },
+];
+
+export const SEED_MONTHLY_SUMMARY = [
+  {
+    month: 'November 2026',
+    totalBookings: 14,
+    grossRevenue: 5931000,
+    totalExpenses: 2290000,
+    netProfit: 3641000,
+  },
+  {
+    month: 'October 2026',
+    totalBookings: 12,
+    grossRevenue: 5400000,
+    totalExpenses: 2150000,
+    netProfit: 3250000,
+  },
+  {
+    month: 'September 2026',
+    totalBookings: 9,
+    grossRevenue: 3850000,
+    totalExpenses: 1620000,
+    netProfit: 2230000,
+  },
+];
+
+export const SEED_OCCUPANCY_DATA = [
+  { name: 'Royal Grand Hall', value: 85 },
+  { name: 'Emerald Marquee', value: 72 },
+  { name: 'Crystal Banquet', value: 64 },
+  { name: 'Pearl Garden', value: 30 },
+];
+
+export const SEED_PENDING_FUND_REQUESTS = [
+  {
+    id: 'FREQ-101',
+    eventName: 'Event A',
+    requestedBy: 'Zainab Farooq (Manager)',
+    reason: 'Kitchen Mutton & Dry Fruit Requisition',
+    amount: 85000,
+    requestedAt: '02:30 PM',
+  },
+  {
+    id: 'FREQ-102',
+    eventName: 'Event B',
+    requestedBy: 'Zainab Farooq (Manager)',
+    reason: 'Extra Chandelier & Stage Lighting',
+    amount: 35000,
+    requestedAt: '03:10 PM',
+  },
+];
+
+export const SEED_EVENT_TRACKER_EXPENSES = [
+  {
+    id: 'ET-101',
+    eventName: 'Event A',
+    date: '2026-11-19',
+    category: 'Food' as const,
+    description: 'Royal Shadi Buffet Raw Ingredients',
+    amount: 420000,
+    status: 'Approved' as const,
+  },
+  {
+    id: 'ET-102',
+    eventName: 'Event A',
+    date: '2026-11-19',
+    category: 'Decor' as const,
+    description: 'Fresh Rose Stage Backdrop & Walkway',
+    amount: 95000,
+    status: 'Approved' as const,
+  },
+  {
+    id: 'ET-103',
+    eventName: 'Event B',
+    date: '2026-11-20',
+    category: 'Damage' as const,
+    description: 'Broken Crockery & Glassware Replacement',
+    amount: 14500,
+    status: 'Pending' as const,
+  },
+];
+
+export const SEED_BLOCKED_DATES = [
+  {
+    id: 'BLK-001',
+    hall: 'Hall A',
+    startDate: '2026-11-26',
+    endDate: '2026-11-27',
+    reason: 'HVAC & Chandelier Maintenance',
+  },
+];

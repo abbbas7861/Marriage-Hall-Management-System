@@ -11,6 +11,10 @@ import {
   Utensils,
   X,
 } from 'lucide-react';
+import {
+  SEED_KDS_REQUESTS,
+  SEED_PANTRY_INGREDIENTS,
+} from '../../data/seedData';
 
 export type KdsOrderStatus = 'new' | 'preparing' | 'ready';
 
@@ -52,11 +56,10 @@ const INGREDIENT_CATEGORIES = [
 const INGREDIENT_UNITS = ['kg', 'g', 'liters', 'ml', 'pcs', 'packs', 'boxes'];
 
 export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) => {
-  // Strictly empty initial arrays — zero hardcoded dummy data
-  const [requests, setRequests] = useState<KdsRequest[]>([]);
+  const [requests, setRequests] = useState<KdsRequest[]>(SEED_KDS_REQUESTS);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [ingredients, setIngredients] = useState<PantryIngredient[]>([]);
+  const [ingredients, setIngredients] = useState<PantryIngredient[]>(SEED_PANTRY_INGREDIENTS);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [usageTarget, setUsageTarget] = useState<PantryIngredient | null>(null);
   const [usageAmount, setUsageAmount] = useState('');

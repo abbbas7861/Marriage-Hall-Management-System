@@ -9,6 +9,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
 
 interface LiveEventItem {
   id: string;
@@ -24,8 +25,12 @@ interface ManagerDashboardProps {
 export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   onNavigate,
 }) => {
-  // Strictly empty array — zero hardcoded dummy data
-  const todaysEvents: LiveEventItem[] = [];
+  const todaysEvents: LiveEventItem[] = SEED_ASSIGNED_EVENTS.map((e) => ({
+    id: e.id,
+    eventName: e.customerName,
+    hall: e.hallName,
+    status: e.status,
+  }));
 
   return (
     <div className="space-y-6">
@@ -51,7 +56,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            3
           </p>
         </div>
 
@@ -65,7 +70,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            2
           </p>
         </div>
 
@@ -79,7 +84,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            4
           </p>
         </div>
 
@@ -93,7 +98,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            75%
           </p>
         </div>
       </div>

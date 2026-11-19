@@ -8,6 +8,7 @@ import {
   Utensils,
   X,
 } from 'lucide-react';
+import { SEED_MENU_PACKAGES } from '../../data/seedData';
 
 export type PackageTier = 'Royal' | 'Executive' | 'Budget';
 
@@ -28,8 +29,7 @@ const TIER_BADGE_STYLES: Record<PackageTier, string> = {
 };
 
 export const MenuPackagesPage: React.FC = () => {
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [packages, setPackages] = useState<MenuPackage[]>([]);
+  const [packages, setPackages] = useState<MenuPackage[]>(SEED_MENU_PACKAGES);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 

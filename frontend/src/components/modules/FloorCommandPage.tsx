@@ -9,6 +9,11 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import {
+  SEED_ASSIGNED_EVENTS,
+  SEED_FLOOR_TABLES,
+  SEED_REFILL_REQUESTS,
+} from '../../data/seedData';
 
 export type TableStatus = 'Occupied' | 'Needs Cleaning' | 'Ready';
 
@@ -73,15 +78,16 @@ const TABLE_STATUS_STYLES: Record<
 };
 
 export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
-  // Strictly empty initial arrays — zero hardcoded dummy data
-  const [tables] = useState<FloorTable[]>([]);
-  const [assignedEvents] = useState<string[]>([]);
+  const [tables] = useState<FloorTable[]>(SEED_FLOOR_TABLES);
+  const [assignedEvents] = useState<string[]>(
+    SEED_ASSIGNED_EVENTS.map((e) => `${e.hallName} — ${e.customerName}`)
+  );
 
   // Refill Dispatcher state
   const [selectedTable, setSelectedTable] = useState('');
   const [selectedItem, setSelectedItem] = useState(REFILL_ITEMS[0]);
   const [refillQuantity, setRefillQuantity] = useState<string>('1');
-  const [refillRequests, setRefillRequests] = useState<RefillRequest[]>([]);
+  const [refillRequests, setRefillRequests] = useState<RefillRequest[]>(SEED_REFILL_REQUESTS);
 
   // Overtime Request state
   const [selectedHallEvent, setSelectedHallEvent] = useState('');

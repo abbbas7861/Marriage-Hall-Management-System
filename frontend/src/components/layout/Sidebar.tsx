@@ -43,6 +43,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
   ],
   Manager: [
     // Core Operations
+    { id: 'event-control-center', label: 'Event Control Center', icon: LayoutGrid, section: 'Core Operations' },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'Core Operations' },
     { id: 'bookings', label: 'Bookings', icon: CalendarDays, section: 'Core Operations' },
     { id: 'master-calendar', label: 'Master Calendar', icon: Calendar, section: 'Core Operations' },
@@ -64,10 +65,12 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
   Kitchen: [
     { id: 'dashboard', label: 'Kitchen Dashboard', icon: LayoutDashboard },
     { id: 'kitchen-display', label: 'Kitchen Display (KDS)', icon: ChefHat },
+    { id: 'event-requisitions', label: 'Event Requisitions', icon: ClipboardCheck },
     { id: 'pantry-inventory', label: 'Pantry Inventory', icon: Package },
   ],
   Accounts: [
     { id: 'dashboard', label: 'Accounts Dashboard', icon: LayoutDashboard },
+    { id: 'event-tracker', label: 'Event Tracker', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3 },

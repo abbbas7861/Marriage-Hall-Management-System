@@ -9,6 +9,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
+import { SEED_BOOKINGS, SEED_INVOICES } from '../../data/seedData';
 
 export type InvoiceStatus = 'Paid' | 'Partial' | 'Unpaid';
 
@@ -36,9 +37,10 @@ const STATUS_BADGE_STYLES: Record<InvoiceStatus, string> = {
 };
 
 export const InvoicesBillingPage: React.FC = () => {
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
-  const [bookings] = useState<BookingOption[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>(SEED_INVOICES);
+  const [bookings] = useState<BookingOption[]>(
+    SEED_BOOKINGS.map((b) => ({ ref: b.bookingId, customerName: b.customerName }))
+  );
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');

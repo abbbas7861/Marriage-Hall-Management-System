@@ -13,6 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { SEED_HALLS } from '../../data/seedData';
 
 interface HallRecord {
   id: string;
@@ -27,8 +28,7 @@ interface HallRecord {
 const FACILITY_OPTIONS = ['AC', 'Parking', 'Stage', 'Bridal Room'] as const;
 
 export const HallsRegistryPage: React.FC = () => {
-  // Strictly no hardcoded dummy data
-  const [halls, setHalls] = useState<HallRecord[]>([]);
+  const [halls, setHalls] = useState<HallRecord[]>(SEED_HALLS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Under Maintenance'>('All');
 

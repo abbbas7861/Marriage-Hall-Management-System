@@ -1,12 +1,14 @@
 import React from 'react';
 import { Menu, LogOut } from 'lucide-react';
 import type { AuthUser } from '../auth/LoginScreen';
+import { NotificationCenter } from './NotificationCenter';
 
 interface TopbarProps {
   user: AuthUser;
   activeLabel: string;
   onToggleMobileMenu: () => void;
   onSignOut: () => void;
+  onNavigate?: (navId: string) => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -14,6 +16,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   activeLabel,
   onToggleMobileMenu,
   onSignOut,
+  onNavigate,
 }) => {
   return (
     <header className="sticky top-0 z-30 h-14 bg-white/95 backdrop-blur-xs border-b border-slate-200/90 flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -41,8 +44,10 @@ export const Topbar: React.FC<TopbarProps> = ({
         </nav>
       </div>
 
-      {/* Right: Account identity + Sign Out action */}
-      <div className="flex items-center gap-4 shrink-0">
+      {/* Right: Notifications + Account identity + Sign Out action */}
+      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+        <NotificationCenter role={user.role} onNavigate={onNavigate} />
+
         <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
           <span className="text-slate-700 font-medium truncate max-w-[180px]">
             {user.identifier}

@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { SEED_FINANCIAL_TREND, SEED_INVOICES } from '../../data/seedData';
 
 interface RecentInvoiceItem {
   id: string;
@@ -24,9 +25,13 @@ interface RecentInvoiceItem {
 }
 
 export const AccountsDashboard: React.FC = () => {
-  // Strictly empty arrays — zero hardcoded dummy data
-  const chartData: Array<{ month: string; revenue: number; expenses: number }> = [];
-  const recentInvoices: RecentInvoiceItem[] = [];
+  const chartData = SEED_FINANCIAL_TREND;
+  const recentInvoices: RecentInvoiceItem[] = SEED_INVOICES.map((inv) => ({
+    id: inv.id,
+    customer: inv.customerName,
+    amount: `Rs. ${inv.totalAmount.toLocaleString()}`,
+    status: inv.status,
+  }));
 
   return (
     <div className="space-y-6">
@@ -52,7 +57,7 @@ export const AccountsDashboard: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 5,931,000
           </p>
         </div>
 
@@ -66,7 +71,7 @@ export const AccountsDashboard: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 3,251,000
           </p>
         </div>
 
@@ -80,7 +85,7 @@ export const AccountsDashboard: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 2,290,000
           </p>
         </div>
 
@@ -94,7 +99,7 @@ export const AccountsDashboard: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 3,641,000
           </p>
         </div>
       </div>

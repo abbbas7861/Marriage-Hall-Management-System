@@ -11,6 +11,7 @@ import {
   Wand2,
   X,
 } from 'lucide-react';
+import { SEED_ASSIGNED_EVENTS, SEED_STAFF_ROSTER } from '../../data/seedData';
 
 export type StaffRole = 'Waiter' | 'Cleaner' | 'Helper' | 'Supervisor';
 export type ShiftOption = 'Morning' | 'Evening' | 'Full Day';
@@ -54,10 +55,18 @@ const STATUS_BADGE_STYLES: Record<AttendanceStatus, string> = {
 };
 
 export const StaffRostersPage: React.FC = () => {
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [activeEvents] = useState<string[]>([]);
-  const [availableStaff] = useState<string[]>([]);
-  const [roster, setRoster] = useState<RosterAssignment[]>([]);
+  const [activeEvents] = useState<string[]>(
+    SEED_ASSIGNED_EVENTS.map((e) => `${e.customerName} (${e.hallName})`)
+  );
+  const [availableStaff] = useState<string[]>([
+    'Imran Ali',
+    'Waqas Ahmed',
+    'Nadeem Akram',
+    'Sajid Hussain',
+    'Faisal Raza',
+    'Tariq Mehmood',
+  ]);
+  const [roster, setRoster] = useState<RosterAssignment[]>(SEED_STAFF_ROSTER);
 
   // Controls bar state
   const [selectedEvent, setSelectedEvent] = useState('');

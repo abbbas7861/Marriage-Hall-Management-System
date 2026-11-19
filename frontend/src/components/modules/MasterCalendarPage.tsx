@@ -1,27 +1,80 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Ban,
+  AlertCircle,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   X,
 } from 'lucide-react';
 
-export interface BlockedDateRange {
+export type EventSlot = 'Lunch/Afternoon' | 'Dinner/Evening';
+export type BookingType =
+  | 'Full Hall'
+  | 'Half Hall (Section A)'
+  | 'Half Hall (Section B)';
+
+export interface CalendarBooking {
   id: string;
+  date: string; // YYYY-MM-DD
   hall: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-  reason: string;
+  slot: EventSlot;
+  bookingType: BookingType;
+  customerName: string;
+  eventType: string;
+  guestCount: string;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const HALL_OPTIONS = ['All Halls', 'Hall A', 'Hall B'];
+const HALL_OPTIONS = ['All Halls', 'Hall A', 'Hall B', 'Hall C'];
+const BOOKABLE_HALLS = ['Hall A', 'Hall B', 'Hall C'];
+const EVENT_SLOTS: EventSlot[] = ['Lunch/Afternoon', 'Dinner/Evening'];
+const BOOKING_TYPES: BookingType[] = [
+  'Full Hall',
+  'Half Hall (Section A)',
+  'Half Hall (Section B)',
+];
 
 function formatDateKey(year: number, month: number, day: number): string {
   const m = String(month + 1).padStart(2, '0');
   const d = String(day).padStart(2, '0');
   return `${year}-${m}-${d}`;
+}
+
+type SlotAvailabilityState =
+  | 'Open'
+  | 'Half Booked (A)'
+  | 'Half Booked (B)'
+  | 'Fully Booked';
+
+function getSlotState(
+  bookings: CalendarBooking[],
+  dateKey: string,
+  hall: string,
+  slot: EventSlot
+): SlotAvailabilityState {
+  const matching = bookings.filter(
+    (b) => b.date === dateKey && b.hall === hall && b.slot === slot
+  );
+  if (matching.length === 0) return 'Open';
+
+  const hasFull = matching.some((b) => b.bookingType === 'Full Hall');
+  const hasA = matching.some((b) => b.bookingType === 'Half Hall (Section A)');
+  const hasB = matching.some((b) => b.bookingType === 'Half Hall (Section B)');
+
+  if (hasFull || (hasA && hasB)) return 'Fully Booked';
+  if (hasA) return 'Half Booked (A)';
+  if (hasB) return 'Half Booked (B)';
+  return 'Open';
+}
+
+function isHallFullyBookedForDay(
+  bookings: CalendarBooking[],
+  dateKey: string,
+  hall: string
+): boolean {
+  const slot1 = getSlotState(bookings, dateKey, hall, 'Lunch/Afternoon');
+  const slot2 = getSlotState(bookings, dateKey, hall, 'Dinner/Evening');
+  return slot1 === 'Fully Booked' && slot2 === 'Fully Booked';
 }
 
 export const MasterCalendarPage: React.FC = () => {
@@ -30,15 +83,20 @@ export const MasterCalendarPage: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [selectedHall, setSelectedHall] = useState<string>('All Halls');
 
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [blockedRanges, setBlockedRanges] = useState<BlockedDateRange[]>([]);
-  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  // Strictly empty initial state — no fake data
+  const [bookings, setBookings] = useState<CalendarBooking[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Block Date modal form state
-  const [blockHall, setBlockHall] = useState<string>('Hall A');
-  const [blockStartDate, setBlockStartDate] = useState<string>('');
-  const [blockEndDate, setBlockEndDate] = useState<string>('');
-  const [blockReason, setBlockReason] = useState<string>('');
+  // Create New Booking Modal state
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingDate, setBookingDate] = useState<string>('');
+  const [bookingHall, setBookingHall] = useState<string>('Hall A');
+  const [bookingSlot, setBookingSlot] = useState<EventSlot>('Lunch/Afternoon');
+  const [bookingType, setBookingType] = useState<BookingType>('Full Hall');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [eventType, setEventType] = useState<string>('Barat');
+  const [guestCount, setGuestCount] = useState<string>('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const todayKey = formatDateKey(
     today.getFullYear(),
@@ -52,6 +110,13 @@ export const MasterCalendarPage: React.FC = () => {
       year: 'numeric',
     });
   }, [currentYear, currentMonth]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3500);
+  };
 
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -76,38 +141,100 @@ export const MasterCalendarPage: React.FC = () => {
     setCurrentMonth(today.getMonth());
   };
 
-  const handleOpenBlockModal = (prefillDate?: string) => {
-    setBlockHall(selectedHall === 'All Halls' ? 'Hall A' : selectedHall);
-    setBlockStartDate(prefillDate ?? '');
-    setBlockEndDate(prefillDate ?? '');
-    setBlockReason('');
-    setIsBlockModalOpen(true);
+  const handleDateCellClick = (dateKey: string) => {
+    const targetHall = selectedHall === 'All Halls' ? 'Hall A' : selectedHall;
+
+    // Enforce max 2 bookings (Lunch + Dinner) per day per hall
+    if (isHallFullyBookedForDay(bookings, dateKey, targetHall)) {
+      showToast('This hall is fully booked for the day.');
+      return;
+    }
+
+    // Pick first available slot for that hall
+    const slot1State = getSlotState(bookings, dateKey, targetHall, 'Lunch/Afternoon');
+    const defaultSlot: EventSlot =
+      slot1State !== 'Fully Booked' ? 'Lunch/Afternoon' : 'Dinner/Evening';
+
+    // Pick first available booking type for that slot
+    const defaultSlotState = getSlotState(bookings, dateKey, targetHall, defaultSlot);
+    const defaultType: BookingType =
+      defaultSlotState === 'Half Booked (A)'
+        ? 'Half Hall (Section B)'
+        : defaultSlotState === 'Half Booked (B)'
+          ? 'Half Hall (Section A)'
+          : 'Full Hall';
+
+    setBookingDate(dateKey);
+    setBookingHall(targetHall);
+    setBookingSlot(defaultSlot);
+    setBookingType(defaultType);
+    setCustomerName('');
+    setEventType('Barat');
+    setGuestCount('');
+    setFormError(null);
+    setIsBookingModalOpen(true);
   };
 
-  const handleBlockDates = (e: React.FormEvent) => {
+  const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!blockStartDate || !blockEndDate) return;
+    setFormError(null);
 
-    const start = blockStartDate <= blockEndDate ? blockStartDate : blockEndDate;
-    const end = blockEndDate >= blockStartDate ? blockEndDate : blockStartDate;
+    if (isHallFullyBookedForDay(bookings, bookingDate, bookingHall)) {
+      setFormError('This hall is fully booked for the day.');
+      return;
+    }
 
-    const newRange: BlockedDateRange = {
-      id: `BLK-${Date.now().toString().slice(-5)}`,
-      hall: blockHall,
-      startDate: start,
-      endDate: end,
-      reason: blockReason.trim() || 'Blocked',
+    const currentSlotState = getSlotState(
+      bookings,
+      bookingDate,
+      bookingHall,
+      bookingSlot
+    );
+
+    if (currentSlotState === 'Fully Booked') {
+      setFormError(`Slot "${bookingSlot}" is already fully booked for ${bookingHall}.`);
+      return;
+    }
+
+    if (
+      currentSlotState === 'Half Booked (A)' &&
+      (bookingType === 'Full Hall' || bookingType === 'Half Hall (Section A)')
+    ) {
+      setFormError(
+        'Section A is already booked for this slot. Only Half Hall (Section B) is available.'
+      );
+      return;
+    }
+
+    if (
+      currentSlotState === 'Half Booked (B)' &&
+      (bookingType === 'Full Hall' || bookingType === 'Half Hall (Section B)')
+    ) {
+      setFormError(
+        'Section B is already booked for this slot. Only Half Hall (Section A) is available.'
+      );
+      return;
+    }
+
+    const created: CalendarBooking = {
+      id: `BK-${Date.now().toString().slice(-4)}`,
+      date: bookingDate,
+      hall: bookingHall,
+      slot: bookingSlot,
+      bookingType,
+      customerName: customerName.trim() || '[--]',
+      eventType,
+      guestCount: guestCount.trim() || '[--]',
     };
 
-    setBlockedRanges((prev) => [newRange, ...prev]);
-    setIsBlockModalOpen(false);
+    setBookings((prev) => [...prev, created]);
+    setIsBookingModalOpen(false);
   };
 
   // Build Mon–Sun calendar grid cells
   const calendarCells = useMemo(() => {
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    // Convert JS Sunday=0..Saturday=6 to Monday=0..Sunday=6
     const startOffset = (firstDayOfMonth.getDay() + 6) % 7;
 
     const cells: Array<{
@@ -135,30 +262,58 @@ export const MasterCalendarPage: React.FC = () => {
     return cells;
   }, [currentYear, currentMonth]);
 
-  const getBlocksForDate = (dateKey: string): BlockedDateRange[] => {
-    return blockedRanges.filter((range) => {
-      const matchesDate = dateKey >= range.startDate && dateKey <= range.endDate;
-      const matchesHall =
-        selectedHall === 'All Halls' ||
-        range.hall === 'All Halls' ||
-        range.hall === selectedHall;
-      return matchesDate && matchesHall;
-    });
+  const getSlotBadgeStyle = (state: SlotAvailabilityState): string => {
+    switch (state) {
+      case 'Fully Booked':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'Half Booked (A)':
+        return 'bg-amber-50 text-amber-800 border-amber-200';
+      case 'Half Booked (B)':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      default:
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    }
   };
+
+  const activeSlotStateInModal = useMemo(() => {
+    if (!bookingDate) return 'Open' as SlotAvailabilityState;
+    return getSlotState(bookings, bookingDate, bookingHall, bookingSlot);
+  }, [bookings, bookingDate, bookingHall, bookingSlot]);
 
   return (
     <div className="space-y-6">
+      {/* Toast / Alert Banner */}
+      {toastMessage && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            aria-label="Dismiss alert"
+            className="p-1 rounded-md text-rose-500 hover:bg-rose-100 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top Section: Header */}
       <div>
         <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
           Calendar &amp; Availability
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          View hall bookings, availability, and block dates for maintenance.
+          Click any open date to schedule a booking. Maximum 2 slots per day per hall (Lunch &amp; Dinner) with Half-Hall support.
         </p>
       </div>
 
-      {/* Controls Bar */}
+      {/* Controls Bar (Block Date removed) */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         {/* Left Side: Month Navigation + Today */}
         <div className="flex flex-wrap items-center gap-2.5">
@@ -193,8 +348,27 @@ export const MasterCalendarPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Right Side: Hall Selector + Block Date */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Right Side: Legend + Hall Selector */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="hidden xl:flex items-center gap-3 text-xs text-slate-600">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Open
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Half (A)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              Half (B)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              Fully Booked
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-slate-400 hidden sm:block" />
             <select
@@ -210,22 +384,13 @@ export const MasterCalendarPage: React.FC = () => {
               ))}
             </select>
           </div>
-
-          <button
-            type="button"
-            onClick={() => handleOpenBlockModal()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer"
-          >
-            <Ban className="w-4 h-4" />
-            Block Date
-          </button>
         </div>
       </div>
 
       {/* Main Section: Custom Month View Calendar Grid */}
       <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-[680px]">
+          <div className="min-w-[700px]">
             {/* Weekday Header Row (Mon-Sun) */}
             <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80">
               {WEEKDAYS.map((dayName) => (
@@ -243,38 +408,65 @@ export const MasterCalendarPage: React.FC = () => {
               {calendarCells.map((cell, index) => {
                 const isLastCol = (index + 1) % 7 === 0;
                 const isToday = cell.dateKey === todayKey;
-                const blocks = cell.dateKey ? getBlocksForDate(cell.dateKey) : [];
 
                 if (!cell.day || !cell.dateKey) {
                   return (
                     <div
                       key={cell.key}
-                      className={`min-h-[110px] sm:min-h-[124px] bg-slate-50/40 border-b border-slate-200 ${
+                      className={`min-h-[118px] sm:min-h-[132px] bg-slate-50/40 border-b border-slate-200 ${
                         isLastCol ? '' : 'border-r'
                       }`}
                     />
                   );
                 }
 
+                const dateKey = cell.dateKey;
+                const activeHallForDisplay =
+                  selectedHall === 'All Halls' ? 'Hall A' : selectedHall;
+                const dayBookings = bookings.filter(
+                  (b) =>
+                    b.date === dateKey &&
+                    (selectedHall === 'All Halls' || b.hall === selectedHall)
+                );
+
+                const slot1State = getSlotState(
+                  bookings,
+                  dateKey,
+                  activeHallForDisplay,
+                  'Lunch/Afternoon'
+                );
+                const slot2State = getSlotState(
+                  bookings,
+                  dateKey,
+                  activeHallForDisplay,
+                  'Dinner/Evening'
+                );
+                const isFullyBooked =
+                  selectedHall !== 'All Halls' &&
+                  slot1State === 'Fully Booked' &&
+                  slot2State === 'Fully Booked';
+
                 return (
                   <div
                     key={cell.key}
-                    onClick={() => handleOpenBlockModal(cell.dateKey ?? undefined)}
-                    className={`min-h-[110px] sm:min-h-[124px] p-2.5 bg-white hover:bg-teal-50/35 transition-colors cursor-pointer flex flex-col justify-between border-b border-slate-200 ${
+                    onClick={() => handleDateCellClick(dateKey)}
+                    className={`min-h-[118px] sm:min-h-[132px] p-2.5 transition-colors cursor-pointer flex flex-col justify-between border-b border-slate-200 ${
                       isLastCol ? '' : 'border-r'
+                    } ${
+                      isFullyBooked
+                        ? 'bg-rose-50/35 hover:bg-rose-50/60'
+                        : 'bg-white hover:bg-teal-50/35'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span
                         className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-mono font-semibold tabular-nums ${
-                          isToday
-                            ? 'bg-teal-700 text-white'
-                            : 'text-slate-700'
+                          isToday ? 'bg-teal-700 text-white' : 'text-slate-700'
                         }`}
                       >
                         {cell.day}
                       </span>
-                      {blocks.length === 0 && (
+                      {dayBookings.length === 0 && (
                         <span className="text-[10px] font-mono text-slate-300">
                           [--]
                         </span>
@@ -282,25 +474,47 @@ export const MasterCalendarPage: React.FC = () => {
                     </div>
 
                     <div className="mt-2 space-y-1">
-                      {blocks.length === 0 ? (
+                      {dayBookings.length === 0 ? (
                         <p className="text-[11px] font-medium text-slate-400">
-                          Open Slots
+                          Open
                         </p>
-                      ) : (
-                        blocks.slice(0, 2).map((blk) => (
+                      ) : selectedHall !== 'All Halls' ? (
+                        <>
                           <div
-                            key={blk.id}
-                            className="rounded bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 truncate"
-                            title={`${blk.hall}: ${blk.reason}`}
+                            className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold truncate ${getSlotBadgeStyle(
+                              slot1State
+                            )}`}
                           >
-                            {blk.hall} &middot; {blk.reason}
+                            S1: {slot1State}
                           </div>
-                        ))
-                      )}
-                      {blocks.length > 2 && (
-                        <p className="text-[10px] font-medium text-slate-500">
-                          +{blocks.length - 2} more
-                        </p>
+                          <div
+                            className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold truncate ${getSlotBadgeStyle(
+                              slot2State
+                            )}`}
+                          >
+                            S2: {slot2State}
+                          </div>
+                        </>
+                      ) : (
+                        dayBookings.slice(0, 2).map((b) => {
+                          const badgeState: SlotAvailabilityState =
+                            b.bookingType === 'Full Hall'
+                              ? 'Fully Booked'
+                              : b.bookingType === 'Half Hall (Section A)'
+                                ? 'Half Booked (A)'
+                                : 'Half Booked (B)';
+                          return (
+                            <div
+                              key={b.id}
+                              className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold truncate ${getSlotBadgeStyle(
+                                badgeState
+                              )}`}
+                              title={`${b.hall} (${b.slot}) — ${b.bookingType}`}
+                            >
+                              {b.hall}: {badgeState}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -311,25 +525,30 @@ export const MasterCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Block Date Modal */}
-      {isBlockModalOpen && (
+      {/* Create New Booking Modal */}
+      {isBookingModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="block-date-modal-title"
+          aria-labelledby="calendar-booking-modal-title"
         >
-          <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-lg overflow-hidden">
+          <div className="w-full max-w-lg rounded-xl bg-white border border-slate-200 shadow-lg overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-              <h3
-                id="block-date-modal-title"
-                className="font-['Plus_Jakarta_Sans'] text-base font-bold text-slate-900"
-              >
-                Block Dates
-              </h3>
+              <div>
+                <h3
+                  id="calendar-booking-modal-title"
+                  className="font-['Plus_Jakarta_Sans'] text-base font-bold text-slate-900"
+                >
+                  Create New Booking
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-mono">
+                  Selected Date: {bookingDate}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => setIsBlockModalOpen(false)}
+                onClick={() => setIsBookingModalOpen(false)}
                 aria-label="Close modal"
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
@@ -337,86 +556,168 @@ export const MasterCalendarPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleBlockDates} className="p-5 space-y-4">
+            <form onSubmit={handleCreateBooking} className="p-5 space-y-4">
+              {formError && (
+                <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-medium text-rose-700">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {/* Venue Details Section */}
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Venue Details
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="bk-hall"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
+                      Hall / Venue
+                    </label>
+                    <select
+                      id="bk-hall"
+                      value={bookingHall}
+                      onChange={(e) => {
+                        setBookingHall(e.target.value);
+                        setFormError(null);
+                      }}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                    >
+                      {BOOKABLE_HALLS.map((h) => (
+                        <option key={h} value={h}>
+                          {h}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="bk-slot"
+                      className="block text-xs font-semibold text-slate-700 mb-1"
+                    >
+                      Event Slot (Max 2/day)
+                    </label>
+                    <select
+                      id="bk-slot"
+                      value={bookingSlot}
+                      onChange={(e) => {
+                        setBookingSlot(e.target.value as EventSlot);
+                        setFormError(null);
+                      }}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                    >
+                      {EVENT_SLOTS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="bk-type"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Booking Type
+                  </label>
+                  <select
+                    id="bk-type"
+                    value={bookingType}
+                    onChange={(e) => {
+                      setBookingType(e.target.value as BookingType);
+                      setFormError(null);
+                    }}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  >
+                    {BOOKING_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  {activeSlotStateInModal === 'Half Booked (A)' && (
+                    <p className="mt-1.5 text-xs font-medium text-amber-700">
+                      Section A is booked for this slot &mdash; Half Hall (Section B) is available.
+                    </p>
+                  )}
+                  {activeSlotStateInModal === 'Half Booked (B)' && (
+                    <p className="mt-1.5 text-xs font-medium text-blue-700">
+                      Section B is booked for this slot &mdash; Half Hall (Section A) is available.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Customer & Event Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="bk-customer"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Customer Name
+                  </label>
+                  <input
+                    id="bk-customer"
+                    type="text"
+                    required
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="[--]"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="bk-guests"
+                    className="block text-xs font-semibold text-slate-700 mb-1"
+                  >
+                    Expected Guests
+                  </label>
+                  <input
+                    id="bk-guests"
+                    type="number"
+                    min="1"
+                    value={guestCount}
+                    onChange={(e) => setGuestCount(e.target.value)}
+                    placeholder="[--]"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label
-                  htmlFor="block-hall"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  htmlFor="bk-event-type"
+                  className="block text-xs font-semibold text-slate-700 mb-1"
                 >
-                  Select Hall
+                  Event Type
                 </label>
                 <select
-                  id="block-hall"
-                  value={blockHall}
-                  onChange={(e) => setBlockHall(e.target.value)}
+                  id="bk-event-type"
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 >
-                  {HALL_OPTIONS.map((hall) => (
-                    <option key={hall} value={hall}>
-                      {hall}
-                    </option>
-                  ))}
+                  <option value="Mehndi">Mehndi</option>
+                  <option value="Barat">Barat</option>
+                  <option value="Walima">Walima</option>
+                  <option value="Corporate / Other">Corporate / Other</option>
                 </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    htmlFor="block-start"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
-                  >
-                    Start Date
-                  </label>
-                  <input
-                    id="block-start"
-                    type="date"
-                    required
-                    value={blockStartDate}
-                    onChange={(e) => setBlockStartDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="block-end"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
-                  >
-                    End Date
-                  </label>
-                  <input
-                    id="block-end"
-                    type="date"
-                    required
-                    value={blockEndDate}
-                    onChange={(e) => setBlockEndDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="block-reason"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
-                >
-                  Reason
-                </label>
-                <textarea
-                  id="block-reason"
-                  rows={3}
-                  required
-                  value={blockReason}
-                  onChange={(e) => setBlockReason(e.target.value)}
-                  placeholder="[Maintenance / Holiday]"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 resize-none"
-                />
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsBlockModalOpen(false)}
+                  onClick={() => setIsBookingModalOpen(false)}
                   className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors cursor-pointer"
                 >
                   Cancel
@@ -425,7 +726,7 @@ export const MasterCalendarPage: React.FC = () => {
                   type="submit"
                   className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
                 >
-                  Block Dates
+                  Save Booking
                 </button>
               </div>
             </form>

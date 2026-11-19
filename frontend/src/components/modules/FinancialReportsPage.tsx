@@ -18,6 +18,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  SEED_EXPENSE_BREAKDOWN,
+  SEED_FINANCIAL_TREND,
+  SEED_MONTHLY_SUMMARY,
+} from '../../data/seedData';
 
 export interface MonthlySummaryRow {
   month: string;
@@ -31,10 +36,9 @@ export const FinancialReportsPage: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Strictly empty arrays — zero hardcoded dummy data
-  const trendData: Array<{ month: string; revenue: number; expenses: number }> = [];
-  const expenseBreakdownData: Array<{ name: string; value: number }> = [];
-  const monthlySummary: MonthlySummaryRow[] = [];
+  const trendData = SEED_FINANCIAL_TREND;
+  const expenseBreakdownData = SEED_EXPENSE_BREAKDOWN;
+  const monthlySummary: MonthlySummaryRow[] = SEED_MONTHLY_SUMMARY;
 
   const handleExportReport = () => {
     const headers = [
@@ -110,7 +114,7 @@ export const FinancialReportsPage: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 5,931,000
           </p>
         </div>
 
@@ -125,7 +129,7 @@ export const FinancialReportsPage: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 2,290,000
           </p>
         </div>
 
@@ -140,7 +144,7 @@ export const FinancialReportsPage: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]
+            Rs. 3,641,000
           </p>
         </div>
 
@@ -155,7 +159,7 @@ export const FinancialReportsPage: React.FC = () => {
             </div>
           </div>
           <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            [--]%
+            61.4%
           </p>
         </div>
       </div>

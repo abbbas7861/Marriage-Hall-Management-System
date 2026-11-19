@@ -11,6 +11,7 @@ import {
   TrendingDown,
   X,
 } from 'lucide-react';
+import { SEED_EXPENSES } from '../../data/seedData';
 
 export type ExpenseCategory =
   | 'Utilities'
@@ -54,8 +55,7 @@ const STATUS_BADGE_STYLES: Record<ExpenseStatus, string> = {
 };
 
 export const ExpensesManagementPage: React.FC = () => {
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>(SEED_EXPENSES);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');

@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import type { UserRole } from '../auth/LoginScreen';
+import { SEED_USERS } from '../../data/seedData';
 
 export type AccountStatus = 'Active' | 'Inactive';
 
@@ -45,8 +46,7 @@ function getInitials(name: string): string {
 }
 
 export const UserManagementPage: React.FC = () => {
-  // Strictly empty initial state — zero hardcoded dummy data
-  const [users, setUsers] = useState<StaffUser[]>([]);
+  const [users, setUsers] = useState<StaffUser[]>(SEED_USERS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
