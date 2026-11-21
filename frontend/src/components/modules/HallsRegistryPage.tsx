@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
   Building,
+  Building2,
   CheckCircle,
   Users,
   Plus,
   Search,
   DoorOpen,
-  Image as ImageIcon,
   MapPin,
   Coins,
   Pencil,
@@ -283,46 +283,46 @@ export const HallsRegistryPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredHalls.map((hall) => (
             <div
               key={hall.id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col"
+              className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
             >
               {/* Top Image Placeholder */}
-              <div className="relative h-40 bg-gray-100 flex items-center justify-center border-b border-gray-200/80">
-                <ImageIcon className="w-9 h-9 text-gray-300 stroke-[1.5]" />
+              <div className="relative h-44 bg-gradient-to-br from-teal-50 via-teal-50/80 to-emerald-100/80 flex items-center justify-center border-b border-teal-100/70">
+                <Building2 className="w-14 h-14 text-teal-600/50 stroke-[1.35]" />
                 <span
-                  className={`absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium border ${
+                  className={`absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium border shadow-2xs ${
                     hall.status === 'Active'
-                      ? 'bg-white text-teal-800 border-teal-200'
-                      : 'bg-white text-amber-800 border-amber-200'
+                      ? 'bg-white/95 text-teal-800 border-teal-200'
+                      : 'bg-white/95 text-amber-800 border-amber-200'
                   }`}
                 >
                   {hall.status}
                 </span>
               </div>
 
-              {/* Card Body */}
+              {/* Card Details Section */}
               <div className="p-5 flex-1 flex flex-col">
-                <h3 className="text-lg font-semibold text-gray-900 tracking-tight truncate">
+                <h3 className="text-xl font-bold text-gray-900 tracking-tight truncate font-['Plus_Jakarta_Sans']">
                   {hall.name}
                 </h3>
 
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1.5">
                   <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span className="truncate">{hall.location}</span>
                 </div>
 
-                {/* Capacity & Base Rent Grid */}
-                <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
+                {/* Divider + Capacity & Base Rent Grid */}
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
                   <div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
                       <Users className="w-3.5 h-3.5 text-gray-400" />
                       <span>Capacity</span>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 mt-1 font-mono tabular-nums">
-                      {hall.capacity.toLocaleString('en-PK')}
+                      {hall.capacity.toLocaleString('en-PK')} Guests
                     </p>
                   </div>
 
@@ -337,31 +337,33 @@ export const HallsRegistryPage: React.FC = () => {
                   </div>
                 </div>
 
-                {hall.facilities.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100 truncate">
-                    {hall.facilities.join(' · ')}
+                {/* Facilities & Bottom-Right Minimal Actions */}
+                <div className="mt-4 pt-3.5 border-t border-gray-100 flex items-center justify-between gap-3">
+                  <p className="text-xs text-gray-500 truncate">
+                    {hall.facilities.length > 0 ? hall.facilities.join(' · ') : '[--]'}
                   </p>
-                )}
-              </div>
 
-              {/* Action Footer */}
-              <div className="px-5 py-3 bg-gray-50/70 border-t border-gray-200/80 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => openEditModal(hall)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <Pencil className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteHall(hall.id)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-red-50 hover:border-red-200 text-gray-700 hover:text-red-700 text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(hall)}
+                      aria-label={`Edit ${hall.name}`}
+                      title="Edit Hall"
+                      className="p-2 rounded-lg text-gray-400 hover:text-teal-700 hover:bg-teal-50/80 transition-colors cursor-pointer"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteHall(hall.id)}
+                      aria-label={`Delete ${hall.name}`}
+                      title="Delete Hall"
+                      className="p-2 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

@@ -37,33 +37,49 @@
     margin: 10mm;
   }
 
+  html,
   body {
     background: #ffffff !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  .printable-receipt-area,
-  .printable-receipt-area * {
-    visibility: visible !important;
-  }
-
-  .printable-receipt-area {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
+    color: #000000 !important;
   }
 
+  /* Hide everything on the page */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the printable receipt area */
+  #printable-receipt,
+  #printable-receipt *,
+  .print-only,
+  .print-only *,
+  .printable-receipt-area,
+  .printable-receipt-area * {
+    visibility: visible;
+  }
+
+  /* Position the receipt at the top left of the page */
+  #printable-receipt,
+  .print-only,
+  .printable-receipt-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible;
+  }
+
+  /* Hide the print and close buttons during print */
   .no-print {
     display: none !important;
   }
 }
-

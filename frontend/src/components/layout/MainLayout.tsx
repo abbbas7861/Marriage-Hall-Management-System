@@ -22,6 +22,7 @@ import { AdminExecutiveDashboard } from '../dashboard/AdminExecutiveDashboard';
 import { AccountsDashboard } from '../dashboard/AccountsDashboard';
 import { ManagerDashboard } from '../dashboard/ManagerDashboard';
 import { KitchenDashboard } from '../dashboard/KitchenDashboard';
+import { VendorDirectoryPage } from '../modules/VendorDirectoryPage';
 import type { UserRole } from '../auth/LoginScreen';
 
 interface MainLayoutProps {
@@ -88,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const shortcutItems = navItems.filter((item) => item.id !== 'dashboard');
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900 flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900">
       <Sidebar
         activeRole={activeRole}
         activeNavId={activeNavId}
@@ -97,7 +98,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 print:pl-0 flex flex-col min-h-screen">
         <Topbar
           user={{ identifier: userIdentifier, role: activeRole }}
           activeLabel={activeItem.label}
@@ -106,9 +107,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onNavigate={setActiveNavId}
         />
 
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <main className="flex-1 w-full max-w-6xl print:max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 print:p-0">
           {activeRole === 'Admin' && activeNavId === 'dashboard' ? (
-            <AdminExecutiveDashboard />
+            <AdminExecutiveDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Admin' && activeNavId === 'halls-registry' ? (
             <HallsRegistryPage />
           ) : activeRole === 'Admin' && activeNavId === 'bookings' ? (
@@ -145,6 +146,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <MenuPackagesPage />
           ) : activeRole === 'Manager' && activeNavId === 'staff-rosters' ? (
             <StaffRostersPage />
+          ) : activeRole === 'Manager' && activeNavId === 'vendors' ? (
+            <VendorDirectoryPage />
           ) : activeRole === 'Manager' && activeNavId === 'final-settlement' ? (
             <ManagerEventSettlementPage initialView="settlement" />
           ) : activeRole === 'Manager' && activeNavId === 'users' ? (
@@ -160,7 +163,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           ) : activeRole === 'Kitchen' && activeNavId === 'pantry-inventory' ? (
             <KitchenPortalPage view="pantry" />
           ) : activeRole === 'Accounts' && activeNavId === 'dashboard' ? (
-            <AccountsDashboard />
+            <AccountsDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Accounts' && activeNavId === 'event-tracker' ? (
             <EventProfitabilityTrackerPage />
           ) : activeRole === 'Accounts' && activeNavId === 'invoices' ? (

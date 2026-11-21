@@ -19,6 +19,7 @@ import {
   ConciergeBell,
   Clock,
   LayoutGrid,
+  Store,
   X,
 } from 'lucide-react';
 import type { UserRole } from '../auth/LoginScreen';
@@ -57,6 +58,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed, section: 'Venue & Catering' },
     // Management
     { id: 'staff-rosters', label: 'Staff Rosters', icon: UserCheck, section: 'Management' },
+    { id: 'vendors', label: 'Vendors', icon: Store, section: 'Management' },
     { id: 'final-settlement', label: 'Final Settlement', icon: Receipt, section: 'Management' },
     // System
     { id: 'users', label: 'Users', icon: Users, section: 'System' },
@@ -99,13 +101,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile backdrop */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[1px] lg:hidden"
+          className="no-print fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[1px] lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-50 flex flex-col transition-transform duration-200 lg:translate-x-0 ${
+        className={`no-print fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-50 flex flex-col transition-transform duration-200 lg:translate-x-0 ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

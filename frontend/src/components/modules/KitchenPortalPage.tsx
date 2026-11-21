@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  Bell,
   Box,
   CheckCircle2,
   ChefHat,
@@ -9,6 +10,8 @@ import {
   Plus,
   RefreshCw,
   Utensils,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import {
@@ -58,6 +61,9 @@ const INGREDIENT_UNITS = ['kg', 'g', 'liters', 'ml', 'pcs', 'packs', 'boxes'];
 export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) => {
   const [requests, setRequests] = useState<KdsRequest[]>(SEED_KDS_REQUESTS);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [audioChimeEnabled, setAudioChimeEnabled] = useState(true);
+  const [isBellRinging, setIsBellRinging] = useState(false);
+  const bellTimerRef = useRef<number | null>(null);
 
   const [ingredients, setIngredients] = useState<PantryIngredient[]>(SEED_PANTRY_INGREDIENTS);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -72,8 +78,63 @@ export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) =>
   const [newThreshold, setNewThreshold] = useState('');
   const [newPendingDelivery, setNewPendingDelivery] = useState(false);
 
+  useEffect(() => {
+    return () => {
+      if (bellTimerRef.current !== null) {
+        window.clearTimeout(bellTimerRef.current);
+      }
+    };
+  }, []);
+
+  const triggerBellChime = (forceTest = false) => {
+    if (!audioChimeEnabled && !forceTest) return;
+
+    console.log('[KDS Audio] Kitchen service bell chime triggered');
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        const playTone = (freq: number, startOffset: number, duration: number) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + startOffset);
+          gain.gain.setValueAtTime(0.001, now + startOffset);
+          gain.gain.exponentialRampToValueAtTime(0.18, now + startOffset + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + startOffset);
+          osc.stop(now + startOffset + duration);
+        };
+
+        playTone(880, 0, 0.45);
+        playTone(1318.5, 0.14, 0.55);
+      }
+    } catch {
+      // Fallback safely when browser blocks Web Audio without gesture
+    }
+
+    setIsBellRinging(true);
+    if (bellTimerRef.current !== null) {
+      window.clearTimeout(bellTimerRef.current);
+    }
+    bellTimerRef.current = window.setTimeout(() => {
+      setIsBellRinging(false);
+    }, 1400);
+  };
+
   const handleRefreshBoard = () => {
     setIsRefreshing(true);
+    const hasNewRequests = requests.some((req) => req.status === 'new');
+    if (audioChimeEnabled && hasNewRequests) {
+      triggerBellChime(false);
+    }
     setTimeout(() => {
       setIsRefreshing(false);
     }, 350);
@@ -191,7 +252,7 @@ export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) =>
     return (
       <div className="space-y-6">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-bold text-gray-900 tracking-tight">
               Kitchen Display System (KDS)
@@ -200,16 +261,51 @@ export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) =>
               Manage live floor requests and raw ingredient stock.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleRefreshBoard}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-xs hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"
-          >
-            <RefreshCw
-              className={`w-4 h-4 text-teal-700 ${isRefreshing ? 'animate-spin' : ''}`}
-            />
-            Refresh Board
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setAudioChimeEnabled((prev) => !prev)}
+              aria-pressed={audioChimeEnabled}
+              className="group inline-flex items-center justify-center gap-2 min-h-[44px] rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-xs hover:bg-gray-50 hover:border-teal-300 hover:text-teal-700 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              {audioChimeEnabled ? (
+                <Volume2 className="w-4 h-4 text-teal-700" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-gray-400 group-hover:text-teal-700" />
+              )}
+              <span>Audio Chime: {audioChimeEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => triggerBellChime(true)}
+              className={`group inline-flex items-center justify-center gap-2 min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap ${
+                isBellRinging
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-teal-300 hover:text-teal-700'
+              }`}
+            >
+              <Bell
+                className={`w-4 h-4 transition-colors ${
+                  isBellRinging
+                    ? 'text-emerald-600 animate-pulse'
+                    : 'text-gray-500 group-hover:text-teal-700'
+                }`}
+              />
+              <span>Test Bell</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRefreshBoard}
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-xs hover:bg-gray-50 hover:border-teal-300 hover:text-teal-700 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <RefreshCw
+                className={`w-4 h-4 text-teal-700 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+              <span>Refresh Board</span>
+            </button>
+          </div>
         </div>
 
         {/* 3-Column High-Contrast Kanban Board */}
@@ -262,9 +358,15 @@ export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) =>
                           <Utensils className="w-3 h-3" />
                           {req.location}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-gray-500">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-mono tabular-nums text-gray-500">
                           <Clock className="w-3.5 h-3.5 text-gray-400" />
-                          {req.requestedAt}
+                          <span>{req.requestedAt}</span>
+                          {req.status === 'new' && (
+                            <Bell
+                              className="w-3.5 h-3.5 text-amber-600 shrink-0"
+                              aria-label="Audio bell triggered"
+                            />
+                          )}
                         </span>
                       </div>
 
