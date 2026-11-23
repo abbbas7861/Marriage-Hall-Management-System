@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Clock,
   Eye,
@@ -12,10 +12,12 @@ import {
   X,
 } from 'lucide-react';
 import { SEED_EXPENSES } from '../../data/seedData';
+import { expensesApi, bookingsApi } from '../../api/client';
 
 export type ExpenseCategory =
   | 'Utilities'
   | 'Staff'
+  | 'Outside Waiters'
   | 'Maintenance'
   | 'Supplies'
   | 'Other';
@@ -30,12 +32,14 @@ export interface ExpenseRecord {
   date: string;
   amount: number;
   status: ExpenseStatus;
+  bookingRef?: string;
   notes?: string;
 }
 
 const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'Utilities',
   'Staff',
+  'Outside Waiters',
   'Maintenance',
   'Supplies',
   'Other',
@@ -44,6 +48,7 @@ const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 const CATEGORY_BADGE_STYLES: Record<ExpenseCategory, string> = {
   Utilities: 'bg-blue-50 text-blue-800 border-blue-200',
   Staff: 'bg-teal-50 text-teal-800 border-teal-200',
+  'Outside Waiters': 'bg-indigo-50 text-indigo-800 border-indigo-200 font-semibold',
   Maintenance: 'bg-orange-50 text-orange-800 border-orange-200',
   Supplies: 'bg-purple-50 text-purple-800 border-purple-200',
   Other: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -56,6 +61,50 @@ const STATUS_BADGE_STYLES: Record<ExpenseStatus, string> = {
 
 export const ExpensesManagementPage: React.FC = () => {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>(SEED_EXPENSES);
+  const [bookings, setBookings] = useState<Array<{ id: string; bookingRef: string; customerName: string; hallName: string; date: string }>>([]);
+
+  const loadExpenses = () => {
+    expensesApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setExpenses(
+            data.map((exp: any) => ({
+              id: String(exp.id),
+              description: exp.description || exp.category || 'Expense',
+              category: (exp.category || 'Utilities') as ExpenseCategory,
+              paidTo: exp.paidTo || exp.vendor || 'Vendor',
+              date: exp.date || new Date().toISOString().slice(0, 10),
+              amount: Number(exp.amount) || 0,
+              status: (exp.status || 'Paid') as ExpenseStatus,
+              bookingRef: exp.bookingRef || exp.booking_ref || '',
+              notes: exp.notes,
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Expenses API error:', err));
+  };
+
+  useEffect(() => {
+    loadExpenses();
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setBookings(
+            data.map((b: any) => ({
+              id: String(b.id),
+              bookingRef: b.bookingRef || `BK-${b.id}`,
+              customerName: b.customerName || 'Client',
+              hallName: b.hallName || 'Main Hall',
+              date: b.date || '',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Bookings API error:', err));
+  }, []);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +121,7 @@ export const ExpensesManagementPage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('Utilities');
+  const [bookingRef, setBookingRef] = useState('');
   const [paidTo, setPaidTo] = useState('');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -116,7 +166,8 @@ export const ExpensesManagementPage: React.FC = () => {
         !q ||
         exp.id.toLowerCase().includes(q) ||
         exp.description.toLowerCase().includes(q) ||
-        exp.paidTo.toLowerCase().includes(q);
+        exp.paidTo.toLowerCase().includes(q) ||
+        (exp.bookingRef && exp.bookingRef.toLowerCase().includes(q));
 
       const matchesCategory =
         categoryFilter === 'All' || exp.category === categoryFilter;
@@ -133,8 +184,9 @@ export const ExpensesManagementPage: React.FC = () => {
     setDescription('');
     setAmount('');
     setCategory('Utilities');
+    setBookingRef('');
     setPaidTo('');
-    setDate('');
+    setDate(new Date().toISOString().slice(0, 10));
     setNotes('');
     setIsModalOpen(true);
   };
@@ -144,13 +196,15 @@ export const ExpensesManagementPage: React.FC = () => {
     setDescription(exp.description);
     setAmount(String(exp.amount));
     setCategory(exp.category);
+    setBookingRef(exp.bookingRef || '');
     setPaidTo(exp.paidTo);
-    setDate(exp.date === '[--]' ? '' : exp.date);
+    setDate(exp.date === '[--]' ? new Date().toISOString().slice(0, 10) : exp.date);
     setNotes(exp.notes ?? '');
     setIsModalOpen(true);
   };
 
   const handleDeleteExpense = (id: string) => {
+    expensesApi.delete(id).catch((err) => console.warn('Expenses API delete error:', err));
     setExpenses((prev) => prev.filter((exp) => exp.id !== id));
   };
 
@@ -163,7 +217,19 @@ export const ExpensesManagementPage: React.FC = () => {
       return;
     }
 
+    const apiPayload = {
+      description: trimmedDesc,
+      category,
+      bookingRef: bookingRef.trim(),
+      vendor: trimmedVendor,
+      amount: parsedAmount,
+      date: date || new Date().toISOString().split('T')[0],
+      paymentMethod: 'Cash',
+      status: 'Paid',
+    };
+
     if (editingId) {
+      expensesApi.update(editingId, apiPayload).catch((err) => console.warn('Expenses API update error:', err));
       setExpenses((prev) =>
         prev.map((exp) =>
           exp.id === editingId
@@ -172,25 +238,41 @@ export const ExpensesManagementPage: React.FC = () => {
                 description: trimmedDesc,
                 amount: parsedAmount,
                 category,
+                bookingRef: bookingRef.trim(),
                 paidTo: trimmedVendor,
-                date: date || '[--]',
+                date: date || new Date().toISOString().split('T')[0],
                 notes: notes.trim() || undefined,
               }
             : exp
         )
       );
     } else {
+      const tempId = `EXP-${Date.now().toString().slice(-4)}`;
       const created: ExpenseRecord = {
-        id: `EXP-${Date.now().toString().slice(-4)}`,
+        id: tempId,
         description: trimmedDesc,
         category,
+        bookingRef: bookingRef.trim(),
         paidTo: trimmedVendor,
-        date: date || '[--]',
+        date: date || new Date().toISOString().split('T')[0],
         amount: parsedAmount,
         status: 'Paid',
         notes: notes.trim() || undefined,
       };
       setExpenses((prev) => [created, ...prev]);
+
+      expensesApi
+        .create(apiPayload)
+        .then((res: any) => {
+          if (res && res.id) {
+            setExpenses((prev) =>
+              prev.map((e) =>
+                e.id === tempId ? { ...e, id: String(res.id) } : e
+              )
+            );
+          }
+        })
+        .catch((err) => console.warn('Expenses API create error:', err));
     }
 
     setIsModalOpen(false);
@@ -331,6 +413,9 @@ export const ExpensesManagementPage: React.FC = () => {
                   Category
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Event / Booking
+                </th>
+                <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Paid To
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -350,7 +435,7 @@ export const ExpensesManagementPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-20 px-6 text-center">
+                  <td colSpan={9} className="py-20 px-6 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-4">
                         <Receipt className="w-7 h-7 text-slate-400" />
@@ -382,6 +467,15 @@ export const ExpensesManagementPage: React.FC = () => {
                       >
                         {exp.category}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-sm">
+                      {exp.bookingRef ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 px-2.5 py-0.5 text-xs font-mono font-semibold">
+                          {exp.bookingRef}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">General Facility</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-5 text-sm text-slate-700">
                       {exp.paidTo}
@@ -475,9 +569,39 @@ export const ExpensesManagementPage: React.FC = () => {
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 15 Outside Waiters for Barat Event"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="exp-booking"
+                  className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between"
+                >
+                  <span>Associated Event / Booking (Required for Outside Waiters)</span>
+                  {category === 'Outside Waiters' && (
+                    <span className="text-[11px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                      Linked to Event Expenses
+                    </span>
+                  )}
+                </label>
+                <select
+                  id="exp-booking"
+                  value={bookingRef}
+                  onChange={(e) => setBookingRef(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                >
+                  <option value="">-- General Hall Facility Expense (Not Tied to Single Event) --</option>
+                  {bookings.map((b) => (
+                    <option key={b.bookingRef} value={b.bookingRef}>
+                      {b.bookingRef} - {b.customerName} ({b.hallName} • {b.date})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Tagging an event adds this cost to that event's final total expense and net profitability ledger.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -496,7 +620,7 @@ export const ExpensesManagementPage: React.FC = () => {
                     required
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="[--]"
+                    placeholder="e.g. 25000"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -511,7 +635,13 @@ export const ExpensesManagementPage: React.FC = () => {
                   <select
                     id="exp-category"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+                    onChange={(e) => {
+                      const newCat = e.target.value as ExpenseCategory;
+                      setCategory(newCat);
+                      if (newCat === 'Outside Waiters' && (!description || description === 'Expense')) {
+                        setDescription('Outside Waiters Service');
+                      }
+                    }}
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   >
                     {EXPENSE_CATEGORIES.map((cat) => (
@@ -537,7 +667,7 @@ export const ExpensesManagementPage: React.FC = () => {
                     required
                     value={paidTo}
                     onChange={(e) => setPaidTo(e.target.value)}
-                    placeholder="[--]"
+                    placeholder="e.g. Royal Waiter Staff Suppliers"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -571,7 +701,7 @@ export const ExpensesManagementPage: React.FC = () => {
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="Optional reference notes, head counts, or receipts..."
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 resize-none"
                 />
               </div>
@@ -627,6 +757,12 @@ export const ExpensesManagementPage: React.FC = () => {
                 <span className="text-slate-500">Description</span>
                 <span className="font-medium text-slate-900">
                   {viewingExpense.description}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500">Event / Booking</span>
+                <span className="font-mono font-semibold text-slate-900">
+                  {viewingExpense.bookingRef || 'General Facility (None)'}
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100">

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { formatTo12Hour } from '../../utils/timeFormat';
 import {
   Palette,
   Download,
@@ -328,12 +329,12 @@ export const CardStudioModule: React.FC = () => {
 
   // WhatsApp formatted invitation message
   const generateInviteMessage = () => {
-    const formattedDate = eventDate || '[Enter Date]';
-    const formattedTime = eventTime || '[Enter Time]';
-    const formattedHost = hostName.trim() || '[Enter Host Name]';
-    const formattedNames = names.trim() || '[Enter Names]';
-    const formattedVenue = venueName.trim() || '[Enter Hall/Venue Name]';
-    const formattedType = eventType || '[Event Type]';
+    const formattedDate = eventDate || 'Enter Date';
+    const formattedTime = eventTime ? formatTo12Hour(eventTime) : 'Enter Time';
+    const formattedHost = hostName.trim() || 'Enter Host Name';
+    const formattedNames = names.trim() || 'Enter Names';
+    const formattedVenue = venueName.trim() || 'Enter Hall/Venue Name';
+    const formattedType = eventType || 'Event';
     const formattedMsg = customMessage.trim()
       ? `\n"${customMessage.trim()}"\n`
       : '';
@@ -559,6 +560,11 @@ export const CardStudioModule: React.FC = () => {
                     onChange={(e) => setEventTime(e.target.value)}
                     className="w-full pl-3.5 pr-2.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00685f]/30 focus:border-[#00685f] transition-all"
                   />
+                  {eventTime && (
+                    <span className="block mt-1 text-xs text-teal-700 font-mono font-medium">
+                      {formatTo12Hour(eventTime)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -853,7 +859,7 @@ export const CardStudioModule: React.FC = () => {
                             : 'opacity-40 font-mono text-[11px]'
                         }`}
                       >
-                        {eventTime ? eventTime : '[Enter Time]'}
+                        {eventTime ? formatTo12Hour(eventTime) : 'Enter Time'}
                       </span>
                     </div>
                   </div>

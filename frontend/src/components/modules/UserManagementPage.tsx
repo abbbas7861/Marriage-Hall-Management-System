@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Briefcase,
   Pencil,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { UserRole } from '../auth/LoginScreen';
 import { SEED_USERS } from '../../data/seedData';
+import { authApi } from '../../api/client';
 
 export type AccountStatus = 'Active' | 'Inactive';
 
@@ -49,6 +50,33 @@ export const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<StaffUser[]>(SEED_USERS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    authApi
+      .listUsers()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setUsers(
+            data.map((u: any) => ({
+              id: String(u.id),
+              fullName: u.fullName || u.username,
+              email: u.email || `${u.username}@mhms.local`,
+              role:
+                u.role === 'admin'
+                  ? 'Admin'
+                  : u.role === 'kitchen'
+                  ? 'Kitchen'
+                  : u.role === 'accounts'
+                  ? 'Accounts'
+                  : 'Manager',
+              status: u.isActive !== false ? 'Active' : 'Inactive',
+              lastLogin: u.dateJoined || 'Active',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('User management API error:', err));
+  }, []);
 
   // Modal form state
   const [fullName, setFullName] = useState('');
@@ -95,6 +123,7 @@ export const UserManagementPage: React.FC = () => {
   };
 
   const handleDeleteUser = (id: string) => {
+    authApi.deleteUser(id).catch((err) => console.warn('User API delete error:', err));
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
@@ -104,7 +133,21 @@ export const UserManagementPage: React.FC = () => {
     const trimmedEmail = email.trim();
     if (!trimmedName || !trimmedEmail) return;
 
+    const apiPayload = {
+      fullName: trimmedName,
+      email: trimmedEmail,
+      username:
+        trimmedEmail.split('@')[0] ||
+        trimmedName.toLowerCase().replace(/\s+/g, ''),
+      role: role.toLowerCase(),
+      password: password || 'SecurePass123!',
+    };
+
     if (editingId) {
+      authApi
+        .updateUser(editingId, apiPayload)
+        .catch((err) => console.warn('User API update error:', err));
+
       setUsers((prev) =>
         prev.map((u) =>
           u.id === editingId
@@ -119,8 +162,9 @@ export const UserManagementPage: React.FC = () => {
         )
       );
     } else {
+      const tempId = `USR-${Date.now().toString().slice(-5)}`;
       const created: StaffUser = {
-        id: `USR-${Date.now().toString().slice(-5)}`,
+        id: tempId,
         fullName: trimmedName,
         email: trimmedEmail,
         role,
@@ -128,6 +172,19 @@ export const UserManagementPage: React.FC = () => {
         lastLogin: '[--]',
       };
       setUsers((prev) => [created, ...prev]);
+
+      authApi
+        .createUser(apiPayload)
+        .then((res: any) => {
+          if (res && res.id) {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === tempId ? { ...u, id: String(res.id) } : u
+              )
+            );
+          }
+        })
+        .catch((err) => console.warn('User API create error:', err));
     }
 
     setIsModalOpen(false);

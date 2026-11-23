@@ -43,6 +43,9 @@ class AssetRequisitionSerializer(serializers.ModelSerializer):
     itemCode = serializers.CharField(source='item_code', required=False, allow_blank=True, default='')
     itemName = serializers.CharField(source='item_name')
     requestedQuantity = serializers.IntegerField(source='requested_quantity', default=1)
+    unit = serializers.CharField(required=False, allow_blank=True, default='kg')
+    estimatedCost = serializers.FloatField(source='estimated_cost', required=False, default=0.0)
+    requestedBy = serializers.CharField(source='requested_by', required=False, default='Kitchen')
     issuedQuantity = serializers.IntegerField(source='issued_quantity', default=0)
     returnedQuantity = serializers.IntegerField(source='returned_quantity', default=0)
     notes = serializers.CharField(required=False, allow_blank=True, default='')
@@ -51,8 +54,8 @@ class AssetRequisitionSerializer(serializers.ModelSerializer):
         model = AssetRequisition
         fields = [
             'id', 'requisitionRef', 'eventRef', 'hallName', 'itemId', 'itemCode',
-            'itemName', 'requestedQuantity', 'issuedQuantity', 'returnedQuantity',
-            'status', 'notes'
+            'itemName', 'requestedQuantity', 'unit', 'estimatedCost', 'requestedBy',
+            'issuedQuantity', 'returnedQuantity', 'status', 'notes'
         ]
 
     def create(self, validated_data):

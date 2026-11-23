@@ -4,6 +4,7 @@ Django settings for config project.
 
 from pathlib import Path
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
 
@@ -17,9 +18,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("DJANGO_SECRET_KEY environment variable is required")
 
-DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() #in ('true', '1', 'yes')
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes', 't')
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
 
 # Applications
 INSTALLED_APPS = [
@@ -33,6 +34,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'django_filters',
 
     'apps.core',
@@ -78,48 +81,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database configuration
-DATABASE_URL = os.getenv('NEON_DATABASE_URL')
-
-if DATABASE_URL:
-    DATABASES = {
+# Database configuration - Local SQLite (PostgreSQL disabled for local development)
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-        'TIME_ZONE': None,
     }
-    }
-
-    # Check actual Neon connectivity
-    from django.db import connections
-    from django.db.utils import OperationalError
-
-    try:
-        connections['default'].ensure_connection()
-        connections['default'].close()
-        print("Database: Connected to Neon PostgreSQL")
-
-    except OperationalError:
-        print("Database: Neon unavailable, switching to SQLite")
-
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-                'TIME_ZONE': None,
-            }
-        }
-
-else:
-    print("Database: No Neon URL found, using SQLite")
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+}
 # Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -174,6 +142,7 @@ CORS_ALLOW_HEADERS = [
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
@@ -185,6 +154,21 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
-    'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
+    'DATETIME_FORMAT': '%Y-%m-%d %I:%M %p',
     'DATE_FORMAT': '%Y-%m-%d',
+    'TIME_FORMAT': '%I:%M %p',
+}
+
+# SimpleJWT Configuration (7-day tokens + blacklist)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer', 'Token'),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }

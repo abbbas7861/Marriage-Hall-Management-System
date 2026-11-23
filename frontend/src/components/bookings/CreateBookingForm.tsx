@@ -16,6 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Booking } from '../../types';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 interface CreateBookingFormProps {
   onCancel: () => void;
@@ -55,6 +56,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
     initialBooking?.amount ? String(initialBooking.amount) : ''
   );
   const [advancePayment, setAdvancePayment] = useState('');
+  const [assignedManager, setAssignedManager] = useState(initialBooking?.assignedManager || 'Manager');
 
   const [validationError, setValidationError] = useState('');
 
@@ -105,8 +107,16 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
       eventType: eventType || 'Other Event',
       hallName: hallVenue,
       date: eventDate,
-      time: startTime && endTime ? `${startTime} - ${endTime}` : initialBooking?.time,
-      slot: startTime && endTime ? `${startTime} - ${endTime}` : (initialBooking?.slot || 'Scheduled Time'),
+      time: startTime && endTime
+        ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}`
+        : initialBooking?.time
+        ? formatTo12Hour(initialBooking.time)
+        : undefined,
+      slot: startTime && endTime
+        ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}`
+        : initialBooking?.slot
+        ? formatTo12Hour(initialBooking.slot)
+        : 'Scheduled Time',
       status: initialBooking?.status || 'Confirmed',
       paymentStatus:
         calculatedRemainingBalance !== null && calculatedRemainingBalance <= 0
@@ -116,6 +126,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           : (initialBooking?.paymentStatus || 'Unpaid'),
       amount: totalBookingAmount ? parseFloat(totalBookingAmount) : undefined,
       guestCount: expectedGuests ? parseInt(expectedGuests, 10) : undefined,
+      assignedManager,
     };
 
     onSave(newBooking);
@@ -228,9 +239,26 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 type="text"
                 value={cnic}
                 onChange={(e) => setCnic(e.target.value)}
-                placeholder="[Enter CNIC / ID Number]"
+                placeholder="e.g. 35202-1234567-1"
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
+            </div>
+
+            {/* Supervising Manager */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Supervising Manager
+              </label>
+              <select
+                aria-label="Supervising Manager"
+                value={assignedManager}
+                onChange={(e) => setAssignedManager(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+              >
+                <option value="Manager">Manager</option>
+                <option value="Operational Manager">Operational Manager</option>
+                <option value="ali">ali</option>
+              </select>
             </div>
 
             {/* Address */}
@@ -437,6 +465,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 onChange={(e) => setStartTime(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
+              {startTime && (
+                <span className="block mt-1 text-[11px] text-teal-700 font-mono font-medium">
+                  {formatTo12Hour(startTime)}
+                </span>
+              )}
             </div>
 
             {/* End Time */}
@@ -450,6 +483,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 onChange={(e) => setEndTime(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
+              {endTime && (
+                <span className="block mt-1 text-[11px] text-teal-700 font-mono font-medium">
+                  {formatTo12Hour(endTime)}
+                </span>
+              )}
             </div>
 
             {/* Extra Time Add-on Box */}

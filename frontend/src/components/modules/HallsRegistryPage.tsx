@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building,
   Building2,
@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { SEED_HALLS } from '../../data/seedData';
+import { hallsApi } from '../../api/client';
 
 interface HallRecord {
   id: string;
@@ -31,6 +32,27 @@ export const HallsRegistryPage: React.FC = () => {
   const [halls, setHalls] = useState<HallRecord[]>(SEED_HALLS);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Under Maintenance'>('All');
+
+  useEffect(() => {
+    hallsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setHalls(
+            data.map((h: any) => ({
+              id: String(h.id),
+              name: h.name,
+              capacity: Number(h.capacity) || 0,
+              baseRent: Number(h.baseRent ?? h.base_rent) || 0,
+              location: h.locationFloor || h.location || '[--]',
+              facilities: Array.isArray(h.facilities) ? h.facilities : [],
+              status: h.status === 'Under Maintenance' ? 'Under Maintenance' : 'Active',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Could not fetch halls from API:', err));
+  }, []);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,7 +120,17 @@ export const HallsRegistryPage: React.FC = () => {
       return;
     }
 
+    const payload = {
+      name: formName.trim(),
+      capacity: parsedCapacity,
+      baseRent: parsedRent,
+      locationFloor: formLocation.trim() || 'Main Floor',
+      facilities: formFacilities,
+      status: formStatus,
+    };
+
     if (editingId) {
+      hallsApi.update(editingId, payload).catch((err) => console.warn('Halls API update error:', err));
       setHalls((prev) =>
         prev.map((h) =>
           h.id === editingId
@@ -115,8 +147,9 @@ export const HallsRegistryPage: React.FC = () => {
         )
       );
     } else {
+      const tempId = `hall-${Date.now()}`;
       const newHall: HallRecord = {
-        id: `hall-${Date.now()}`,
+        id: tempId,
         name: formName.trim(),
         capacity: parsedCapacity,
         baseRent: parsedRent,
@@ -125,12 +158,24 @@ export const HallsRegistryPage: React.FC = () => {
         status: formStatus,
       };
       setHalls((prev) => [newHall, ...prev]);
+
+      hallsApi
+        .create(payload)
+        .then((created) => {
+          if (created && created.id) {
+            setHalls((prev) =>
+              prev.map((h) => (h.id === tempId ? { ...h, id: String(created.id) } : h))
+            );
+          }
+        })
+        .catch((err) => console.warn('Halls API create error:', err));
     }
 
     closeModal();
   };
 
   const handleDeleteHall = (id: string) => {
+    hallsApi.delete(id).catch((err) => console.warn('Halls API delete error:', err));
     setHalls((prev) => prev.filter((h) => h.id !== id));
   };
 

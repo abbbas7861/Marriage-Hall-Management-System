@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -15,15 +15,30 @@ import {
   UtensilsCrossed,
   Wallet,
   X,
+  UserCheck,
+  Package,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
+import { bookingsApi, expensesApi, fundRequestsApi, requisitionsApi, AssetRequisitionItem, FundRequestItem } from '../../api/client';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 type ControlTab = 'seating' | 'decor' | 'catering' | 'floor-changes';
 
 interface ActiveEventOption {
   id: string;
+  bookingRef?: string;
   label: string;
+  customerName: string;
+  hallName: string;
+  eventDate: string;
+  eventTime: string;
   bookingRevenue: number;
+  guestCount?: number;
+  seatingArrangement?: string;
+  menuPackage?: string;
+  customMenuItems?: string[];
+  assignedManager?: string;
+  specialInstructions?: string;
 }
 
 interface ChecklistItem {
@@ -39,44 +54,123 @@ interface FloorChangeLog {
   timestamp: string;
 }
 
-interface FundRequest {
-  id: string;
-  reason: string;
-  amount: number;
-  notes?: string;
-  status: 'Pending Accounts Approval';
-  requestedAt: string;
-}
-
 interface EventExpenseRow {
   id: string;
-  category:
-    | 'Base Hall Rent'
-    | 'Kitchen Requisition'
-    | 'Decor'
-    | 'Damages'
-    | 'Extra Time';
+  category: string;
   description: string;
   date: string;
   amount: number;
-  status: 'Recorded' | 'Pending';
+  status: string;
 }
 
 export const EventControlCenterPage: React.FC = () => {
-  const [activeEvents] = useState<ActiveEventOption[]>([
-    {
-      id: SEED_ASSIGNED_EVENTS[0].id,
-      label: `${SEED_ASSIGNED_EVENTS[0].customerName} (${SEED_ASSIGNED_EVENTS[0].hallName})`,
-      bookingRevenue: 1930000,
-    },
-    {
-      id: SEED_ASSIGNED_EVENTS[1].id,
-      label: `${SEED_ASSIGNED_EVENTS[1].customerName} (${SEED_ASSIGNED_EVENTS[1].hallName})`,
-      bookingRevenue: 1180000,
-    },
-  ]);
-  const [selectedEventId, setSelectedEventId] = useState<string>(SEED_ASSIGNED_EVENTS[0].id);
+  const [activeEvents, setActiveEvents] = useState<ActiveEventOption[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<ControlTab>('seating');
+
+  // Backend connected states
+  const [fundRequests, setFundRequests] = useState<FundRequestItem[]>([]);
+  const [kitchenRequisitions, setKitchenRequisitions] = useState<AssetRequisitionItem[]>([]);
+  const [eventExpenses, setEventExpenses] = useState<EventExpenseRow[]>([]);
+
+  useEffect(() => {
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped: ActiveEventOption[] = data.map((b: any) => ({
+            id: String(b.id),
+            bookingRef: b.bookingRef,
+            customerName: b.customerName || b.bookingRef || 'Client',
+            hallName: b.hallName || 'Main Hall',
+            eventDate: b.date || '',
+            eventTime: formatTo12Hour(b.time || b.slot) || '12:00 PM – 04:00 PM',
+            label: `${b.customerName || b.bookingRef} — ${b.hallName} (${b.date} • ${formatTo12Hour(b.time || b.slot) || '12:00 PM – 04:00 PM'}) [${b.assignedManager || 'Manager'}]`,
+            bookingRevenue: Number(b.amount) || 0,
+            guestCount: Number(b.guestCount) || 100,
+            seatingArrangement: b.seatingArrangement || 'Round Tables',
+            menuPackage: b.menuPackage || 'Standard Menu',
+            customMenuItems: b.customMenuItems || [],
+            assignedManager: b.assignedManager || 'Manager',
+            specialInstructions: b.specialInstructions || '',
+          }));
+          setActiveEvents(mapped);
+          if (mapped.length > 0) {
+            setSelectedEventId(mapped[0].id);
+          }
+        } else {
+          // Fallback to seed data if empty
+          const fallback: ActiveEventOption[] = SEED_ASSIGNED_EVENTS.map((e) => ({
+            id: e.id,
+            bookingRef: e.id,
+            label: `${e.customerName} (${e.hallName})`,
+            customerName: e.customerName,
+            hallName: e.hallName,
+            eventDate: e.eventDate,
+            eventTime: e.eventTime,
+            bookingRevenue: 1500000,
+            guestCount: e.totalGuests,
+            seatingArrangement: 'Round Tables',
+            menuPackage: e.menuPackage,
+            assignedManager: 'Manager',
+          }));
+          setActiveEvents(fallback);
+          setSelectedEventId(fallback[0]?.id || '');
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const selectedEvent = useMemo(
+    () => activeEvents.find((e) => e.id === selectedEventId) ?? null,
+    [activeEvents, selectedEventId]
+  );
+
+  const loadEventBackendData = async (bRef: string) => {
+    if (!bRef) return;
+    try {
+      const [fetchedFunds, fetchedReqs, fetchedExpenses] = await Promise.all([
+        fundRequestsApi.list({ bookingRef: bRef }).catch(() => []),
+        requisitionsApi.list(bRef).catch(() => []),
+        expensesApi.list({ bookingRef: bRef }).catch(() => []),
+      ]);
+
+      setFundRequests(fetchedFunds || []);
+      setKitchenRequisitions(fetchedReqs || []);
+
+      if (fetchedExpenses && fetchedExpenses.length > 0) {
+        setEventExpenses(
+          fetchedExpenses.map((exp: any) => ({
+            id: String(exp.id || exp.expenseRef),
+            category: exp.category || 'General',
+            description: exp.description || exp.category || 'Operational cost',
+            date: exp.date || '',
+            amount: Number(exp.amount) || 0,
+            status: exp.status || 'Recorded',
+          }))
+        );
+      } else {
+        setEventExpenses([
+          {
+            id: 'EEX-1',
+            category: 'Base Hall Rent',
+            description: `${selectedEvent?.hallName || 'Hall'} Operational Allocation`,
+            date: selectedEvent?.eventDate || new Date().toISOString().slice(0, 10),
+            amount: 250000,
+            status: 'Recorded',
+          },
+        ]);
+      }
+    } catch (err) {
+      console.warn('Error loading backend data for event in Control Center:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedEvent?.bookingRef) {
+      loadEventBackendData(selectedEvent.bookingRef);
+    }
+  }, [selectedEvent?.bookingRef]);
 
   // Decor & Stage checklists
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
@@ -92,52 +186,17 @@ export const EventControlCenterPage: React.FC = () => {
     { id: 'FLR-1', note: 'Added 2 extra VIP tables near main stage', timestamp: '07:45 PM' },
   ]);
 
-  // Financials & Requisitions
-  const [fundRequests, setFundRequests] = useState<FundRequest[]>([]);
-  const [eventExpenses] = useState<EventExpenseRow[]>([
-    {
-      id: 'EEX-1',
-      category: 'Base Hall Rent',
-      description: 'Royal Grand Hall Operational Allocation',
-      date: '2026-11-19',
-      amount: 280000,
-      status: 'Recorded',
-    },
-    {
-      id: 'EEX-2',
-      category: 'Kitchen Requisition',
-      description: 'Mutton, Basmati Rice & Spices Batch #1',
-      date: '2026-11-19',
-      amount: 158000,
-      status: 'Recorded',
-    },
-    {
-      id: 'EEX-3',
-      category: 'Decor',
-      description: 'Fresh Floral Stage & Walkway Arch',
-      date: '2026-11-19',
-      amount: 95000,
-      status: 'Recorded',
-    },
-  ]);
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
-
-  // Fund Request modal fields
   const [fundReason, setFundReason] = useState('');
   const [fundAmount, setFundAmount] = useState('');
   const [fundNotes, setFundNotes] = useState('');
 
-  const selectedEvent = useMemo(
-    () => activeEvents.find((e) => e.id === selectedEventId) ?? null,
-    [activeEvents, selectedEventId]
-  );
-
   const financialSnapshot = useMemo(() => {
     if (!selectedEvent && eventExpenses.length === 0) {
       return {
-        revenue: '[--]',
-        expenses: '[--]',
-        profit: '[--]',
+        revenue: 'Rs. 0',
+        expenses: 'Rs. 0',
+        profit: 'Rs. 0',
       };
     }
 
@@ -185,6 +244,7 @@ export const EventControlCenterPage: React.FC = () => {
     const timeStr = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: true,
     });
 
     setFloorChanges((prev) => [
@@ -198,33 +258,46 @@ export const EventControlCenterPage: React.FC = () => {
     setFloorChangeInput('');
   };
 
-  const handleSubmitFundRequest = (e: React.FormEvent) => {
+  const handleSubmitFundRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedReason = fundReason.trim();
     const parsedAmount = parseFloat(fundAmount);
     if (!trimmedReason || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
-    const timeStr = new Date().toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    setFundRequests((prev) => [
-      {
-        id: `REQ-${Date.now().toString().slice(-4)}`,
+    try {
+      await fundRequestsApi.create({
+        bookingRef: selectedEvent?.bookingRef || selectedEvent?.id || '',
+        eventName: selectedEvent?.customerName || '',
         reason: trimmedReason,
         amount: parsedAmount,
-        notes: fundNotes.trim() || undefined,
-        status: 'Pending Accounts Approval',
-        requestedAt: timeStr,
-      },
-      ...prev,
-    ]);
+        notes: fundNotes.trim(),
+        requestedBy: 'Manager',
+      });
 
-    setFundReason('');
-    setFundAmount('');
-    setFundNotes('');
-    setIsFundModalOpen(false);
+      if (selectedEvent?.bookingRef) {
+        await loadEventBackendData(selectedEvent.bookingRef);
+      }
+
+      setFundReason('');
+      setFundAmount('');
+      setFundNotes('');
+      setIsFundModalOpen(false);
+    } catch (err) {
+      console.error('Failed to submit fund request to accounts:', err);
+      alert('Error submitting fund request to accounts.');
+    }
+  };
+
+  const handleApproveRequisition = async (reqId: string | number) => {
+    try {
+      await requisitionsApi.approve(reqId);
+      if (selectedEvent?.bookingRef) {
+        await loadEventBackendData(selectedEvent.bookingRef);
+      }
+    } catch (err) {
+      console.error('Failed to approve kitchen requisition:', err);
+      alert('Error approving requisition.');
+    }
   };
 
   const tabs: Array<{
@@ -266,7 +339,7 @@ export const EventControlCenterPage: React.FC = () => {
           >
             <option value="">
               {activeEvents.length === 0
-                ? 'Select Active Event ([--])'
+                ? 'No active events found'
                 : 'Choose an active event...'}
             </option>
             {activeEvents.map((ev) => (
@@ -314,7 +387,7 @@ export const EventControlCenterPage: React.FC = () => {
           {/* TAB 1: SEATING & LAYOUT */}
           {activeTab === 'seating' && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -323,7 +396,7 @@ export const EventControlCenterPage: React.FC = () => {
                     <Users className="w-4 h-4 text-teal-700" />
                   </div>
                   <p className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-900">
-                    [--]
+                    {selectedEvent?.guestCount ?? 150}
                   </p>
                 </div>
 
@@ -335,19 +408,31 @@ export const EventControlCenterPage: React.FC = () => {
                     <Grid className="w-4 h-4 text-teal-700" />
                   </div>
                   <p className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-900">
-                    [--]
+                    {selectedEvent?.guestCount ? Math.ceil(selectedEvent.guestCount / 10) : 15} Tables
                   </p>
                 </div>
 
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                      VIP Seating Blocks
+                      Arrangement
                     </span>
                     <Sparkles className="w-4 h-4 text-teal-700" />
                   </div>
-                  <p className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-900">
-                    [--]
+                  <p className="mt-2 text-sm font-bold text-slate-900">
+                    {selectedEvent?.seatingArrangement || 'Round Tables'}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Manager
+                    </span>
+                    <UserCheck className="w-4 h-4 text-teal-700" />
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-teal-800">
+                    {selectedEvent?.assignedManager || 'Manager'}
                   </p>
                 </div>
               </div>
@@ -450,37 +535,127 @@ export const EventControlCenterPage: React.FC = () => {
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Assigned Menu Package
                   </span>
-                  <p className="mt-2 text-lg font-bold font-mono text-slate-900">
-                    [--]
+                  <p className="mt-2 text-base font-bold text-slate-900">
+                    {selectedEvent?.menuPackage || 'Custom Package'}
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Per-Head Catering Rate
+                    Guest Headcount
                   </span>
-                  <p className="mt-2 text-lg font-bold font-mono tabular-nums text-teal-700">
-                    Rs. [--]
+                  <p className="mt-2 text-xl font-bold font-mono tabular-nums text-teal-700">
+                    {selectedEvent?.guestCount ?? 150} Guests
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Live Serving Status
                   </span>
-                  <p className="mt-2 text-lg font-bold font-mono text-slate-900">
-                    [--]
+                  <p className="mt-2 text-base font-bold text-emerald-700">
+                    Kitchen Prep Active
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-14 px-6 text-center">
-                <UtensilsCrossed className="w-7 h-7 text-slate-400 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-slate-700">
-                  No catering menu linked to this event yet.
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Assigned dish courses and live buffet serving progress will appear here.
-                </p>
+              {selectedEvent?.specialInstructions && (
+                <div className="rounded-lg bg-amber-50/60 border border-amber-200 p-4 text-xs text-amber-900">
+                  <span className="font-semibold">Special Dietary &amp; Service Instructions:</span>{' '}
+                  {selectedEvent.specialInstructions}
+                </div>
+              )}
+
+              {/* Kitchen Requisitions Sent to Manager */}
+              <div className="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-2xs">
+                <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-teal-700" />
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Kitchen Ingredient &amp; Stock Requisitions
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono text-slate-400">
+                    {kitchenRequisitions.length} item{kitchenRequisitions.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                {kitchenRequisitions.length === 0 ? (
+                  <div className="py-10 px-6 text-center text-xs text-slate-500">
+                    <UtensilsCrossed className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                    No ingredient requisitions forwarded from the Kitchen for this event yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 bg-slate-50/40 text-xs text-slate-500 uppercase">
+                          <th className="py-2.5 px-4 font-semibold">Item Name</th>
+                          <th className="py-2.5 px-4 font-semibold">Quantity</th>
+                          <th className="py-2.5 px-4 font-semibold">Est. Cost</th>
+                          <th className="py-2.5 px-4 font-semibold">Status</th>
+                          <th className="py-2.5 px-4 font-semibold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {kitchenRequisitions.map((req) => (
+                          <tr key={req.id} className="hover:bg-slate-50/60">
+                            <td className="py-3 px-4 font-medium text-slate-900">
+                              {req.itemName}
+                            </td>
+                            <td className="py-3 px-4 font-mono">
+                              {req.requestedQuantity} {req.unit || 'units'}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-teal-800">
+                              Rs. {Number(req.estimatedCost || 0).toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                  req.status === 'Approved' || req.status === 'Issued'
+                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                                }`}
+                              >
+                                {req.status === 'Approved' ? 'Approved' : req.status === 'Issued' ? 'Issued' : 'Pending Manager Review'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              {req.status === 'Requested' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveRequisition(req.id)}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Approve
+                                </button>
+                              ) : (
+                                <span className="text-xs text-emerald-600 font-medium inline-flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Ready
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
+
+              {selectedEvent?.customMenuItems && selectedEvent.customMenuItems.length > 0 && (
+                <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Custom Menu Additions Requested by Client:
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEvent.customMenuItems.map((item, idx) => (
+                      <span key={idx} className="bg-teal-50 border border-teal-200 text-teal-800 px-2.5 py-1 rounded-md text-xs font-medium">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -757,7 +932,7 @@ export const EventControlCenterPage: React.FC = () => {
                   htmlFor="fund-reason"
                   className="block text-xs font-semibold text-slate-700 mb-1.5"
                 >
-                  Reason
+                  Reason / Purpose *
                 </label>
                 <input
                   id="fund-reason"
@@ -765,7 +940,7 @@ export const EventControlCenterPage: React.FC = () => {
                   required
                   value={fundReason}
                   onChange={(e) => setFundReason(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. Additional Ice &amp; Disposable Cutlery"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 />
               </div>
@@ -775,7 +950,7 @@ export const EventControlCenterPage: React.FC = () => {
                   htmlFor="fund-amount"
                   className="block text-xs font-semibold text-slate-700 mb-1.5"
                 >
-                  Amount (Rs.)
+                  Amount (Rs.) *
                 </label>
                 <input
                   id="fund-amount"
@@ -785,7 +960,7 @@ export const EventControlCenterPage: React.FC = () => {
                   required
                   value={fundAmount}
                   onChange={(e) => setFundAmount(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 8000"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 />
               </div>
@@ -795,14 +970,14 @@ export const EventControlCenterPage: React.FC = () => {
                   htmlFor="fund-notes"
                   className="block text-xs font-semibold text-slate-700 mb-1.5"
                 >
-                  Notes
+                  Notes / Urgent Justification
                 </label>
                 <textarea
                   id="fund-notes"
                   rows={3}
                   value={fundNotes}
                   onChange={(e) => setFundNotes(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="Additional explanation for accounts disbursement..."
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 resize-none"
                 />
               </div>

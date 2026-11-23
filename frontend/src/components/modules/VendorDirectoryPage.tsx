@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Pencil,
   Plus,
@@ -7,6 +7,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { vendorsApi } from '../../api/client';
 
 export type VendorCategory = 'Decorator' | 'Photographer' | 'Sound' | 'Other';
 export type VendorStatus = 'Active' | 'Inactive';
@@ -44,6 +45,31 @@ const STATUS_BADGE_STYLES: Record<VendorStatus, string> = {
 
 export const VendorDirectoryPage: React.FC = () => {
   const [vendors, setVendors] = useState<VendorRecord[]>([]);
+
+  useEffect(() => {
+    vendorsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setVendors(
+            data.map((v: any) => ({
+              id: String(v.id),
+              businessName: v.businessName || v.name || '[--]',
+              category: (['Decorator', 'Photographer', 'Sound'].includes(v.category)
+                ? v.category
+                : 'Other') as any,
+              contactPerson: v.contactPerson || '[--]',
+              phone: v.phoneNumber || v.phone || '[--]',
+              email: v.email || '[--]',
+              address: v.address || '[--]',
+              notes: v.notes || '',
+              status: v.status || 'Active',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Vendors API error:', err));
+  }, []);
 
   // Filter Bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,7 +140,21 @@ export const VendorDirectoryPage: React.FC = () => {
       return;
     }
 
+    const apiPayload = {
+      businessName: businessName.trim(),
+      category,
+      contactPerson: contactPerson.trim(),
+      phoneNumber: phone.trim(),
+      email: email.trim(),
+      address: address.trim(),
+      notes: notes.trim(),
+    };
+
     if (editingId) {
+      vendorsApi
+        .update(editingId, apiPayload)
+        .catch((err) => console.warn('Vendor API update error:', err));
+
       setVendors((prev) =>
         prev.map((v) =>
           v.id === editingId
@@ -133,8 +173,9 @@ export const VendorDirectoryPage: React.FC = () => {
         )
       );
     } else {
+      const tempId = `vnd-${Date.now()}`;
       const created: VendorRecord = {
-        id: `vnd-${Date.now()}`,
+        id: tempId,
         businessName: businessName.trim(),
         category,
         contactPerson: contactPerson.trim(),
@@ -145,12 +186,26 @@ export const VendorDirectoryPage: React.FC = () => {
         status,
       };
       setVendors((prev) => [created, ...prev]);
+
+      vendorsApi
+        .create(apiPayload)
+        .then((res: any) => {
+          if (res && res.id) {
+            setVendors((prev) =>
+              prev.map((v) =>
+                v.id === tempId ? { ...v, id: String(res.id) } : v
+              )
+            );
+          }
+        })
+        .catch((err) => console.warn('Vendor API create error:', err));
     }
 
     closeModal();
   };
 
   const handleDeleteVendor = (id: string) => {
+    vendorsApi.delete(id).catch((err) => console.warn('Vendor API delete error:', err));
     setVendors((prev) => prev.filter((v) => v.id !== id));
   };
 

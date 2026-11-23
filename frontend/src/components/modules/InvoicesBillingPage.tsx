@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -15,6 +15,7 @@ import {
   SEED_INVOICES,
   SEED_MENU_PACKAGES,
 } from '../../data/seedData';
+import { invoicesApi, bookingsApi } from '../../api/client';
 
 export type InvoiceStatus = 'Paid' | 'Partial' | 'Unpaid';
 
@@ -43,9 +44,62 @@ const STATUS_BADGE_STYLES: Record<InvoiceStatus, string> = {
 
 export const InvoicesBillingPage: React.FC = () => {
   const [invoices, setInvoices] = useState<InvoiceRecord[]>(SEED_INVOICES);
-  const [bookings] = useState<BookingOption[]>(
-    SEED_BOOKINGS.map((b) => ({ ref: b.bookingId, customerName: b.customerName }))
-  );
+  const [bookings, setBookings] = useState<BookingOption[]>([]);
+
+  useEffect(() => {
+    invoicesApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setInvoices(
+            data.map((inv: any) => {
+              const rawStatus = inv.paymentStatus || inv.status;
+              const normalizedStatus: InvoiceStatus =
+                rawStatus === 'Paid'
+                  ? 'Paid'
+                  : rawStatus === 'Partial'
+                  ? 'Partial'
+                  : 'Unpaid';
+
+              const total = Number(inv.totalAmount) || 0;
+              const paid = Number(inv.paidAmount) || 0;
+              const balance = Number(inv.remainingBalance ?? inv.balanceDue ?? (total - paid)) || 0;
+
+              return {
+                id: inv.invoiceId || `INV-${inv.id}`,
+                bookingRef: inv.bookingRef || inv.bookingId || `BK-${inv.id}`,
+                customerName: inv.customerName || 'Client',
+                totalAmount: total,
+                paidAmount: paid,
+                balanceDue: balance,
+                status: normalizedStatus,
+                dueDate: inv.dueDate || inv.date || '',
+                notes: inv.notes,
+              };
+            })
+          );
+        }
+      })
+      .catch((err) => console.warn('Invoices API error:', err));
+
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setBookings(
+            data.map((b: any) => ({
+              ref: b.bookingRef || `BK-${b.id}`,
+              customerName: b.customerName || 'Client',
+            }))
+          );
+        } else {
+          setBookings(
+            SEED_BOOKINGS.map((b) => ({ ref: b.bookingId, customerName: b.customerName }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Bookings API error:', err));
+  }, []);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,15 +123,15 @@ export const InvoicesBillingPage: React.FC = () => {
   const kpiMetrics = useMemo(() => {
     if (invoices.length === 0) {
       return {
-        totalInvoiced: '[--]',
-        totalCollected: '[--]',
-        pendingReceivables: '[--]',
+        totalInvoiced: 'Rs. 0',
+        totalCollected: 'Rs. 0',
+        pendingReceivables: 'Rs. 0',
       };
     }
 
-    const invoicedSum = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const collectedSum = invoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
-    const pendingSum = invoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
+    const invoicedSum = invoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0);
+    const collectedSum = invoices.reduce((sum, inv) => sum + (Number(inv.paidAmount) || 0), 0);
+    const pendingSum = invoices.reduce((sum, inv) => sum + (Number(inv.balanceDue) || 0), 0);
 
     return {
       totalInvoiced: `Rs. ${invoicedSum.toLocaleString()}`,
@@ -132,8 +186,9 @@ export const InvoicesBillingPage: React.FC = () => {
     const computedStatus: InvoiceStatus =
       balance === 0 ? 'Paid' : safePaid > 0 ? 'Partial' : 'Unpaid';
 
+    const tempId = `INV-${Date.now().toString().slice(-4)}`;
     const created: InvoiceRecord = {
-      id: `INV-${Date.now().toString().slice(-4)}`,
+      id: tempId,
       bookingRef: selectedBookingRef || '[BK-XXXX]',
       customerName: customerName || '[--]',
       totalAmount: total,
@@ -145,6 +200,30 @@ export const InvoicesBillingPage: React.FC = () => {
     };
 
     setInvoices((prev) => [created, ...prev]);
+
+    const apiPayload = {
+      bookingId: selectedBookingRef || 'BK-MANUAL',
+      customerName: customerName || '[--]',
+      totalAmount: total,
+      paidAmount: safePaid,
+      remainingBalance: balance,
+      paymentStatus: computedStatus,
+      date: dueDate || new Date().toISOString().split('T')[0],
+    };
+
+    invoicesApi
+      .create(apiPayload)
+      .then((res: any) => {
+        if (res && res.id) {
+          setInvoices((prev) =>
+            prev.map((inv) =>
+              inv.id === tempId ? { ...inv, id: String(res.id) } : inv
+            )
+          );
+        }
+      })
+      .catch((err) => console.warn('Invoice API create error:', err));
+
     setIsCreateOpen(false);
   };
 
@@ -347,7 +426,9 @@ export const InvoicesBillingPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-5">
                       <span
-                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE_STYLES[inv.status]}`}
+                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                          STATUS_BADGE_STYLES[inv.status] || STATUS_BADGE_STYLES.Unpaid
+                        }`}
                       >
                         {inv.status}
                       </span>
@@ -421,7 +502,7 @@ export const InvoicesBillingPage: React.FC = () => {
                   onChange={(e) => handleBookingChange(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 >
-                  <option value="">[--]</option>
+                  <option value="">Select a booking...</option>
                   {bookings.map((b) => (
                     <option key={b.ref} value={b.ref}>
                       {b.ref} — {b.customerName}
@@ -442,7 +523,7 @@ export const InvoicesBillingPage: React.FC = () => {
                   type="text"
                   readOnly
                   value={customerName}
-                  placeholder="[--]"
+                  placeholder="Auto-filled from selected booking"
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
@@ -463,7 +544,7 @@ export const InvoicesBillingPage: React.FC = () => {
                     required
                     value={totalAmount}
                     onChange={(e) => setTotalAmount(e.target.value)}
-                    placeholder="[--]"
+                    placeholder="e.g. 450000"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -482,7 +563,7 @@ export const InvoicesBillingPage: React.FC = () => {
                     step="1"
                     value={advancePaid}
                     onChange={(e) => setAdvancePaid(e.target.value)}
-                    placeholder="[--]"
+                    placeholder="e.g. 100000"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -516,7 +597,7 @@ export const InvoicesBillingPage: React.FC = () => {
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="Optional billing or payment terms notes..."
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 resize-none"
                 />
               </div>
@@ -691,8 +772,8 @@ export const InvoicesBillingPage: React.FC = () => {
                     <h2 className="text-xl font-bold tracking-tight text-black font-['Plus_Jakarta_Sans']">
                       Marriage Hall ERP
                     </h2>
-                    <p className="text-xs text-slate-700 mt-1">Address: [--]</p>
-                    <p className="text-xs text-slate-700 mt-0.5">Contact: [--]</p>
+                    <p className="text-xs text-slate-700 mt-1">Address: Main Boulevard, Gulberg, Lahore</p>
+                    <p className="text-xs text-slate-700 mt-0.5">Contact: +92 42 3578 9000</p>
                   </div>
                   <div className="sm:text-right">
                     <span className="inline-block px-3 py-1 border border-black text-xs font-bold uppercase tracking-widest text-black">
@@ -711,7 +792,7 @@ export const InvoicesBillingPage: React.FC = () => {
                       Invoice ID
                     </p>
                     <p className="font-mono font-bold text-black mt-1">
-                      {printingInvoice.id || '[--]'}
+                      {printingInvoice.id || 'INV-0000'}
                     </p>
                   </div>
                   <div>
@@ -719,7 +800,7 @@ export const InvoicesBillingPage: React.FC = () => {
                       Booking Ref
                     </p>
                     <p className="font-mono font-semibold text-black mt-1">
-                      {printingInvoice.bookingRef || '[--]'}
+                      {printingInvoice.bookingRef || 'Direct'}
                     </p>
                   </div>
                   <div>
@@ -735,7 +816,7 @@ export const InvoicesBillingPage: React.FC = () => {
                       Customer Name
                     </p>
                     <p className="font-semibold text-black mt-1">
-                      {printingInvoice.customerName || '[--]'}
+                      {printingInvoice.customerName || 'Client'}
                     </p>
                   </div>
                 </div>
@@ -760,12 +841,12 @@ export const InvoicesBillingPage: React.FC = () => {
                       <tr>
                         <td className="py-3 px-4 font-semibold text-black">Hall Rent</td>
                         <td className="py-3 px-4 text-slate-700">
-                          {matchedBooking?.hallName || '[--]'}
+                          {matchedBooking?.hallName || 'Hall Reservation'}
                         </td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-black">
                           {hallRentAmount !== null
                             ? `Rs. ${hallRentAmount.toLocaleString('en-PK')}`
-                            : '[--]'}
+                            : 'Rs. 0'}
                         </td>
                       </tr>
                       <tr>
@@ -773,12 +854,12 @@ export const InvoicesBillingPage: React.FC = () => {
                         <td className="py-3 px-4 text-slate-700">
                           {matchedBooking
                             ? `${matchedBooking.menuPackage} (${matchedBooking.guestCount} guests)`
-                            : '[--]'}
+                            : 'Catering Service'}
                         </td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-black">
                           {menuAmount !== null
                             ? `Rs. ${menuAmount.toLocaleString('en-PK')}`
-                            : '[--]'}
+                            : 'Rs. 0'}
                         </td>
                       </tr>
                       <tr>
@@ -786,7 +867,7 @@ export const InvoicesBillingPage: React.FC = () => {
                         <td className="py-3 px-4 text-slate-700">
                           {matchedBooking && matchedBooking.extraHours > 0
                             ? `${matchedBooking.extraHours} hr(s) overtime`
-                            : '[--]'}
+                            : 'None'}
                         </td>
                         <td className="py-3 px-4 text-right font-mono tabular-nums text-black">
                           {extraChargesAmount !== null && extraChargesAmount > 0

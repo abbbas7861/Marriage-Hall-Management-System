@@ -3,12 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
-from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord, SecurityDepositSettlement
+from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord, SecurityDepositSettlement, ManagerFundRequest
 from .serializers import (
     InvoiceRecordSerializer,
     PaymentTransactionSerializer,
     ExpenseRecordSerializer,
     SecurityDepositSettlementSerializer,
+    ManagerFundRequestSerializer,
 )
 from apps.core.models import AuditLogEntry
 import random
@@ -132,10 +133,17 @@ class ExpenseRecordViewSet(viewsets.ModelViewSet):
     queryset = ExpenseRecord.objects.all()
     serializer_class = ExpenseRecordSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'date']
-    search_fields = ['expense_ref', 'vendor', 'category', 'approved_by']
+    filterset_fields = ['category', 'date', 'booking_ref', 'status']
+    search_fields = ['expense_ref', 'vendor', 'category', 'approved_by', 'booking_ref', 'description']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        booking_ref = self.request.query_params.get('bookingRef') or self.request.query_params.get('booking_ref')
+        if booking_ref:
+            qs = qs.filter(booking_ref__iexact=booking_ref)
+        return qs
 
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
@@ -146,6 +154,78 @@ class ExpenseRecordViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().destroy(request, *args, **kwargs)
+
+
+class ManagerFundRequestViewSet(viewsets.ModelViewSet):
+    queryset = ManagerFundRequest.objects.all()
+    serializer_class = ManagerFundRequestSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'booking_ref']
+    search_fields = ['request_ref', 'booking_ref', 'event_name', 'reason', 'requested_by']
+    ordering_fields = ['created_at', 'amount', 'status']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        booking_ref = self.request.query_params.get('bookingRef') or self.request.query_params.get('booking_ref')
+        if booking_ref:
+            qs = qs.filter(booking_ref__iexact=booking_ref)
+        return qs
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        fund_req = self.get_object()
+        approver = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Accounts Officer'
+        fund_req.status = 'Approved'
+        fund_req.approved_by = approver
+        fund_req.approved_at = timezone.now()
+        fund_req.save()
+
+        # Automatically disburse and record as ExpenseRecord
+        ExpenseRecord.objects.create(
+            expense_ref=f"EXP-{random.randint(1000, 9999)}",
+            booking_ref=fund_req.booking_ref,
+            description=f"Fund Disbursed: {fund_req.reason}",
+            category='Operational Funds',
+            vendor=fund_req.requested_by or 'Manager Operations',
+            amount=fund_req.amount,
+            approved_by=approver,
+            date=timezone.now().date(),
+            payment_method='Cash',
+            status='Paid',
+        )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approver,
+            user_role="Finance",
+            action="Approved",
+            module="Finance",
+            details=f"Approved fund requisition {fund_req.request_ref} for {fund_req.booking_ref} (Rs. {fund_req.amount:,.0f}). Disbursed to {fund_req.requested_by}.",
+            ip_address="127.0.0.1"
+        )
+
+        return Response(ManagerFundRequestSerializer(fund_req).data)
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        fund_req = self.get_object()
+        approver = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Accounts Officer'
+        fund_req.status = 'Rejected'
+        fund_req.approved_by = approver
+        fund_req.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approver,
+            user_role="Finance",
+            action="Rejected",
+            module="Finance",
+            details=f"Rejected fund requisition {fund_req.request_ref} for {fund_req.booking_ref}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response(ManagerFundRequestSerializer(fund_req).data)
 
 
 class SecurityDepositSettlementViewSet(viewsets.ModelViewSet):
@@ -181,7 +261,7 @@ class SecurityDepositSettlementViewSet(viewsets.ModelViewSet):
                 channel=refund_channel,
                 billing_status="Settled",
                 amount=settlement.net_refund_amount,
-                timestamp=timezone.now().strftime('%Y-%m-%d %H:%M'),
+                timestamp=timezone.now().strftime('%Y-%m-%d %I:%M %p'),
                 booking_ref=settlement.booking_ref
             )
 

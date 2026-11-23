@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   BarChart3,
@@ -23,6 +23,7 @@ import {
   SEED_FINANCIAL_TREND,
   SEED_MONTHLY_SUMMARY,
 } from '../../data/seedData';
+import { reportsApi } from '../../api/client';
 
 export interface MonthlySummaryRow {
   month: string;
@@ -35,10 +36,43 @@ export interface MonthlySummaryRow {
 export const FinancialReportsPage: React.FC = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [trendData, setTrendData] = useState<any[]>(SEED_FINANCIAL_TREND);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlySummaryRow[]>(SEED_MONTHLY_SUMMARY);
+  const [expenseBreakdownData, setExpenseBreakdownData] = useState<any[]>(SEED_EXPENSE_BREAKDOWN);
 
-  const trendData = SEED_FINANCIAL_TREND;
-  const expenseBreakdownData = SEED_EXPENSE_BREAKDOWN;
-  const monthlySummary: MonthlySummaryRow[] = SEED_MONTHLY_SUMMARY;
+  useEffect(() => {
+    reportsApi
+      .getSummary({
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      })
+      .then((data: any) => {
+        if (data) {
+          if (data.monthly_breakdown && data.monthly_breakdown.length > 0) {
+            setTrendData(
+              data.monthly_breakdown.map((m: any) => ({
+                month: m.month,
+                revenue: m.revenue || 0,
+                expenses: m.expenses || 0,
+              }))
+            );
+            setMonthlySummary(
+              data.monthly_breakdown.map((m: any) => ({
+                month: m.month,
+                totalBookings: m.totalBookings || 4,
+                grossRevenue: m.revenue || 0,
+                totalExpenses: m.expenses || 0,
+                netProfit: (m.revenue || 0) - (m.expenses || 0),
+              }))
+            );
+          }
+          if (data.expense_breakdown && data.expense_breakdown.length > 0) {
+            setExpenseBreakdownData(data.expense_breakdown);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [startDate, endDate]);
 
   const handleExportReport = () => {
     const headers = [

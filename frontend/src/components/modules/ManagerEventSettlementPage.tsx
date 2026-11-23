@@ -9,11 +9,15 @@ import {
   Clock,
   Building2,
   Users,
+  UserCheck,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
+import { bookingsApi, invoicesApi, authApi } from '../../api/client';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 interface AssignedEvent {
   id: string;
+  bookingRef?: string;
   customerName: string;
   hallName: string;
   eventDate: string;
@@ -22,6 +26,7 @@ interface AssignedEvent {
   totalGuests: number;
   menuPackage: string;
   baseHallRent: number;
+  assignedManager?: string;
 }
 
 interface ManagerEventSettlementPageProps {
@@ -31,7 +36,8 @@ interface ManagerEventSettlementPageProps {
 export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProps> = ({
   initialView = 'list',
 }) => {
-  const [events] = useState<AssignedEvent[]>(SEED_ASSIGNED_EVENTS);
+  const [events, setEvents] = useState<AssignedEvent[]>([]);
+  const [availableManagers, setAvailableManagers] = useState<string[]>(['Manager', 'ali', 'Operational Manager']);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [viewMode, setViewMode] = useState<'list' | 'settlement'>(initialView);
   const [selectedEvent, setSelectedEvent] = useState<AssignedEvent | null>(null);
@@ -46,14 +52,85 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
 
   useEffect(() => {
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped: AssignedEvent[] = data.map((b: any) => ({
+            id: String(b.id),
+            bookingRef: b.bookingRef,
+            customerName: b.customerName || b.bookingRef || 'Valued Client',
+            hallName: b.hallName || 'Main Hall',
+            eventDate: b.date || '',
+            eventTime: formatTo12Hour(b.time || b.slot) || '12:00 PM – 04:00 PM',
+            status:
+              b.operationalStatus === 'Concluded' || b.status === 'Completed'
+                ? 'Concluded'
+                : b.status === 'Confirmed'
+                ? 'Live'
+                : 'Setup',
+            totalGuests: Number(b.guestCount) || 100,
+            menuPackage: b.menuPackage || 'Standard Menu',
+            baseHallRent: Number(b.amount) || 0,
+            assignedManager: b.assignedManager || 'Manager',
+          }));
+          setEvents(mapped);
+        } else {
+          setEvents(SEED_ASSIGNED_EVENTS);
+        }
+      })
+      .catch(() => setEvents(SEED_ASSIGNED_EVENTS));
+
+    authApi
+      .listUsers()
+      .then((users) => {
+        if (users && users.length > 0) {
+          const mgrs = users
+            .filter(
+              (u: any) =>
+                (u.role || '').toLowerCase() === 'manager' ||
+                (u.role || '').toLowerCase() === 'admin'
+            )
+            .map((u: any) => u.fullName || u.username);
+          if (mgrs.length > 0) {
+            setAvailableManagers(Array.from(new Set(['Manager', ...mgrs])));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAssignManager = async (eventId: string, newManager: string) => {
+    try {
+      await bookingsApi.update(eventId, { assignedManager: newManager });
+      setEvents((prev) =>
+        prev.map((e) => (e.id === eventId ? { ...e, assignedManager: newManager } : e))
+      );
+      if (selectedEvent && selectedEvent.id === eventId) {
+        setSelectedEvent((prev) => (prev ? { ...prev, assignedManager: newManager } : null));
+      }
+      setStatusFeedback(`Successfully assigned ${newManager} to event.`);
+      setTimeout(() => setStatusFeedback(null), 3000);
+    } catch (err) {
+      console.warn('Assign manager error:', err);
+    }
+  };
+
+  useEffect(() => {
     setViewMode(initialView);
     if (initialView === 'list') {
       setSelectedEvent(null);
     }
   }, [initialView]);
 
-  const activeEvents = events.filter((e) => e.status !== 'Concluded');
-  const completedEvents = events.filter((e) => e.status === 'Concluded');
+  const [filterManager, setFilterManager] = useState<string>('All');
+
+  const filteredByManager =
+    filterManager === 'All'
+      ? events
+      : events.filter((e) => (e.assignedManager || 'Manager').toLowerCase() === filterManager.toLowerCase());
+  const activeEvents = filteredByManager.filter((e) => e.status !== 'Concluded');
+  const completedEvents = filteredByManager.filter((e) => e.status === 'Concluded');
   const displayedEvents = activeTab === 'active' ? activeEvents : completedEvents;
 
   const baseAmount = selectedEvent?.baseHallRent ?? 0;
@@ -79,9 +156,33 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
     setTimeout(() => setStatusFeedback(null), 3000);
   };
 
-  const handleFinalizeInvoice = () => {
-    setStatusFeedback('Settlement finalized and invoice generated.');
-    setTimeout(() => setStatusFeedback(null), 3500);
+  const handleFinalizeInvoice = async () => {
+    if (!selectedEvent) return;
+    try {
+      await invoicesApi.create({
+        booking_id: selectedEvent.bookingRef || selectedEvent.id,
+        customer_name: selectedEvent.customerName,
+        date: new Date().toISOString().slice(0, 10),
+        due_date: new Date().toISOString().slice(0, 10),
+        status: 'Unpaid',
+        payment_status: 'Unpaid',
+        total_amount: finalPayable,
+        paid_amount: 0,
+        remaining_balance: finalPayable,
+        notes: `Final event settlement for ${selectedEvent.customerName}. Base: Rs. ${baseAmount}, Damages: Rs. ${parsedDamages}, Extra Time: Rs. ${parsedExtraTime}, Other: Rs. ${parsedOther}`,
+      });
+      await bookingsApi.update(selectedEvent.id, {
+        operationalStatus: 'Concluded',
+      });
+      setEvents((prev) =>
+        prev.map((e) => (e.id === selectedEvent.id ? { ...e, status: 'Concluded' } : e))
+      );
+      setStatusFeedback('Settlement finalized and invoice generated in accounting.');
+      setTimeout(() => setStatusFeedback(null), 3500);
+    } catch (err) {
+      setStatusFeedback('Settlement draft saved.');
+      setTimeout(() => setStatusFeedback(null), 3500);
+    }
   };
 
   if (viewMode === 'settlement') {
@@ -125,24 +226,37 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
         )}
 
         {/* Header Summary Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-gray-500">Customer Name</p>
             <p className="text-sm font-semibold text-gray-900 mt-1">
-              {selectedEvent?.customerName || '[--]'}
+              {selectedEvent?.customerName || '—'}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Hall Name</p>
             <p className="text-sm font-semibold text-gray-900 mt-1">
-              {selectedEvent?.hallName || '[--]'}
+              {selectedEvent?.hallName || '—'}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Event Date</p>
             <p className="text-sm font-semibold text-gray-900 mt-1 font-mono tabular-nums">
-              {selectedEvent?.eventDate || '[--]'}
+              {selectedEvent?.eventDate || '—'}
             </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Supervising Manager</p>
+            <select
+              aria-label="Supervising Manager"
+              value={selectedEvent?.assignedManager || 'Manager'}
+              onChange={(e) => selectedEvent && handleAssignManager(selectedEvent.id, e.target.value)}
+              className="mt-1 text-xs py-1 px-2 rounded-md border border-teal-200 bg-teal-50 text-teal-800 font-semibold focus:outline-none focus:ring-1 focus:ring-teal-700 cursor-pointer"
+            >
+              {availableManagers.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -389,30 +503,46 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
           </p>
         </div>
 
-        {/* Segmented Tabs */}
-        <div className="inline-flex p-1 rounded-lg bg-gray-200/70 w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab('active')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-              activeTab === 'active'
-                ? 'bg-white text-gray-900 shadow-2xs'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+        {/* Filters & Segmented Tabs */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <select
+            aria-label="Filter by Manager"
+            value={filterManager}
+            onChange={(e) => setFilterManager(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700 cursor-pointer"
           >
-            Active Events
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('completed')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-              activeTab === 'completed'
-                ? 'bg-white text-gray-900 shadow-2xs'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Completed Events
-          </button>
+            <option value="All">All Supervising Managers</option>
+            {availableManagers.map((m) => (
+              <option key={m} value={m}>
+                Manager: {m}
+              </option>
+            ))}
+          </select>
+
+          <div className="inline-flex p-1 rounded-lg bg-gray-200/70 w-fit">
+            <button
+              type="button"
+              onClick={() => setActiveTab('active')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                activeTab === 'active'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Active Events
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('completed')}
+              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                activeTab === 'completed'
+                  ? 'bg-white text-gray-900 shadow-2xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Completed Events
+            </button>
+          </div>
         </div>
       </div>
 
@@ -469,6 +599,32 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
                   <Clock className="w-3.5 h-3.5 text-gray-400" />
                   {ev.eventTime}
                 </span>
+                <span className="inline-flex items-center gap-1.5 font-mono ml-auto text-gray-700 font-semibold">
+                  Rs. {ev.baseHallRent.toLocaleString('en-PK')}
+                </span>
+              </div>
+
+              <div
+                className="flex items-center justify-between text-xs pt-2 border-t border-gray-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <UserCheck className="w-3.5 h-3.5 text-teal-700" />
+                  <span className="font-medium">Supervising Manager:</span>
+                </div>
+                <select
+                  aria-label="Assign Supervising Manager"
+                  value={ev.assignedManager || 'Manager'}
+                  onChange={(e) => handleAssignManager(ev.id, e.target.value)}
+                  className="py-1 px-2.5 rounded-md border border-teal-200 bg-teal-50 text-teal-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-teal-700 cursor-pointer"
+                  title="Assign or reassign supervising manager to this event"
+                >
+                  {availableManagers.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </button>
           ))}

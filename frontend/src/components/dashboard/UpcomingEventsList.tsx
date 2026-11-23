@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarCheck, ChevronRight, Inbox, PlusCircle } from 'lucide-react';
 import { Booking } from '../../types';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 interface UpcomingEventsListProps {
   events?: Booking[];
@@ -31,7 +32,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
           onClick={onViewCalendar}
           className="inline-flex items-center gap-1 text-xs text-teal-700 font-semibold hover:text-teal-800 transition-colors"
         >
-          <span>[View Calendar]</span>
+          <span>View Calendar</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -41,7 +42,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
           <thead>
             <tr className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider rounded-md">
               <th className="py-2.5 px-3 rounded-l-md">Event Name</th>
-              <th className="py-2.5 px-3">Date</th>
+              <th className="py-2.5 px-3">Date &amp; Time</th>
               <th className="py-2.5 px-3">Hall</th>
               <th className="py-2.5 px-3 text-right rounded-r-md">Status</th>
             </tr>
@@ -67,7 +68,12 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
                     {evt.eventType || evt.customerName}
                   </td>
                   <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
-                    {evt.date}
+                    <div>{evt.date}</div>
+                    {(evt.time || evt.slot) && (
+                      <div className="text-[10px] text-teal-700">
+                        {formatTo12Hour(evt.time || evt.slot)}
+                      </div>
+                    )}
                   </td>
                   <td className="py-3 px-3 text-slate-700">{evt.hallName}</td>
                   <td className="py-3 px-3 text-right">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   Calendar,
@@ -11,6 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
+import { bookingsApi } from '../../api/client';
 
 interface LiveEventItem {
   id: string;
@@ -26,12 +27,39 @@ interface ManagerDashboardProps {
 export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   onNavigate,
 }) => {
-  const todaysEvents: LiveEventItem[] = SEED_ASSIGNED_EVENTS.map((e) => ({
-    id: e.id,
-    eventName: e.customerName,
-    hall: e.hallName,
-    status: e.status,
-  }));
+  const [eventsList, setEventsList] = useState<LiveEventItem[]>(
+    SEED_ASSIGNED_EVENTS.map((e) => ({
+      id: e.id,
+      eventName: e.customerName,
+      hall: e.hallName,
+      status: e.status,
+    }))
+  );
+
+  useEffect(() => {
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setEventsList(
+            data.slice(0, 5).map((b: any) => ({
+              id: String(b.id),
+              eventName: b.customerName || b.bookingRef || 'Event',
+              hall: b.hallName || 'Main Hall',
+              status:
+                b.status === 'Confirmed'
+                  ? 'Live'
+                  : b.status === 'Completed'
+                  ? 'Concluded'
+                  : 'Setup',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Manager dashboard bookings API error:', err));
+  }, []);
+
+  const todaysEvents: LiveEventItem[] = eventsList;
 
   const kpiCards = [
     {

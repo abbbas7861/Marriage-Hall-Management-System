@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   ArrowUpRight,
@@ -31,6 +31,7 @@ import {
   SEED_INVOICES,
   SEED_OCCUPANCY_DATA,
 } from '../../data/seedData';
+import { dashboardApi, hallsApi, bookingsApi, invoicesApi, DashboardStatsResponse } from '../../api/client';
 
 interface AdminExecutiveDashboardProps {
   onNavigate?: (navId: string) => void;
@@ -41,18 +42,104 @@ const OCCUPANCY_COLORS = ['#0f766e', '#2563eb', '#d97706', '#64748b'];
 export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = ({
   onNavigate,
 }) => {
-  const revenueData = SEED_FINANCIAL_TREND.map((item) => ({
-    period: item.month,
-    revenue: item.revenue,
-    expenses: item.expenses,
-  }));
-  const occupancyData = SEED_OCCUPANCY_DATA;
-  const upcomingEvents = SEED_BOOKINGS;
-  const recentTransactions = SEED_INVOICES;
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+  const [liveBookings, setLiveBookings] = useState<any[]>([]);
+  const [liveInvoices, setLiveInvoices] = useState<any[]>([]);
+  const [hallsCount, setHallsCount] = useState<number>(SEED_HALLS.length);
+  const [activeHalls, setActiveHalls] = useState<number>(
+    SEED_HALLS.filter((h) => h.status === 'Active').length
+  );
 
-  const totalRevenue = SEED_BOOKINGS.reduce((sum, b) => sum + b.totalAmount, 0);
-  const pendingPayments = SEED_BOOKINGS.reduce((sum, b) => sum + b.remainingBalance, 0);
-  const activeHallsCount = SEED_HALLS.filter((h) => h.status === 'Active').length;
+  useEffect(() => {
+    dashboardApi
+      .getStats()
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch((err) => console.warn('Dashboard stats API error:', err));
+
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) setLiveBookings(data);
+      })
+      .catch(() => {});
+
+    invoicesApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) setLiveInvoices(data);
+      })
+      .catch(() => {});
+
+    hallsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setHallsCount(data.length);
+          setActiveHalls(data.filter((h) => h.status === 'Active').length);
+        }
+      })
+      .catch((err) => console.warn('Halls list API error in dashboard:', err));
+  }, []);
+
+  const revenueData = stats?.revenueTrend?.length
+    ? stats.revenueTrend.map((item: any) => ({
+        period: item.period || item.month,
+        revenue: item.bookedRevenue || item.revenue || 0,
+        expenses: item.ancillaryCatering || item.expenses || 0,
+      }))
+    : SEED_FINANCIAL_TREND.map((item) => ({
+        period: item.month,
+        revenue: item.revenue,
+        expenses: item.expenses,
+      }));
+
+  const occupancyData = stats?.occupancyData?.length ? stats.occupancyData : SEED_OCCUPANCY_DATA;
+  const upcomingEvents = liveBookings.length > 0
+    ? liveBookings.slice(0, 5).map((b: any) => ({
+        id: String(b.id),
+        bookingRef: b.bookingRef,
+        customerName: b.customerName || 'Client',
+        eventType: b.eventType || 'Event',
+        hallName: b.hallName || 'Main Hall',
+        date: b.date || '',
+        time: b.time || b.slot || '12:00 PM – 04:00 PM',
+        status: b.status || 'Confirmed',
+        totalAmount: Number(b.amount) || 0,
+        remainingBalance: Math.max(0, (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)),
+      }))
+    : SEED_BOOKINGS;
+
+  const recentTransactions = liveInvoices.length > 0
+    ? liveInvoices.slice(0, 5).map((inv: any) => ({
+        id: String(inv.id),
+        invoiceNumber: inv.invoiceNumber || inv.invoice_number || `INV-${inv.id}`,
+        customerName: inv.customerName || inv.customer_name || 'Client',
+        hallName: inv.hallName || 'Hall',
+        amount: Number(inv.totalAmount || inv.total_amount) || 0,
+        paymentStatus: inv.paymentStatus || inv.payment_status || 'Unpaid',
+        date: inv.date || '',
+      }))
+    : SEED_INVOICES;
+
+  const totalRevenue =
+    stats?.totalRevenue ??
+    (liveBookings.length > 0
+      ? liveBookings.reduce((sum, b: any) => sum + (Number(b.amount) || 0), 0)
+      : SEED_BOOKINGS.reduce((sum, b) => sum + b.totalAmount, 0));
+  const pendingPayments =
+    stats
+      ? stats.totalRevenue - (stats.netProfit || 0)
+      : liveBookings.length > 0
+      ? liveBookings.reduce(
+          (sum, b: any) =>
+            sum + Math.max(0, (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)),
+          0
+        )
+      : SEED_BOOKINGS.reduce((sum, b) => sum + b.remainingBalance, 0);
+  const totalBookingsCount = liveBookings.length > 0 ? liveBookings.length : SEED_BOOKINGS.length;
+  const activeHallsCount = activeHalls;
   const averageOccupancy =
     occupancyData.length > 0
       ? Math.round(
@@ -71,7 +158,7 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
     },
     {
       label: 'Total Bookings',
-      value: String(SEED_BOOKINGS.length),
+      value: String(totalBookingsCount),
       caption: 'Confirmed & pending reservations',
       icon: Calendar,
       iconBox:

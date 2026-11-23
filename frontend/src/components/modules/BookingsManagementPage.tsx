@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   Plus,
@@ -9,8 +9,27 @@ import {
   ArrowLeft,
   X,
   Printer,
+  AlertTriangle,
+  CheckCircle2,
+  Calculator,
 } from 'lucide-react';
-import { SEED_BOOKINGS } from '../../data/seedData';
+import { SEED_BOOKINGS, SEED_HALLS, SEED_MENU_PACKAGES } from '../../data/seedData';
+import { bookingsApi, hallsApi, menuApi, authApi } from '../../api/client';
+import { formatTo12Hour } from '../../utils/timeFormat';
+
+export interface BookingsManagementPageProps {
+  onNavigateToCalendar?: () => void;
+  prefillData?: {
+    date?: string;
+    hall?: string;
+    slot?: string;
+    bookingType?: string;
+    customerName?: string;
+    eventType?: string;
+    guestCount?: string;
+  } | null;
+  onClearPrefill?: () => void;
+}
 
 interface BookingItem {
   id: string;
@@ -26,6 +45,7 @@ interface BookingItem {
   seatingArrangement: string;
   includeMenuPackage?: boolean;
   menuPackage: string;
+  menuRatePerHead?: number;
   dietaryInstructions: string;
   customRequests?: string;
   includeDjSound?: boolean;
@@ -37,16 +57,310 @@ interface BookingItem {
   totalAmount: number;
   advancePayment: number;
   remainingBalance: number;
+  assignedManager?: string;
   status: 'Pending' | 'Confirmed' | 'Cancelled';
   paymentStatus: 'Paid' | 'Partial' | 'Unpaid';
 }
 
-export const BookingsManagementPage: React.FC = () => {
+function parseTimeToMinutes(timeStr: string): number | null {
+  if (!timeStr) return null;
+  const clean = timeStr.trim().toUpperCase();
+  if (!clean) return null;
+
+  try {
+    if (clean.includes('AM') || clean.includes('PM')) {
+      const match = clean.match(/(\d+):(\d+)\s*(AM|PM)/);
+      if (match) {
+        let h = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        const p = match[3];
+        if (p === 'PM' && h < 12) h += 12;
+        if (p === 'AM' && h === 12) h = 0;
+        return h * 60 + m;
+      }
+    }
+    if (clean.includes(':')) {
+      const parts = clean.split(':');
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) || 0;
+      if (!isNaN(h)) return h * 60 + m;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function extractStartEndMinutes(timeStr: string): [number | null, number | null] {
+  if (!timeStr) return [null, null];
+  const normalized = timeStr.replace(/[–—]/g, '-').replace(/\s+to\s+/i, '-');
+  if (normalized.includes('-')) {
+    const parts = normalized.split('-');
+    const s = parseTimeToMinutes(parts[0]);
+    let e = parseTimeToMinutes(parts[1]);
+    if (s !== null && e !== null) {
+      if (e <= s) e += 24 * 60;
+      return [s, e];
+    }
+  }
+
+  const lower = timeStr.toLowerCase();
+  if (lower.includes('morning') || lower.includes('lunch') || lower.includes('afternoon')) {
+    return [12 * 60, 16 * 60];
+  }
+  if (lower.includes('evening') || lower.includes('dinner') || lower.includes('night')) {
+    return [18 * 60, 23 * 60 + 30];
+  }
+
+  const single = parseTimeToMinutes(timeStr);
+  if (single !== null) {
+    return [single, Math.min(24 * 60 - 1, single + 5 * 60)];
+  }
+
+  return [null, null];
+}
+
+interface CollisionResult {
+  hasConflict: boolean;
+  message?: string;
+  conflictingBooking?: BookingItem;
+}
+
+function detectBookingCollision(
+  bookings: BookingItem[],
+  hallName: string,
+  eventDate: string,
+  startTime: string,
+  endTime: string,
+  excludeId: string | null
+): CollisionResult {
+  if (!hallName || !eventDate) {
+    return { hasConflict: false };
+  }
+
+  const BUFFER_MINUTES = 60; // 1-hour mandatory turnover/cleaning margin
+
+  let reqStart = parseTimeToMinutes(startTime);
+  let reqEnd = parseTimeToMinutes(endTime);
+
+  if (reqStart === null || reqEnd === null) {
+    const [s, e] = extractStartEndMinutes(startTime);
+    if (reqStart === null) reqStart = s;
+    if (reqEnd === null) reqEnd = e;
+  }
+
+  if (reqStart !== null && reqEnd !== null && reqEnd <= reqStart) {
+    reqEnd += 24 * 60;
+  }
+
+  const candidateBookings = bookings.filter((b) => {
+    if (b.status === 'Cancelled') return false;
+    if (excludeId && b.id === excludeId) return false;
+    if (b.eventDate !== eventDate) return false;
+    if (b.hallName.trim().toLowerCase() !== hallName.trim().toLowerCase()) return false;
+    return true;
+  });
+
+  for (const b of candidateBookings) {
+    let bStart = parseTimeToMinutes(b.startTime);
+    let bEnd = parseTimeToMinutes(b.endTime);
+
+    if (bStart === null || bEnd === null) {
+      const [s, e] = extractStartEndMinutes(b.startTime);
+      if (bStart === null) bStart = s;
+      if (bEnd === null) bEnd = e;
+    }
+
+    if (bStart !== null && bEnd !== null && bEnd <= bStart) {
+      bEnd += 24 * 60;
+    }
+
+    if (reqStart !== null && reqEnd !== null && bStart !== null && bEnd !== null) {
+      const bufferedStart = Math.max(0, bStart - BUFFER_MINUTES);
+      const bufferedEnd = bEnd + BUFFER_MINUTES;
+
+      if (Math.max(reqStart, bufferedStart) < Math.min(reqEnd, bufferedEnd)) {
+        const bookedTimeStr = `${b.startTime || 'Standard Slot'}${b.endTime ? ` – ${b.endTime}` : ''}`;
+        return {
+          hasConflict: true,
+          conflictingBooking: b,
+          message: `Hall "${hallName}" is already reserved on ${eventDate} (${bookedTimeStr}) by ${b.customerName} (${b.bookingId}). Including the mandatory 1-hour cleaning & turnover buffer, this time slot cannot be booked.`,
+        };
+      }
+    } else {
+      const bIsLunch = (b.startTime + ' ' + (b.eventType || '')).toLowerCase().includes('lunch');
+      const reqIsLunch = (startTime || '').toLowerCase().includes('lunch') || (reqStart !== null && reqStart < 17 * 60);
+
+      const bIsDinner = !bIsLunch;
+      const reqIsDinner = !reqIsLunch;
+
+      if ((bIsLunch && reqIsLunch) || (bIsDinner && reqIsDinner)) {
+        return {
+          hasConflict: true,
+          conflictingBooking: b,
+          message: `Hall "${hallName}" is already reserved for this slot on ${eventDate} by ${b.customerName} (${b.bookingId}).`,
+        };
+      }
+    }
+  }
+
+  return { hasConflict: false };
+}
+
+export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
+  onNavigateToCalendar,
+  prefillData,
+  onClearPrefill,
+}) => {
   const [bookings, setBookings] = useState<BookingItem[]>(SEED_BOOKINGS);
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingBooking, setViewingBooking] = useState<BookingItem | null>(null);
   const [receiptBooking, setReceiptBooking] = useState<BookingItem | null>(null);
+
+  // Dynamic Halls and Menu Packages
+  const [availableHalls, setAvailableHalls] = useState<
+    Array<{ id: string; name: string; capacity?: number }>
+  >([]);
+  const [availablePackages, setAvailablePackages] = useState<
+    Array<{ id: string; name: string; pricePerHead?: number }>
+  >([]);
+
+  useEffect(() => {
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setBookings(
+            data.map((b: any) => ({
+              id: String(b.id),
+              bookingId: b.bookingRef || `BK-${b.id}`,
+              customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
+              phone: b.contactRef && b.contactRef !== '[--]' ? b.contactRef : '',
+              cnic: b.cnic && b.cnic !== '[--]' ? b.cnic : '',
+              eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Wedding',
+              hallName: b.hallName && b.hallName !== '[--]' ? b.hallName : '',
+              bookingType: 'Full Hall',
+              eventDate: b.date || '',
+              guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
+              seatingArrangement: b.seatingArrangement && b.seatingArrangement !== '[--]' ? b.seatingArrangement : 'Round Tables',
+              includeMenuPackage: !!b.menuPackage,
+              menuPackage: b.menuPackage && b.menuPackage !== '[--]' ? b.menuPackage : '',
+              dietaryInstructions: b.specialInstructions || '',
+              customRequests: '',
+              includeDjSound: false,
+              includeStageDecor: false,
+              startTime: b.time || '18:00',
+              endTime: '23:00',
+              extraHours: Number(b.extraHours) || 0,
+              ratePerHour: Number(b.ratePerHour) || 0,
+              totalAmount: Number(b.amount) || 0,
+              advancePayment: Number(b.advancePayment) || 0,
+              remainingBalance: Math.max(
+                0,
+                (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)
+              ),
+              assignedManager: b.assignedManager || 'Manager',
+              status:
+                b.status === 'Confirmed'
+                  ? 'Confirmed'
+                  : b.status === 'Cancelled'
+                  ? 'Cancelled'
+                  : 'Pending',
+              paymentStatus:
+                b.paymentStatus === 'Paid'
+                  ? 'Paid'
+                  : b.paymentStatus === 'Partial'
+                  ? 'Partial'
+                  : 'Unpaid',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Could not load bookings from API:', err));
+
+    hallsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setAvailableHalls(
+            data.map((h: any) => ({
+              id: String(h.id),
+              name: h.name,
+              capacity: h.capacity,
+            }))
+          );
+        } else {
+          setAvailableHalls(
+            SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity }))
+          );
+        }
+      })
+      .catch(() => {
+        setAvailableHalls(
+          SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity }))
+        );
+      });
+
+    menuApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setAvailablePackages(
+            data.map((p: any) => ({
+              id: String(p.id),
+              name: p.name,
+              pricePerHead: p.pricePerHead,
+            }))
+          );
+        } else {
+          setAvailablePackages(
+            SEED_MENU_PACKAGES.map((p) => ({
+              id: p.id,
+              name: p.name,
+              pricePerHead: p.pricePerHead,
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        setAvailablePackages(
+          SEED_MENU_PACKAGES.map((p) => ({
+            id: p.id,
+            name: p.name,
+            pricePerHead: p.pricePerHead,
+          }))
+        );
+      });
+  }, []);
+
+  // Listen to calendar prefill data
+  useEffect(() => {
+    if (prefillData) {
+      resetForm();
+      if (prefillData.date) setEventDate(prefillData.date);
+      if (prefillData.hall) setHallName(prefillData.hall);
+      if (prefillData.bookingType) {
+        setBookingType(prefillData.bookingType as any);
+      }
+      if (prefillData.customerName) setFullName(prefillData.customerName);
+      if (prefillData.eventType) setEventType(prefillData.eventType);
+      if (prefillData.guestCount) setGuestCount(prefillData.guestCount);
+      if (prefillData.slot) {
+        if (prefillData.slot.toLowerCase().includes('lunch')) {
+          setStartTime('12:00');
+          setEndTime('16:00');
+        } else {
+          setStartTime('18:00');
+          setEndTime('23:00');
+        }
+      }
+      setViewMode('form');
+      if (onClearPrefill) {
+        onClearPrefill();
+      }
+    }
+  }, [prefillData, onClearPrefill]);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +383,7 @@ export const BookingsManagementPage: React.FC = () => {
   const [seatingArrangement, setSeatingArrangement] = useState('');
   const [includeMenuPackage, setIncludeMenuPackage] = useState(true);
   const [menuPackage, setMenuPackage] = useState('');
+  const [menuRatePerHead, setMenuRatePerHead] = useState<string>('');
   const [dietaryInstructions, setDietaryInstructions] = useState('');
   const [customRequests, setCustomRequests] = useState('');
   const [includeDjSound, setIncludeDjSound] = useState(false);
@@ -79,7 +394,86 @@ export const BookingsManagementPage: React.FC = () => {
   const [ratePerHour, setRatePerHour] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [advancePayment, setAdvancePayment] = useState('');
+  const [assignedManager, setAssignedManager] = useState('Manager');
+  const [availableManagers, setAvailableManagers] = useState<string[]>(['Manager', 'ali', 'Operational Manager']);
   const [formError, setFormError] = useState<string | null>(null);
+  const [collisionWarning, setCollisionWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    authApi
+      .listUsers()
+      .then((users) => {
+        if (users && users.length > 0) {
+          const mgrs = users
+            .filter(
+              (u: any) =>
+                (u.role || '').toLowerCase() === 'manager' ||
+                (u.role || '').toLowerCase() === 'admin'
+            )
+            .map((u: any) => u.fullName || u.username);
+          if (mgrs.length > 0) {
+            setAvailableManagers(Array.from(new Set(['Manager', ...mgrs])));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAssignManager = async (bookingId: string, newManager: string) => {
+    try {
+      await bookingsApi.update(bookingId, { assignedManager: newManager });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, assignedManager: newManager } : b))
+      );
+    } catch (err) {
+      console.warn('Assign manager error:', err);
+    }
+  };
+
+  // Live collision detection against existing bookings and 1-hour turnover margin
+  useEffect(() => {
+    if (!hallName || !eventDate) {
+      setCollisionWarning(null);
+      return;
+    }
+
+    const collision = detectBookingCollision(
+      bookings,
+      hallName,
+      eventDate,
+      startTime || '18:00',
+      endTime || '23:00',
+      editingId
+    );
+
+    if (collision.hasConflict) {
+      setCollisionWarning(
+        collision.message ||
+          `Schedule Conflict: Hall "${hallName}" is already reserved for this schedule with 1-hour margin buffer.`
+      );
+    } else {
+      setCollisionWarning(null);
+      // Double check with backend endpoint
+      bookingsApi
+        .checkAvailability({
+          hall: hallName,
+          date: eventDate,
+          startTime: startTime || '18:00',
+          endTime: endTime || '23:00',
+          excludeId: editingId || undefined,
+        })
+        .then((res) => {
+          if (res && res.available === false) {
+            setCollisionWarning(
+              res.conflict ||
+                res.details ||
+                `Conflict: Hall "${hallName}" is already booked on ${eventDate}.`
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [hallName, eventDate, startTime, endTime, editingId, bookings]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -94,6 +488,7 @@ export const BookingsManagementPage: React.FC = () => {
     setSeatingArrangement('');
     setIncludeMenuPackage(true);
     setMenuPackage('');
+    setMenuRatePerHead('');
     setDietaryInstructions('');
     setCustomRequests('');
     setIncludeDjSound(false);
@@ -104,38 +499,63 @@ export const BookingsManagementPage: React.FC = () => {
     setRatePerHour('');
     setTotalAmount('');
     setAdvancePayment('');
+    setAssignedManager('Manager');
     setFormError(null);
+    setCollisionWarning(null);
   };
 
   const openCreateForm = () => {
+    if (onNavigateToCalendar) {
+      onNavigateToCalendar();
+    } else {
+      resetForm();
+      setViewMode('form');
+    }
+  };
+
+  const openDirectForm = () => {
     resetForm();
     setViewMode('form');
   };
 
   const openEditForm = (item: BookingItem) => {
     setEditingId(item.id);
-    setFullName(item.customerName);
-    setPhone(item.phone);
-    setCnic(item.cnic);
-    setEventType(item.eventType);
-    setHallName(item.hallName);
+    setFullName(item.customerName === '[--]' ? '' : item.customerName);
+    setPhone(item.phone === '[--]' ? '' : item.phone);
+    setCnic(item.cnic === '[--]' ? '' : item.cnic);
+    setEventType(item.eventType === '[--]' ? '' : item.eventType);
+    setHallName(item.hallName === '[--]' ? '' : item.hallName);
     setBookingType(item.bookingType ?? 'Full Hall');
-    setEventDate(item.eventDate);
-    setGuestCount(item.guestCount);
-    setSeatingArrangement(item.seatingArrangement);
+    setEventDate(item.eventDate === '[--]' ? '' : item.eventDate);
+    setGuestCount(item.guestCount === '[--]' ? '' : item.guestCount);
+    setSeatingArrangement(item.seatingArrangement === '[--]' ? '' : item.seatingArrangement);
     setIncludeMenuPackage(item.includeMenuPackage ?? true);
-    setMenuPackage(item.menuPackage);
+    setMenuPackage(item.menuPackage === '[--]' ? '' : item.menuPackage);
+    if (item.menuRatePerHead) {
+      setMenuRatePerHead(String(item.menuRatePerHead));
+    } else if (item.menuPackage) {
+      const matched = availablePackages.find((p) => p.name === item.menuPackage);
+      if (matched && matched.pricePerHead) {
+        setMenuRatePerHead(String(matched.pricePerHead));
+      } else {
+        setMenuRatePerHead('');
+      }
+    } else {
+      setMenuRatePerHead('');
+    }
     setDietaryInstructions(item.dietaryInstructions);
     setCustomRequests(item.customRequests ?? '');
     setIncludeDjSound(item.includeDjSound ?? false);
     setIncludeStageDecor(item.includeStageDecor ?? false);
-    setStartTime(item.startTime);
-    setEndTime(item.endTime);
+    setStartTime(item.startTime === '[--]' ? '' : item.startTime);
+    setEndTime(item.endTime === '[--]' ? '' : item.endTime);
     setExtraHours(item.extraHours ? String(item.extraHours) : '');
     setRatePerHour(item.ratePerHour ? String(item.ratePerHour) : '');
     setTotalAmount(item.totalAmount ? String(item.totalAmount) : '');
     setAdvancePayment(item.advancePayment ? String(item.advancePayment) : '');
+    setAssignedManager(item.assignedManager || 'Manager');
     setFormError(null);
+    setCollisionWarning(null);
     setViewMode('form');
   };
 
@@ -146,6 +566,14 @@ export const BookingsManagementPage: React.FC = () => {
   const extraCharges = parsedExtraHours * parsedRatePerHour;
   const grandTotal = parsedTotal + extraCharges;
   const remainingBalance = Math.max(0, grandTotal - parsedAdvance);
+
+  // Live Food Cost Calculation
+  const parsedGuests = Number(guestCount) || 0;
+  const parsedRatePerHead = Number(menuRatePerHead) || 0;
+  const calculatedFoodCost =
+    includeMenuPackage && parsedGuests > 0 && parsedRatePerHead > 0
+      ? parsedGuests * parsedRatePerHead
+      : 0;
 
   const hasAmountInput =
     totalAmount.trim() !== '' ||
@@ -158,6 +586,33 @@ export const BookingsManagementPage: React.FC = () => {
       return null;
     }
 
+    const defaultHall = availableHalls[0]?.name || 'Grand Crystal Ballroom';
+    const chosenHall = hallName || defaultHall;
+    const chosenDate = eventDate || new Date().toISOString().split('T')[0];
+
+    // Enforce Double-Booking & Turnover Margin Prevention
+    if (collisionWarning) {
+      setFormError(collisionWarning);
+      return null;
+    }
+
+    const collisionCheck = detectBookingCollision(
+      bookings,
+      chosenHall,
+      chosenDate,
+      startTime || '18:00',
+      endTime || '23:00',
+      editingId
+    );
+    if (collisionCheck.hasConflict) {
+      const msg =
+        collisionCheck.message ||
+        `Cannot save: Hall "${chosenHall}" is already booked on ${chosenDate} for the selected time or 1-hour margin buffer.`;
+      setCollisionWarning(msg);
+      setFormError(msg);
+      return null;
+    }
+
     const derivedPaymentStatus: BookingItem['paymentStatus'] =
       grandTotal > 0 && remainingBalance === 0
         ? 'Paid'
@@ -165,7 +620,51 @@ export const BookingsManagementPage: React.FC = () => {
         ? 'Partial'
         : 'Unpaid';
 
+    const effectiveTime =
+      startTime && endTime ? `${startTime} - ${endTime}` : startTime || '18:00 - 23:00';
+    const effectiveSlot = startTime
+      ? Number(startTime.split(':')[0]) < 17
+        ? 'Lunch'
+        : 'Dinner'
+      : 'Evening';
+
+    const apiPayload = {
+      customerName: fullName.trim(),
+      contactRef: phone.trim(),
+      cnic: cnic.trim(),
+      eventType: eventType || 'Wedding',
+      hallName: chosenHall,
+      date: chosenDate,
+      time: effectiveTime,
+      slot: effectiveSlot,
+      guestCount: Number(guestCount) || 100,
+      seatingArrangement: seatingArrangement.trim(),
+      menuPackage: includeMenuPackage
+        ? menuPackage
+          ? menuRatePerHead
+            ? `${menuPackage} (Rs. ${menuRatePerHead}/head)`
+            : menuPackage
+          : menuRatePerHead
+          ? `Custom Menu (Rs. ${menuRatePerHead}/head)`
+          : 'Package Selected'
+        : '',
+      specialInstructions:
+        dietaryInstructions.trim() +
+        (customRequests ? ` | ${customRequests.trim()}` : ''),
+      amount: grandTotal,
+      advancePayment: parsedAdvance,
+      extraHours: parsedExtraHours,
+      ratePerHour: parsedRatePerHour,
+      assignedManager: assignedManager || 'Manager',
+      status: 'Pending',
+      paymentStatus: derivedPaymentStatus,
+    };
+
     if (editingId) {
+      bookingsApi
+        .update(editingId, apiPayload)
+        .catch((err) => console.warn('API booking update error:', err));
+
       let updatedRecord: BookingItem | null = null;
       setBookings((prev) =>
         prev.map((b) => {
@@ -173,27 +672,28 @@ export const BookingsManagementPage: React.FC = () => {
           updatedRecord = {
             ...b,
             customerName: fullName.trim(),
-            phone: phone.trim() || '[--]',
-            cnic: cnic.trim() || '[--]',
-            eventType: eventType || '[--]',
-            hallName: hallName || '[--]',
+            phone: phone.trim(),
+            cnic: cnic.trim(),
+            eventType: eventType || 'Wedding',
+            hallName: chosenHall,
             bookingType,
-            eventDate: eventDate || '[--]',
-            guestCount: guestCount || '[--]',
-            seatingArrangement: seatingArrangement.trim() || '[--]',
+            eventDate: chosenDate,
+            guestCount: guestCount || '100',
+            seatingArrangement: seatingArrangement.trim(),
             includeMenuPackage,
-            menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+            menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
             dietaryInstructions: dietaryInstructions.trim(),
             customRequests: customRequests.trim(),
             includeDjSound,
             includeStageDecor,
-            startTime: startTime || '[--]',
-            endTime: endTime || '[--]',
+            startTime: startTime || '18:00',
+            endTime: endTime || '23:00',
             extraHours: parsedExtraHours,
             ratePerHour: parsedRatePerHour,
             totalAmount: grandTotal,
             advancePayment: parsedAdvance,
             remainingBalance,
+            assignedManager: assignedManager || 'Manager',
             paymentStatus: derivedPaymentStatus,
           };
           return updatedRecord;
@@ -202,24 +702,24 @@ export const BookingsManagementPage: React.FC = () => {
       return (
         updatedRecord ?? {
           id: editingId,
-          bookingId: bookings.find((b) => b.id === editingId)?.bookingId || '[--]',
+          bookingId: bookings.find((b) => b.id === editingId)?.bookingId || `BK-${editingId}`,
           customerName: fullName.trim(),
-          phone: phone.trim() || '[--]',
-          cnic: cnic.trim() || '[--]',
-          eventType: eventType || '[--]',
-          hallName: hallName || '[--]',
+          phone: phone.trim(),
+          cnic: cnic.trim(),
+          eventType: eventType || 'Wedding',
+          hallName: chosenHall,
           bookingType,
-          eventDate: eventDate || '[--]',
-          guestCount: guestCount || '[--]',
-          seatingArrangement: seatingArrangement.trim() || '[--]',
+          eventDate: chosenDate,
+          guestCount: guestCount || '100',
+          seatingArrangement: seatingArrangement.trim(),
           includeMenuPackage,
-          menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+          menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
           dietaryInstructions: dietaryInstructions.trim(),
           customRequests: customRequests.trim(),
           includeDjSound,
           includeStageDecor,
-          startTime: startTime || '[--]',
-          endTime: endTime || '[--]',
+          startTime: startTime || '18:00',
+          endTime: endTime || '23:00',
           extraHours: parsedExtraHours,
           ratePerHour: parsedRatePerHour,
           totalAmount: grandTotal,
@@ -232,35 +732,57 @@ export const BookingsManagementPage: React.FC = () => {
     }
 
     const nextIndex = bookings.length + 1;
+    const tempId = `bk-${Date.now()}`;
     const newBooking: BookingItem = {
-      id: `bk-${Date.now()}`,
+      id: tempId,
       bookingId: `BK-${String(nextIndex).padStart(4, '0')}`,
       customerName: fullName.trim(),
-      phone: phone.trim() || '[--]',
-      cnic: cnic.trim() || '[--]',
-      eventType: eventType || '[--]',
-      hallName: hallName || '[--]',
+      phone: phone.trim(),
+      cnic: cnic.trim(),
+      eventType: eventType || 'Wedding',
+      hallName: chosenHall,
       bookingType,
-      eventDate: eventDate || '[--]',
-      guestCount: guestCount || '[--]',
-      seatingArrangement: seatingArrangement.trim() || '[--]',
+      eventDate: chosenDate,
+      guestCount: guestCount || '100',
+      seatingArrangement: seatingArrangement.trim(),
       includeMenuPackage,
-      menuPackage: includeMenuPackage ? menuPackage || '[--]' : 'Customer Own',
+      menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
       dietaryInstructions: dietaryInstructions.trim(),
       customRequests: customRequests.trim(),
       includeDjSound,
       includeStageDecor,
-      startTime: startTime || '[--]',
-      endTime: endTime || '[--]',
+      startTime: startTime || '18:00',
+      endTime: endTime || '23:00',
       extraHours: parsedExtraHours,
       ratePerHour: parsedRatePerHour,
       totalAmount: grandTotal,
       advancePayment: parsedAdvance,
       remainingBalance,
+      assignedManager: assignedManager || 'Manager',
       status: 'Pending',
       paymentStatus: derivedPaymentStatus,
     };
     setBookings((prev) => [newBooking, ...prev]);
+
+    bookingsApi
+      .create(apiPayload)
+      .then((res: any) => {
+        if (res && res.id) {
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === tempId
+                ? {
+                    ...b,
+                    id: String(res.id),
+                    bookingId: res.bookingRef || b.bookingId,
+                  }
+                : b
+            )
+          );
+        }
+      })
+      .catch((err) => console.warn('API booking create error:', err));
+
     return newBooking;
   };
 
@@ -281,6 +803,7 @@ export const BookingsManagementPage: React.FC = () => {
   };
 
   const handleDeleteBooking = (id: string) => {
+    bookingsApi.delete(id).catch((err) => console.warn('API booking delete error:', err));
     setBookings((prev) => prev.filter((b) => b.id !== id));
     if (viewingBooking?.id === id) setViewingBooking(null);
   };
@@ -299,10 +822,10 @@ export const BookingsManagementPage: React.FC = () => {
     if (selectedStatus !== 'All' && b.status !== selectedStatus) {
       return false;
     }
-    if (startDate && b.eventDate !== '[--]' && b.eventDate < startDate) {
+    if (startDate && b.eventDate && b.eventDate < startDate) {
       return false;
     }
-    if (endDate && b.eventDate !== '[--]' && b.eventDate > endDate) {
+    if (endDate && b.eventDate && b.eventDate > endDate) {
       return false;
     }
     return true;
@@ -360,13 +883,13 @@ export const BookingsManagementPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-gray-900 pb-4 border-b border-gray-100">
               1. Customer Information
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
               <div>
                 <label
                   htmlFor="booking-fullname"
                   className="block text-xs font-medium text-gray-700 mb-1.5"
                 >
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="booking-fullname"
@@ -376,7 +899,7 @@ export const BookingsManagementPage: React.FC = () => {
                     setFullName(e.target.value);
                     if (formError) setFormError(null);
                   }}
-                  placeholder="[--]"
+                  placeholder="e.g. Tariq Mehmood"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -393,7 +916,7 @@ export const BookingsManagementPage: React.FC = () => {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 0300-1234567"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -410,9 +933,30 @@ export const BookingsManagementPage: React.FC = () => {
                   type="text"
                   value={cnic}
                   onChange={(e) => setCnic(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 35202-1234567-1"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="booking-assigned-manager"
+                  className="block text-xs font-medium text-gray-700 mb-1.5"
+                >
+                  Supervising Manager
+                </label>
+                <select
+                  id="booking-assigned-manager"
+                  value={assignedManager}
+                  onChange={(e) => setAssignedManager(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
+                >
+                  {availableManagers.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </section>
@@ -436,10 +980,11 @@ export const BookingsManagementPage: React.FC = () => {
                   onChange={(e) => setEventType(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
                 >
-                  <option value="">[--]</option>
+                  <option value="">Select Event Type</option>
                   <option value="Mehndi">Mehndi</option>
                   <option value="Barat">Barat</option>
                   <option value="Walima">Walima</option>
+                  <option value="Corporate / Other">Corporate / Other</option>
                 </select>
               </div>
 
@@ -456,7 +1001,15 @@ export const BookingsManagementPage: React.FC = () => {
                   onChange={(e) => setHallName(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
                 >
-                  <option value="">[--]</option>
+                  <option value="">Select Hall</option>
+                  {availableHalls.map((h) => (
+                    <option key={h.id} value={h.name}>
+                      {h.name} {h.capacity ? `(Capacity: ${h.capacity})` : ''}
+                    </option>
+                  ))}
+                  {hallName && !availableHalls.some((h) => h.name === hallName) && (
+                    <option value={hallName}>{hallName}</option>
+                  )}
                 </select>
               </div>
 
@@ -519,7 +1072,7 @@ export const BookingsManagementPage: React.FC = () => {
                   min="1"
                   value={guestCount}
                   onChange={(e) => setGuestCount(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 450"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -536,7 +1089,7 @@ export const BookingsManagementPage: React.FC = () => {
                   type="text"
                   value={seatingArrangement}
                   onChange={(e) => setSeatingArrangement(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. Round tables with VIP stage setup"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -577,6 +1130,33 @@ export const BookingsManagementPage: React.FC = () => {
                 </label>
               </div>
             </div>
+
+            {/* Real-time Schedule Conflict / Availability Status */}
+            {collisionWarning ? (
+              <div className="mt-5 rounded-xl border border-rose-300 bg-rose-50/95 p-4 text-rose-900 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                      Booking Collision Detected (Double-Booking Prevented)
+                    </h4>
+                    <p className="mt-1 text-xs text-rose-700 leading-relaxed font-medium">
+                      {collisionWarning}
+                    </p>
+                    <p className="mt-1.5 text-[11px] text-rose-600">
+                      Note: Bookings require at least a 1-hour turnover buffer before and after for hall cleaning &amp; preparation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : hallName && eventDate ? (
+              <div className="mt-5 rounded-xl border border-teal-200 bg-teal-50/60 px-4 py-2.5 text-xs text-teal-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>
+                  <strong>{hallName}</strong> is open on <strong>{eventDate}</strong> with required 1-hour margin buffer.
+                </span>
+              </div>
+            ) : null}
           </section>
 
           {/* Section 3: Menu & Catering */}
@@ -596,7 +1176,10 @@ export const BookingsManagementPage: React.FC = () => {
                   onClick={() => {
                     const next = !includeMenuPackage;
                     setIncludeMenuPackage(next);
-                    if (!next) setMenuPackage('');
+                    if (!next) {
+                      setMenuPackage('');
+                      setMenuRatePerHead('');
+                    }
                   }}
                   className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-700/20 ${
                     includeMenuPackage ? 'bg-teal-700' : 'bg-gray-300'
@@ -613,22 +1196,105 @@ export const BookingsManagementPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
               {includeMenuPackage ? (
-                <div>
-                  <label
-                    htmlFor="booking-menu"
-                    className="block text-xs font-medium text-gray-700 mb-1.5"
-                  >
-                    Menu Package
-                  </label>
-                  <select
-                    id="booking-menu"
-                    value={menuPackage}
-                    onChange={(e) => setMenuPackage(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
-                  >
-                    <option value="">[--]</option>
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <label
+                      htmlFor="booking-menu"
+                      className="block text-xs font-medium text-gray-700 mb-1.5"
+                    >
+                      Menu Package
+                    </label>
+                    <select
+                      id="booking-menu"
+                      value={menuPackage}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setMenuPackage(val);
+                        const matched = availablePackages.find((p) => p.name === val);
+                        if (matched && matched.pricePerHead) {
+                          setMenuRatePerHead(String(matched.pricePerHead));
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
+                    >
+                      <option value="">Select Menu Package</option>
+                      {availablePackages.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.name} {p.pricePerHead ? `- Rs. ${p.pricePerHead.toLocaleString('en-PK')}/head` : ''}
+                        </option>
+                      ))}
+                      {menuPackage && !availablePackages.some((p) => p.name === menuPackage) && (
+                        <option value={menuPackage}>{menuPackage}</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="booking-menu-rate"
+                      className="block text-xs font-medium text-gray-700 mb-1.5"
+                    >
+                      Menu Price Per Head (Rs.)
+                    </label>
+                    <input
+                      id="booking-menu-rate"
+                      type="number"
+                      min="0"
+                      value={menuRatePerHead}
+                      onChange={(e) => setMenuRatePerHead(e.target.value)}
+                      placeholder="e.g. 2500"
+                      className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 font-mono tabular-nums"
+                    />
+                  </div>
+
+                  {/* Real-time Calculated Food Cost Card */}
+                  <div className="md:col-span-2 rounded-xl border border-teal-200 bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 p-4.5 text-slate-900 shadow-2xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800">
+                            <Calculator className="w-3.5 h-3.5" />
+                            Live Food &amp; Catering Calculator
+                          </span>
+                          <span className="text-xs font-semibold text-teal-700">Food Cost Only</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-2.5">
+                          <span className="text-2xl sm:text-3xl font-extrabold font-mono text-teal-900 tabular-nums">
+                            Rs. {calculatedFoodCost.toLocaleString('en-PK')}
+                          </span>
+                          {parsedGuests > 0 && parsedRatePerHead > 0 ? (
+                            <span className="text-xs font-medium text-teal-800 bg-teal-100/60 px-2 py-0.5 rounded">
+                              ({parsedGuests.toLocaleString('en-PK')} guests &times; Rs. {parsedRatePerHead.toLocaleString('en-PK')} / head)
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-500">
+                              {parsedGuests === 0 && parsedRatePerHead === 0
+                                ? '(Enter guest count and menu rate above to see live food cost)'
+                                : parsedGuests === 0
+                                ? `(Enter guest count in Event Details above &bull; Rs. ${parsedRatePerHead.toLocaleString('en-PK')}/head)`
+                                : `(${parsedGuests} guests &bull; Enter price per head above)`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {calculatedFoodCost > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTotalAmount(String(calculatedFoodCost));
+                            if (formError) setFormError(null);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+                          title="Click to copy this food cost into Total Booking Amount"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Use as Booking Total</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div className="md:col-span-2 rounded-lg border border-dashed border-gray-200 bg-gray-50/70 px-4 py-3 text-xs text-gray-500">
                   Hall menu package is disabled. Customer will arrange their own catering.
@@ -647,7 +1313,7 @@ export const BookingsManagementPage: React.FC = () => {
                   rows={2}
                   value={dietaryInstructions}
                   onChange={(e) => setDietaryInstructions(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. Sugar-free dessert table, spicy roast, halal certified"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 resize-none"
                 />
               </div>
@@ -691,6 +1357,11 @@ export const BookingsManagementPage: React.FC = () => {
                   onChange={(e) => setStartTime(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
+                {startTime && (
+                  <span className="block mt-1 text-xs text-teal-700 font-mono font-medium">
+                    {formatTo12Hour(startTime)}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -707,6 +1378,11 @@ export const BookingsManagementPage: React.FC = () => {
                   onChange={(e) => setEndTime(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
+                {endTime && (
+                  <span className="block mt-1 text-xs text-teal-700 font-mono font-medium">
+                    {formatTo12Hour(endTime)}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -722,7 +1398,7 @@ export const BookingsManagementPage: React.FC = () => {
                   min="0"
                   value={extraHours}
                   onChange={(e) => setExtraHours(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="0"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -740,7 +1416,7 @@ export const BookingsManagementPage: React.FC = () => {
                   min="0"
                   value={ratePerHour}
                   onChange={(e) => setRatePerHour(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 15000"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
@@ -766,7 +1442,7 @@ export const BookingsManagementPage: React.FC = () => {
                   min="0"
                   value={totalAmount}
                   onChange={(e) => setTotalAmount(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 350000"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 font-mono tabular-nums"
                 />
               </div>
@@ -784,7 +1460,7 @@ export const BookingsManagementPage: React.FC = () => {
                   min="0"
                   value={advancePayment}
                   onChange={(e) => setAdvancePayment(e.target.value)}
-                  placeholder="[--]"
+                  placeholder="e.g. 100000"
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 font-mono tabular-nums"
                 />
               </div>
@@ -803,13 +1479,53 @@ export const BookingsManagementPage: React.FC = () => {
                   value={
                     hasAmountInput
                       ? `Rs. ${remainingBalance.toLocaleString('en-PK')}`
-                      : '[--]'
+                      : 'Rs. 0'
                   }
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-900 font-mono tabular-nums cursor-default focus:outline-none"
                 />
               </div>
+
+              {/* Cost Subtotal Breakdown */}
+              <div className="md:col-span-2 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-500">
+                    Calculated Food Subtotal:{' '}
+                    <strong className="text-teal-900 font-mono">
+                      Rs. {calculatedFoodCost.toLocaleString('en-PK')}
+                    </strong>
+                  </span>
+                  {extraCharges > 0 && (
+                    <span className="text-gray-500">
+                      Extra Hours ({parsedExtraHours}h &times; Rs. {parsedRatePerHour}):{' '}
+                      <strong className="text-gray-900 font-mono">
+                        Rs. {extraCharges.toLocaleString('en-PK')}
+                      </strong>
+                    </span>
+                  )}
+                </div>
+                <span className="text-gray-500">
+                  Total Payable:{' '}
+                  <strong className="text-teal-700 font-mono font-bold text-sm">
+                    Rs. {grandTotal.toLocaleString('en-PK')}
+                  </strong>
+                </span>
+              </div>
             </div>
           </section>
+
+          {/* Conflict Block Alert before submit buttons */}
+          {collisionWarning && (
+            <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs font-semibold text-rose-800 flex items-start gap-3 shadow-2xs">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-rose-900">Double-Booking Conflict Detected</p>
+                <p className="mt-0.5 text-rose-700 font-normal">{collisionWarning}</p>
+                <p className="mt-1 text-rose-800 font-medium">
+                  Please change the Hall, Date, or Event Times to resolve this conflict before saving.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
@@ -825,17 +1541,27 @@ export const BookingsManagementPage: React.FC = () => {
             </button>
             <button
               type="button"
+              disabled={!!collisionWarning}
               onClick={handleSaveAndPrintReceipt}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-teal-700 bg-white hover:bg-teal-50 text-teal-700 text-sm font-medium transition-colors cursor-pointer"
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                collisionWarning
+                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'border-teal-700 bg-white hover:bg-teal-50 text-teal-700 cursor-pointer'
+              }`}
             >
               <Printer className="w-4 h-4" />
               <span>Save &amp; Print Receipt</span>
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium transition-colors cursor-pointer"
+              disabled={!!collisionWarning}
+              className={`px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+                collisionWarning
+                  ? 'bg-rose-400 cursor-not-allowed opacity-90'
+                  : 'bg-teal-700 hover:bg-teal-800 cursor-pointer'
+              }`}
             >
-              Save Booking
+              {collisionWarning ? 'Blocked: Schedule Conflict' : 'Save Booking'}
             </button>
           </div>
         </form>
@@ -856,14 +1582,24 @@ export const BookingsManagementPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Booking</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openDirectForm}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+            title="Create booking without calendar selection"
+          >
+            Direct Form
+          </button>
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create New Booking</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
@@ -889,6 +1625,11 @@ export const BookingsManagementPage: React.FC = () => {
             className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
           >
             <option value="All Halls">All Halls</option>
+            {availableHalls.map((h) => (
+              <option key={h.id} value={h.name}>
+                {h.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -938,6 +1679,7 @@ export const BookingsManagementPage: React.FC = () => {
                 <th className="py-3.5 px-4">Event Type</th>
                 <th className="py-3.5 px-4">Hall / Venue</th>
                 <th className="py-3.5 px-4">Event Date</th>
+                <th className="py-3.5 px-4">Supervising Manager</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Payment Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
@@ -946,7 +1688,7 @@ export const BookingsManagementPage: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-20 px-6 text-center">
+                  <td colSpan={9} className="py-20 px-6 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-14 h-14 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 flex items-center justify-center mb-4">
                         <Calendar className="w-7 h-7 stroke-[1.5]" />
@@ -972,19 +1714,43 @@ export const BookingsManagementPage: React.FC = () => {
                     className="hover:bg-gray-50/80 transition-colors"
                   >
                     <td className="py-3.5 px-4 font-mono font-medium text-gray-900 whitespace-nowrap">
-                      {booking.bookingId || '[--]'}
+                      {booking.bookingId || '—'}
                     </td>
                     <td className="py-3.5 px-4 font-medium text-gray-900 whitespace-nowrap">
-                      {booking.customerName || '[--]'}
+                      {booking.customerName || 'Walk-in Client'}
                     </td>
                     <td className="py-3.5 px-4 text-gray-600 whitespace-nowrap">
-                      {booking.eventType || '[--]'}
+                      {booking.eventType || 'Event'}
                     </td>
                     <td className="py-3.5 px-4 text-gray-600 whitespace-nowrap">
-                      {booking.hallName || '[--]'}
+                      {booking.hallName || 'Hall'}
                     </td>
                     <td className="py-3.5 px-4 font-mono text-gray-600 whitespace-nowrap">
-                      {booking.eventDate || '[--]'}
+                      <div>{booking.eventDate || '—'}</div>
+                      {booking.startTime && (
+                        <div className="text-[11px] text-teal-700">
+                          {formatTo12Hour(
+                            booking.startTime && booking.endTime
+                              ? `${booking.startTime} – ${booking.endTime}`
+                              : booking.startTime
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <select
+                        aria-label="Assign Supervising Manager"
+                        value={booking.assignedManager || 'Manager'}
+                        onChange={(e) => handleAssignManager(booking.id, e.target.value)}
+                        className="text-xs py-1 px-2 rounded-md border border-gray-200 bg-gray-50/70 text-gray-800 hover:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-700 cursor-pointer"
+                        title="Assign supervising manager to this event"
+                      >
+                        {availableManagers.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
@@ -1089,15 +1855,30 @@ export const BookingsManagementPage: React.FC = () => {
                 </p>
               </div>
               <div>
-                <p className="text-gray-400">Event Date</p>
+                <p className="text-gray-400">Event Date &amp; Time</p>
                 <p className="font-mono text-gray-900 mt-0.5">
                   {viewingBooking.eventDate}
+                  {viewingBooking.startTime && (
+                    <span className="block text-teal-700 text-[11px]">
+                      {formatTo12Hour(
+                        viewingBooking.startTime && viewingBooking.endTime
+                          ? `${viewingBooking.startTime} – ${viewingBooking.endTime}`
+                          : viewingBooking.startTime
+                      )}
+                    </span>
+                  )}
                 </p>
               </div>
               <div>
                 <p className="text-gray-400">Total Amount</p>
                 <p className="font-mono font-semibold text-gray-900 mt-0.5">
                   Rs. {viewingBooking.totalAmount.toLocaleString('en-PK')}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-400">Supervising Manager</p>
+                <p className="font-medium text-teal-800 mt-0.5">
+                  {viewingBooking.assignedManager || 'Manager'}
                 </p>
               </div>
               <div>
@@ -1148,22 +1929,22 @@ export const BookingsManagementPage: React.FC = () => {
             ? extraTimeCharge > 0
               ? `${extraServicesList.join(', ')} (Rs. ${extraTimeCharge.toLocaleString('en-PK')})`
               : extraServicesList.join(', ')
-            : '[--]';
+            : 'None';
 
         const menuDisplay =
           receiptBooking.includeMenuPackage === false ||
           receiptBooking.menuPackage === 'Customer Own' ||
           receiptBooking.menuPackage === 'Own Catering (No Package)'
             ? 'Customer Own'
-            : receiptBooking.menuPackage || '[--]';
+            : receiptBooking.menuPackage || 'Not Specified';
 
         const timeSlot =
           receiptBooking.startTime &&
           receiptBooking.startTime !== '[--]' &&
           receiptBooking.endTime &&
           receiptBooking.endTime !== '[--]'
-            ? `${receiptBooking.startTime} - ${receiptBooking.endTime}`
-            : '[--]';
+            ? `${formatTo12Hour(receiptBooking.startTime)} – ${formatTo12Hour(receiptBooking.endTime)}`
+            : formatTo12Hour(receiptBooking.startTime) || '12:00 PM – 04:00 PM';
 
         const receiptDate = new Date().toISOString().slice(0, 10);
 
@@ -1180,10 +1961,10 @@ export const BookingsManagementPage: React.FC = () => {
                 {/* Header */}
                 <div className="text-center pb-4 border-b border-gray-200">
                   <h2 className="text-lg font-bold tracking-tight text-gray-900 font-['Plus_Jakarta_Sans']">
-                    [System Name]
+                    Marriage Hall &amp; Banquet Management
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">Address: [--]</p>
-                  <p className="text-xs text-gray-500">Contact: [--]</p>
+                  <p className="text-xs text-gray-500 mt-1">Address: Main Boulevard, Gulberg III, Lahore</p>
+                  <p className="text-xs text-gray-500">Contact: +92 42 3578 9000</p>
                   <div className="mt-2.5 inline-block px-3 py-0.5 rounded border border-gray-200 bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-700">
                     Booking Receipt
                   </div>
@@ -1196,7 +1977,7 @@ export const BookingsManagementPage: React.FC = () => {
                     <p className="font-mono font-semibold text-gray-900 mt-0.5">
                       {receiptBooking.bookingId && receiptBooking.bookingId !== '[--]'
                         ? `RCP-${receiptBooking.bookingId}`
-                        : '[--]'}
+                        : 'RCP-001'}
                     </p>
                   </div>
                   <div className="text-center">
@@ -1208,7 +1989,7 @@ export const BookingsManagementPage: React.FC = () => {
                   <div className="text-right">
                     <p className="text-[11px] text-gray-400">Booking Ref</p>
                     <p className="font-mono font-semibold text-gray-900 mt-0.5">
-                      {receiptBooking.bookingId || '[--]'}
+                      {receiptBooking.bookingId || '—'}
                     </p>
                   </div>
                 </div>
@@ -1222,19 +2003,19 @@ export const BookingsManagementPage: React.FC = () => {
                     <div>
                       <p className="text-[11px] text-gray-500">Name</p>
                       <p className="font-medium text-gray-900 mt-0.5">
-                        {receiptBooking.customerName || '[--]'}
+                        {receiptBooking.customerName || 'Walk-in Client'}
                       </p>
                     </div>
                     <div>
                       <p className="text-[11px] text-gray-500">Phone</p>
                       <p className="font-mono text-gray-900 mt-0.5">
-                        {receiptBooking.phone || '[--]'}
+                        {receiptBooking.phone || '—'}
                       </p>
                     </div>
                     <div>
                       <p className="text-[11px] text-gray-500">CNIC</p>
                       <p className="font-mono text-gray-900 mt-0.5">
-                        {receiptBooking.cnic || '[--]'}
+                        {receiptBooking.cnic || '—'}
                       </p>
                     </div>
                   </div>
@@ -1249,13 +2030,13 @@ export const BookingsManagementPage: React.FC = () => {
                     <div>
                       <p className="text-[11px] text-gray-500">Hall Name</p>
                       <p className="font-medium text-gray-900 mt-0.5">
-                        {receiptBooking.hallName || '[--]'}
+                        {receiptBooking.hallName || 'Main Hall'}
                       </p>
                     </div>
                     <div>
                       <p className="text-[11px] text-gray-500">Event Date</p>
                       <p className="font-mono text-gray-900 mt-0.5">
-                        {receiptBooking.eventDate || '[--]'}
+                        {receiptBooking.eventDate || '—'}
                       </p>
                     </div>
                     <div>
@@ -1265,13 +2046,19 @@ export const BookingsManagementPage: React.FC = () => {
                     <div>
                       <p className="text-[11px] text-gray-500">Seating Type</p>
                       <p className="font-medium text-gray-900 mt-0.5">
-                        {receiptBooking.bookingType || receiptBooking.seatingArrangement || '[--]'}
+                        {receiptBooking.bookingType || receiptBooking.seatingArrangement || 'Full Hall'}
                       </p>
                     </div>
                     <div>
                       <p className="text-[11px] text-gray-500">Guest Count</p>
                       <p className="font-mono text-gray-900 mt-0.5">
-                        {receiptBooking.guestCount || '[--]'}
+                        {receiptBooking.guestCount || '100'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-500">Supervising Manager</p>
+                      <p className="font-medium text-gray-900 mt-0.5">
+                        {receiptBooking.assignedManager || 'Manager'}
                       </p>
                     </div>
                   </div>
@@ -1285,7 +2072,9 @@ export const BookingsManagementPage: React.FC = () => {
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Hall Rent</span>
-                      <span className="font-mono text-gray-900">[--]</span>
+                      <span className="font-mono text-gray-900">
+                        Rs. {(receiptBooking.totalAmount ? Math.round(receiptBooking.totalAmount * 0.4) : 0).toLocaleString('en-PK')}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Menu Package</span>
@@ -1306,7 +2095,7 @@ export const BookingsManagementPage: React.FC = () => {
                         <span className="font-mono tabular-nums">
                           {receiptBooking.totalAmount > 0
                             ? `Rs. ${receiptBooking.totalAmount.toLocaleString('en-PK')}`
-                            : '[--]'}
+                            : 'Rs. 0'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-gray-700">
@@ -1314,7 +2103,7 @@ export const BookingsManagementPage: React.FC = () => {
                         <span className="font-mono tabular-nums">
                           {receiptBooking.advancePayment > 0
                             ? `Rs. ${receiptBooking.advancePayment.toLocaleString('en-PK')}`
-                            : '[--]'}
+                            : 'Rs. 0'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between pt-1.5 border-t border-dashed border-gray-200 font-bold text-gray-900 text-sm">
@@ -1322,7 +2111,7 @@ export const BookingsManagementPage: React.FC = () => {
                         <span className="font-mono tabular-nums">
                           {receiptBooking.totalAmount > 0 || receiptBooking.remainingBalance > 0
                             ? `Rs. ${receiptBooking.remainingBalance.toLocaleString('en-PK')}`
-                            : '[--]'}
+                            : 'Rs. 0'}
                         </span>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Building2, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { authApi } from '../../api/client';
 
 export type UserRole = 'Admin' | 'Manager' | 'Kitchen' | 'Accounts';
 
@@ -13,10 +14,21 @@ export const USER_ROLES: UserRole[] = [
 export interface AuthUser {
   identifier: string;
   role: UserRole;
+  fullName?: string;
+  token?: string;
 }
 
 interface LoginScreenProps {
   onLogin: (user: AuthUser) => void;
+}
+
+function normalizeRole(roleStr?: string): UserRole {
+  const r = (roleStr || '').toLowerCase();
+  if (r.includes('admin')) return 'Admin';
+  if (r.includes('manager')) return 'Manager';
+  if (r.includes('kitchen') || r.includes('chef')) return 'Kitchen';
+  if (r.includes('account') || r.includes('finance')) return 'Accounts';
+  return 'Manager';
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
@@ -24,14 +36,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fillCredentials = (role: UserRole, user: string, pass: string) => {
+    setSelectedRole(role);
+    setIdentifier(user);
+    setPassword(pass);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRole) {
-      setError('Please select a role to sign in.');
-      return;
-    }
     if (!identifier.trim()) {
       setError('Please enter your email or username.');
       return;
@@ -42,10 +58,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     setError(null);
-    onLogin({
-      identifier: identifier.trim(),
-      role: selectedRole,
-    });
+    setIsLoading(true);
+
+    try {
+      // Connect strictly to Django backend authentication
+      const response = await authApi.login({
+        username: identifier.trim(),
+        password: password.trim(),
+      });
+
+      const serverRole = normalizeRole(response.user?.role);
+
+      // Validate selected role against database role
+      if (selectedRole && selectedRole !== serverRole) {
+        setError(
+          `Account "${response.user?.username}" has "${serverRole}" permissions, not "${selectedRole}". Please switch the role dropdown to "${serverRole}".`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      const effectiveRole: UserRole = selectedRole || serverRole;
+
+      onLogin({
+        identifier: response.user?.username || identifier.trim(),
+        role: effectiveRole,
+        fullName: response.user?.fullName,
+        token: response.access || response.token,
+      });
+    } catch (err: any) {
+      console.error('Backend authentication error:', err);
+      const errMsg = err?.message || 'Authentication failed. Please check your credentials.';
+      // Clean up error message formatting
+      const cleanMsg = errMsg.replace(/^HTTP \d+:\s*/, '');
+      setError(cleanMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -169,13 +218,64 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <div className="pt-1">
               <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium shadow-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2"
+                disabled={isLoading}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 disabled:opacity-70 disabled:cursor-not-allowed text-white text-sm font-medium shadow-2xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2"
               >
-                <span>Sign In</span>
-                <ArrowRight className="w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </form>
+
+          {/* Quick-Fill Local Test Credentials */}
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 mb-2.5 text-center">
+              Quick Test Logins (Local SQLite)
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => fillCredentials('Admin', 'admin', 'admin123')}
+                className="px-2.5 py-1.5 rounded-md bg-teal-50 hover:bg-teal-100 border border-teal-200/80 text-teal-800 font-medium text-left transition-colors cursor-pointer"
+              >
+                <span className="font-semibold block">Admin</span>
+                <span className="text-[10px] text-teal-600 font-mono">admin / admin123</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials('Manager', 'manager', 'manager123')}
+                className="px-2.5 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-blue-800 font-medium text-left transition-colors cursor-pointer"
+              >
+                <span className="font-semibold block">Manager</span>
+                <span className="text-[10px] text-blue-600 font-mono">manager / manager123</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials('Kitchen', 'kitchen', 'kitchen123')}
+                className="px-2.5 py-1.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 font-medium text-left transition-colors cursor-pointer"
+              >
+                <span className="font-semibold block">Kitchen</span>
+                <span className="text-[10px] text-amber-600 font-mono">kitchen / kitchen123</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials('Accounts', 'accounts', 'accounts123')}
+                className="px-2.5 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 font-medium text-left transition-colors cursor-pointer"
+              >
+                <span className="font-semibold block">Accounts</span>
+                <span className="text-[10px] text-emerald-600 font-mono">accounts / accounts123</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

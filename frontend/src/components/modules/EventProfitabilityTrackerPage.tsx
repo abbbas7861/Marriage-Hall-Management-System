@@ -1,173 +1,277 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   CheckCircle2,
   Clock,
   DollarSign,
+  Plus,
   Receipt,
   TrendingDown,
   TrendingUp,
+  Users,
+  X,
   XCircle,
 } from 'lucide-react';
-import {
-  SEED_EVENT_TRACKER_EXPENSES,
-  SEED_PENDING_FUND_REQUESTS,
-} from '../../data/seedData';
+import { bookingsApi, expensesApi, fundRequestsApi, FundRequestItem } from '../../api/client';
+import { Booking } from '../../types';
 
-export type TrackerExpenseCategory = 'Food' | 'Decor' | 'Damage';
-export type TrackerExpenseStatus = 'Approved' | 'Pending';
+export type TrackerExpenseCategory =
+  | 'Food'
+  | 'Decor'
+  | 'Damage'
+  | 'Outside Waiters'
+  | 'Operational Funds'
+  | 'Staff'
+  | 'Other';
 
-export interface PendingFundRequest {
-  id: string;
-  eventName: string;
-  requestedBy: string;
-  reason: string;
-  amount: number;
-  requestedAt: string;
-}
+export type TrackerExpenseStatus = 'Approved' | 'Pending' | 'Paid';
 
 export interface EventTrackerExpense {
   id: string;
   eventName: string;
+  bookingRef: string;
   date: string;
   category: TrackerExpenseCategory;
   description: string;
   amount: number;
   status: TrackerExpenseStatus;
+  paidTo?: string;
 }
 
-const EVENT_FILTER_OPTIONS = ['All Events', 'Event A', 'Event B'];
-
-const CATEGORY_BADGE_STYLES: Record<TrackerExpenseCategory, string> = {
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
+  'Outside Waiters': 'bg-indigo-50 text-indigo-800 border-indigo-200 font-semibold',
+  'Operational Funds': 'bg-cyan-50 text-cyan-800 border-cyan-200',
   Food: 'bg-teal-50 text-teal-800 border-teal-200',
   Decor: 'bg-purple-50 text-purple-800 border-purple-200',
   Damage: 'bg-rose-50 text-rose-700 border-rose-200',
+  Staff: 'bg-blue-50 text-blue-800 border-blue-200',
+  Other: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
-const STATUS_BADGE_STYLES: Record<TrackerExpenseStatus, string> = {
+const STATUS_BADGE_STYLES: Record<string, string> = {
   Approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  Paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   Pending: 'bg-amber-50 text-amber-800 border-amber-200',
 };
 
 export const EventProfitabilityTrackerPage: React.FC = () => {
-  // Filter bar state
-  const [selectedEvent, setSelectedEvent] = useState<string>('All Events');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedEventRef, setSelectedEventRef] = useState<string>('All Events');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  const [fundRequests, setFundRequests] = useState<PendingFundRequest[]>(
-    SEED_PENDING_FUND_REQUESTS
-  );
-  const [expenses, setExpenses] = useState<EventTrackerExpense[]>(
-    SEED_EVENT_TRACKER_EXPENSES
-  );
-  const [eventRevenues] = useState<Record<string, number>>({
-    'Event A': 1930000,
-    'Event B': 1180000,
-  });
+  const [fundRequests, setFundRequests] = useState<FundRequestItem[]>([]);
+  const [expenses, setExpenses] = useState<EventTrackerExpense[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Modal for adding outside waiters / event expense
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [modalBookingRef, setModalBookingRef] = useState('');
+  const [modalCategory, setModalCategory] = useState<TrackerExpenseCategory>('Outside Waiters');
+  const [modalDescription, setModalDescription] = useState('Outside Waiters for Event Service');
+  const [modalVendor, setModalVendor] = useState('');
+  const [modalAmount, setModalAmount] = useState('');
+  const [modalDate, setModalDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [fetchedBookings, fetchedExpenses, fetchedFundReqs] = await Promise.all([
+        bookingsApi.list().catch(() => []),
+        expensesApi.list().catch(() => []),
+        fundRequestsApi.list({ status: 'Pending' }).catch(() => []),
+      ]);
+
+      setBookings(fetchedBookings || []);
+
+      if (fetchedExpenses && fetchedExpenses.length > 0) {
+        setExpenses(
+          fetchedExpenses.map((e: any) => ({
+            id: String(e.id || e.expenseRef),
+            eventName: e.bookingRef || 'General Hall',
+            bookingRef: e.bookingRef || '',
+            date: e.date || new Date().toISOString().slice(0, 10),
+            category: (e.category || 'Other') as TrackerExpenseCategory,
+            description: e.description || e.category || 'Expense',
+            amount: Number(e.amount) || 0,
+            status: (e.status || 'Paid') as TrackerExpenseStatus,
+            paidTo: e.vendor || e.paidTo || '',
+          }))
+        );
+      } else {
+        setExpenses([]);
+      }
+
+      setFundRequests(fetchedFundReqs || []);
+    } catch (err) {
+      console.warn('Failed to load profitability tracker data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const selectedBooking = useMemo(() => {
+    if (selectedEventRef === 'All Events') return null;
+    return bookings.find((b) => b.bookingRef === selectedEventRef) || null;
+  }, [bookings, selectedEventRef]);
 
   const filteredRequests = useMemo(() => {
-    return fundRequests.filter(
-      (req) => selectedEvent === 'All Events' || req.eventName === selectedEvent
-    );
-  }, [fundRequests, selectedEvent]);
+    return fundRequests.filter((req) => {
+      if (req.status !== 'Pending') return false;
+      if (selectedEventRef === 'All Events') return true;
+      return req.bookingRef === selectedEventRef || req.eventName === selectedEventRef;
+    });
+  }, [fundRequests, selectedEventRef]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
       const matchesEvent =
-        selectedEvent === 'All Events' || exp.eventName === selectedEvent;
+        selectedEventRef === 'All Events' ||
+        exp.bookingRef === selectedEventRef ||
+        exp.eventName === selectedEventRef;
       const matchesStart = !startDate || exp.date >= startDate;
       const matchesEnd = !endDate || exp.date <= endDate;
       return matchesEvent && matchesStart && matchesEnd;
     });
-  }, [expenses, selectedEvent, startDate, endDate]);
+  }, [expenses, selectedEventRef, startDate, endDate]);
 
   const kpiMetrics = useMemo(() => {
-    const hasRevenue =
-      selectedEvent === 'All Events'
-        ? Object.keys(eventRevenues).length > 0
-        : eventRevenues[selectedEvent] !== undefined;
-
-    if (!hasRevenue && filteredExpenses.length === 0) {
-      return {
-        revenueLabel: '[--]',
-        expensesLabel: '[--]',
-        netProfitLabel: '[--]',
-        netProfitNumeric: null as number | null,
-      };
+    let totalRevenue = 0;
+    if (selectedEventRef === 'All Events') {
+      totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    } else if (selectedBooking) {
+      totalRevenue = Number(selectedBooking.amount) || 0;
     }
 
-    const totalRevenue =
-      selectedEvent === 'All Events'
-        ? Object.values(eventRevenues).reduce((sum, v) => sum + v, 0)
-        : eventRevenues[selectedEvent] ?? 0;
+    // Outside Waiters expense specifically for this event
+    const outsideWaitersTotal = filteredExpenses
+      .filter((e) => e.category === 'Outside Waiters')
+      .reduce((sum, e) => sum + e.amount, 0);
 
-    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = totalRevenue - totalExpenses;
+    // Final total expenses (including outside waiters + other expenses)
+    const finalTotalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const netProfit = totalRevenue - finalTotalExpenses;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0';
 
     return {
       revenueLabel: `Rs. ${totalRevenue.toLocaleString()}`,
-      expensesLabel: `Rs. ${totalExpenses.toLocaleString()}`,
+      outsideWaitersLabel: `Rs. ${outsideWaitersTotal.toLocaleString()}`,
+      outsideWaitersCount: filteredExpenses.filter((e) => e.category === 'Outside Waiters').length,
+      finalTotalExpensesLabel: `Rs. ${finalTotalExpenses.toLocaleString()}`,
       netProfitLabel: `Rs. ${netProfit.toLocaleString()}`,
       netProfitNumeric: netProfit,
+      profitMargin,
     };
-  }, [eventRevenues, filteredExpenses, selectedEvent]);
+  }, [bookings, selectedBooking, filteredExpenses, selectedEventRef]);
 
-  const handleApproveRequest = (req: PendingFundRequest) => {
-    setFundRequests((prev) => prev.filter((item) => item.id !== req.id));
-    setExpenses((prev) => [
-      {
-        id: `EXP-${Date.now().toString().slice(-4)}`,
-        eventName: req.eventName,
-        date: new Date().toISOString().slice(0, 10),
-        category: 'Food',
-        description: req.reason,
-        amount: req.amount,
-        status: 'Approved',
-      },
-      ...prev,
-    ]);
+  const handleApproveRequest = async (req: FundRequestItem) => {
+    try {
+      await fundRequestsApi.approve(req.id);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to approve fund request:', err);
+      alert('Error approving fund request. Please try again.');
+    }
   };
 
-  const handleRejectRequest = (id: string) => {
-    setFundRequests((prev) => prev.filter((item) => item.id !== id));
+  const handleRejectRequest = async (id: string | number) => {
+    try {
+      await fundRequestsApi.reject(id);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to reject fund request:', err);
+      alert('Error rejecting fund request.');
+    }
+  };
+
+  const handleOpenAddExpense = () => {
+    setModalBookingRef(selectedEventRef !== 'All Events' ? selectedEventRef : (bookings[0]?.bookingRef || ''));
+    setModalCategory('Outside Waiters');
+    setModalDescription('Outside Waiters Service');
+    setModalVendor('');
+    setModalAmount('');
+    setModalDate(new Date().toISOString().slice(0, 10));
+    setIsAddExpenseOpen(true);
+  };
+
+  const handleSubmitExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsedAmount = parseFloat(modalAmount);
+    if (!modalDescription.trim() || !modalVendor.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert('Please fill out all required fields with a valid amount.');
+      return;
+    }
+
+    try {
+      await expensesApi.create({
+        bookingRef: modalBookingRef,
+        description: modalDescription.trim(),
+        category: modalCategory,
+        vendor: modalVendor.trim(),
+        amount: parsedAmount,
+        date: modalDate,
+        paymentMethod: 'Cash',
+        status: 'Paid',
+      });
+      setIsAddExpenseOpen(false);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to record event expense:', err);
+      alert('Error recording expense.');
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
-          Event Expense &amp; Profitability Tracker
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Monitor event-level revenue, approve manager fund requisitions, and track net profitability.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
+            Event Expense &amp; Profitability Tracker
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Monitor event-level revenue, track Outside Waiters &amp; operations costs, approve manager funds, and track net margins.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleOpenAddExpense}
+          className="inline-flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          Add Event Expense / Waiters
+        </button>
       </div>
 
       {/* Top Filter Bar */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-1 max-w-xl">
           <label
             htmlFor="tracker-event-filter"
             className="text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap"
           >
-            Filter by Event
+            Select Event:
           </label>
           <select
             id="tracker-event-filter"
-            value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 min-w-[180px]"
+            value={selectedEventRef}
+            onChange={(e) => setSelectedEventRef(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
           >
-            {EVENT_FILTER_OPTIONS.map((ev) => (
-              <option key={ev} value={ev}>
-                {ev}
+            <option value="All Events">All Events (Cumulative Hall Overview)</option>
+            {bookings.map((b) => (
+              <option key={b.id || b.bookingRef} value={b.bookingRef}>
+                {b.bookingRef} — {b.customerName} ({b.hallName} • {b.date})
               </option>
             ))}
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <input
             type="date"
             aria-label="Start Date"
@@ -186,8 +290,9 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards (3 Cards - Dynamic based on filter) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* KPI Cards (4 Cards: Revenue, Outside Waiters Cost, Final Total Expenses, Net Profit) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Event Revenue */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -197,25 +302,47 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
               <TrendingUp className="w-4 h-4 text-teal-700" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
+          <p className="mt-3 text-2xl font-bold font-mono tabular-nums text-slate-900">
             {kpiMetrics.revenueLabel}
           </p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Contract package value</span>
         </div>
 
+        {/* Card 2: Outside Waiters Expense (Requested Feature) */}
+        <div className="bg-white border border-indigo-200/80 rounded-xl p-5 shadow-2xs bg-gradient-to-br from-indigo-50/20 to-white">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
+              Outside Waiters Expense
+            </span>
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <Users className="w-4 h-4 text-indigo-700" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-bold font-mono tabular-nums text-indigo-900">
+            {kpiMetrics.outsideWaitersLabel}
+          </p>
+          <span className="text-[11px] text-indigo-600/80 mt-1 block font-medium">
+            Included in final total expenses ({kpiMetrics.outsideWaitersCount} record{kpiMetrics.outsideWaitersCount === 1 ? '' : 's'})
+          </span>
+        </div>
+
+        {/* Card 3: Final Total Expenses */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Total Event Expenses
+              Final Total Expenses
             </span>
             <div className="w-9 h-9 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center">
               <TrendingDown className="w-4 h-4 text-rose-600" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-bold font-mono tabular-nums text-slate-900">
-            {kpiMetrics.expensesLabel}
+          <p className="mt-3 text-2xl font-bold font-mono tabular-nums text-rose-600">
+            {kpiMetrics.finalTotalExpensesLabel}
           </p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Waiters + Food + Decor + Funds</span>
         </div>
 
+        {/* Card 4: Net Profitability */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -223,43 +350,40 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
             </span>
             <div
               className={`w-9 h-9 rounded-lg border flex items-center justify-center ${
-                kpiMetrics.netProfitNumeric !== null && kpiMetrics.netProfitNumeric < 0
+                kpiMetrics.netProfitNumeric < 0
                   ? 'bg-rose-50 border-rose-100'
                   : 'bg-emerald-50 border-emerald-100'
               }`}
             >
               <DollarSign
                 className={`w-4 h-4 ${
-                  kpiMetrics.netProfitNumeric !== null && kpiMetrics.netProfitNumeric < 0
-                    ? 'text-rose-600'
-                    : 'text-emerald-600'
+                  kpiMetrics.netProfitNumeric < 0 ? 'text-rose-600' : 'text-emerald-600'
                 }`}
               />
             </div>
           </div>
           <p
-            className={`mt-3 text-3xl font-bold font-mono tabular-nums ${
-              kpiMetrics.netProfitNumeric === null
-                ? 'text-slate-900'
-                : kpiMetrics.netProfitNumeric < 0
-                  ? 'text-rose-600'
-                  : 'text-emerald-700'
+            className={`mt-3 text-2xl font-bold font-mono tabular-nums ${
+              kpiMetrics.netProfitNumeric < 0 ? 'text-rose-600' : 'text-emerald-700'
             }`}
           >
             {kpiMetrics.netProfitLabel}
           </p>
+          <span className="text-[11px] font-medium text-slate-500 mt-1 block">
+            Net Margin: <span className="font-semibold">{kpiMetrics.profitMargin}%</span>
+          </span>
         </div>
       </div>
 
-      {/* Pending Fund Requests Section */}
+      {/* Pending Fund Requests Section (Manager -> Accounts Flow) */}
       <section className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="font-['Plus_Jakarta_Sans'] text-base font-semibold text-slate-900">
-              Pending Fund Requests
+              Manager Fund Requisitions
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Review and disburse operational fund requisitions submitted by Managers
+              Review and disburse operational cash requests submitted by Managers from Event Control Center
             </p>
           </div>
           <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-mono font-semibold text-amber-800">
@@ -268,7 +392,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
         </div>
 
         {filteredRequests.length === 0 ? (
-          <div className="py-12 px-6 text-center flex flex-col items-center justify-center">
+          <div className="py-10 px-6 text-center flex flex-col items-center justify-center">
             <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
               <Clock className="w-5 h-5 text-slate-400" />
             </div>
@@ -276,7 +400,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
               No pending fund requests from managers.
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              Incoming requisitions from the Manager Event Control Center will appear here for approval.
+              When a Manager requests emergency or operational cash in the Event Control Center, it appears here for Accounts review and disbursement.
             </p>
           </div>
         ) : (
@@ -289,16 +413,17 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-slate-900">
-                      {req.requestedBy} requested{' '}
-                      <span className="font-mono tabular-nums text-teal-800">
-                        Rs. {req.amount.toLocaleString()}
+                      {req.requestedBy || 'Manager'} requested{' '}
+                      <span className="font-mono tabular-nums text-teal-800 font-bold">
+                        Rs. {Number(req.amount).toLocaleString()}
                       </span>{' '}
-                      for {req.reason}
+                      for: <span className="font-medium text-slate-800">{req.reason}</span>
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Event: <span className="font-medium text-slate-700">{req.eventName}</span>{' '}
-                    &middot; Requested at <span className="font-mono">{req.requestedAt}</span>
+                    Event Ref: <span className="font-mono font-semibold text-slate-700">{req.bookingRef || 'General'}</span>{' '}
+                    {req.eventName && <span>({req.eventName})</span>}
+                    {req.notes && <span className="ml-2 italic text-slate-600">— &ldquo;{req.notes}&rdquo;</span>}
                   </p>
                 </div>
 
@@ -306,7 +431,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleApproveRequest(req)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Approve &amp; Disburse
@@ -314,7 +439,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRejectRequest(req.id)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 px-3.5 py-2 text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     Reject
@@ -329,9 +454,14 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
       {/* Expense Table */}
       <section className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-['Plus_Jakarta_Sans'] text-base font-semibold text-slate-900">
-            Event Expense Ledger
-          </h2>
+          <div>
+            <h2 className="font-['Plus_Jakarta_Sans'] text-base font-semibold text-slate-900">
+              Event Expense Ledger (Itemized Costs)
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Itemized list of Outside Waiters, operational funds, food, and venue expenses for this event
+            </p>
+          </div>
           <span className="text-xs font-mono text-slate-400">
             {filteredExpenses.length} entries
           </span>
@@ -348,7 +478,13 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   Category
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Description
+                  Event / Booking
+                </th>
+                <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Description / Service
+                </th>
+                <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Paid To / Vendor
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Amount
@@ -361,7 +497,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 px-6 text-center">
+                  <td colSpan={7} className="py-16 px-6 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-3">
                         <Receipt className="w-6 h-6 text-slate-400" />
@@ -370,7 +506,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                         No event expenses recorded yet.
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Approved disbursements and event costs (Food, Decor, Damage) will be itemized here.
+                        Use the &ldquo;Add Event Expense / Waiters&rdquo; button above to record Outside Waiters or event disbursements.
                       </p>
                     </div>
                   </td>
@@ -383,20 +519,30 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-5">
                       <span
-                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${CATEGORY_BADGE_STYLES[exp.category]}`}
+                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs ${
+                          CATEGORY_BADGE_STYLES[exp.category] || CATEGORY_BADGE_STYLES.Other
+                        }`}
                       >
                         {exp.category}
                       </span>
                     </td>
+                    <td className="py-3.5 px-5 text-sm font-mono font-medium text-slate-800">
+                      {exp.bookingRef || 'General'}
+                    </td>
                     <td className="py-3.5 px-5 text-sm font-medium text-slate-900">
                       {exp.description}
+                    </td>
+                    <td className="py-3.5 px-5 text-sm text-slate-600">
+                      {exp.paidTo || '—'}
                     </td>
                     <td className="py-3.5 px-5 text-sm font-mono tabular-nums font-semibold text-rose-600">
                       Rs. {exp.amount.toLocaleString()}
                     </td>
                     <td className="py-3.5 px-5 text-right">
                       <span
-                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE_STYLES[exp.status]}`}
+                        className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold ${
+                          STATUS_BADGE_STYLES[exp.status] || STATUS_BADGE_STYLES.Paid
+                        }`}
                       >
                         {exp.status}
                       </span>
@@ -408,6 +554,154 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           </table>
         </div>
       </section>
+
+      {/* Add Expense / Outside Waiters Modal */}
+      {isAddExpenseOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/70">
+              <h3 className="font-['Plus_Jakarta_Sans'] text-base font-bold text-slate-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-700" />
+                Record Event Expense / Outside Waiters
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddExpenseOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitExpense} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Associated Event / Booking *
+                </label>
+                <select
+                  value={modalBookingRef}
+                  onChange={(e) => setModalBookingRef(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                >
+                  <option value="">Select an Event...</option>
+                  {bookings.map((b) => (
+                    <option key={b.bookingRef} value={b.bookingRef}>
+                      {b.bookingRef} — {b.customerName} ({b.hallName} • {b.date})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Category *
+                  </label>
+                  <select
+                    value={modalCategory}
+                    onChange={(e) => {
+                      const cat = e.target.value as TrackerExpenseCategory;
+                      setModalCategory(cat);
+                      if (cat === 'Outside Waiters' && (!modalDescription || modalDescription.includes('Service'))) {
+                        setModalDescription('Outside Waiters Service');
+                      }
+                    }}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  >
+                    <option value="Outside Waiters">Outside Waiters</option>
+                    <option value="Food">Food &amp; Catering</option>
+                    <option value="Decor">Decor &amp; Stage</option>
+                    <option value="Operational Funds">Operational Funds</option>
+                    <option value="Damage">Damage / Repair</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Amount (Rs.) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value={modalAmount}
+                    onChange={(e) => setModalAmount(e.target.value)}
+                    placeholder="e.g. 25000"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Description / Service Details *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={modalDescription}
+                  onChange={(e) => setModalDescription(e.target.value)}
+                  placeholder="e.g. 15 Outside Waiters for Banquet Service"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Paid To / Vendor *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={modalVendor}
+                    onChange={(e) => setModalVendor(e.target.value)}
+                    placeholder="e.g. Royal Staffing Agency"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={modalDate}
+                    onChange={(e) => setModalDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddExpenseOpen(false)}
+                  className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
+                >
+                  Save &amp; Add to Event Total
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

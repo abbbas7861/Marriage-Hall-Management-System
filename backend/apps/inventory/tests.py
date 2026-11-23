@@ -102,5 +102,31 @@ class InventoryIssueReturnTests(TestCase):
         self.assertEqual(res.data[0]['totalCost'], 75000.0) # 50 * 1500
         self.assertEqual(res.data[1]['totalCost'], 66000.0) # 120 * 550
 
+    def test_kitchen_to_manager_requisition_workflow(self):
+        # 1. Kitchen creates requisition for event BK-20493
+        req_res = self.client.post('/api/v1/requisitions/', {
+            'eventRef': 'BK-20493',
+            'hallName': 'Grand Ballroom',
+            'itemName': 'Fresh Boneless Mutton',
+            'requestedQuantity': 50,
+            'unit': 'kg',
+            'estimatedCost': 110000.0,
+            'requestedBy': 'Executive Chef',
+            'notes': 'Required for royal korma'
+        }, format='json')
+        self.assertEqual(req_res.status_code, status.HTTP_201_CREATED)
+        req_id = req_res.data['id']
+        self.assertEqual(req_res.data['status'], 'Requested')
+
+        # 2. Manager retrieves requisitions by eventRef
+        list_res = self.client.get('/api/v1/requisitions/?eventRef=BK-20493')
+        self.assertEqual(list_res.status_code, status.HTTP_200_OK)
+        self.assertTrue(any(r['id'] == req_id for r in list_res.data))
+
+        # 3. Manager approves requisition
+        approve_res = self.client.post(f'/api/v1/requisitions/{req_id}/approve/')
+        self.assertEqual(approve_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(approve_res.data['status'], 'Approved')
+
 
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   AlertCircle,
   ClipboardList,
@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS, SEED_STAFF_ROSTER } from '../../data/seedData';
+import { bookingsApi, staffApi } from '../../api/client';
 
 export type StaffRole = 'Waiter' | 'Cleaner' | 'Helper' | 'Supervisor';
 export type ShiftOption = 'Morning' | 'Evening' | 'Full Day';
@@ -55,10 +56,8 @@ const STATUS_BADGE_STYLES: Record<AttendanceStatus, string> = {
 };
 
 export const StaffRostersPage: React.FC = () => {
-  const [activeEvents] = useState<string[]>(
-    SEED_ASSIGNED_EVENTS.map((e) => `${e.customerName} (${e.hallName})`)
-  );
-  const [availableStaff] = useState<string[]>([
+  const [activeEvents, setActiveEvents] = useState<string[]>([]);
+  const [availableStaff, setAvailableStaff] = useState<string[]>([
     'Imran Ali',
     'Waqas Ahmed',
     'Nadeem Akram',
@@ -67,6 +66,32 @@ export const StaffRostersPage: React.FC = () => {
     'Tariq Mehmood',
   ]);
   const [roster, setRoster] = useState<RosterAssignment[]>(SEED_STAFF_ROSTER);
+
+  useEffect(() => {
+    bookingsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped = data.map((b: any) => `${b.customerName || b.bookingRef} (${b.hallName})`);
+          setActiveEvents(mapped);
+        } else {
+          setActiveEvents(SEED_ASSIGNED_EVENTS.map((e) => `${e.customerName} (${e.hallName})`));
+        }
+      })
+      .catch(() => {});
+
+    staffApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const names = data.map((s: any) => s.name || s.fullName).filter(Boolean);
+          if (names.length > 0) {
+            setAvailableStaff(names);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Controls bar state
   const [selectedEvent, setSelectedEvent] = useState('');
