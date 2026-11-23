@@ -88,10 +88,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const activeItem = navItems.find((item) => item.id === activeNavId) || navItems[0];
   const shortcutItems = navItems.filter((item) => item.id !== 'dashboard');
 
-  const navItems = ROLE_NAV_ITEMS[activeRole];
-  const activeItem = navItems.find((item) => item.id === activeNavId) || navItems[0];
-  const shortcutItems = navItems.filter((item) => item.id !== 'dashboard');
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900">
       <Sidebar
