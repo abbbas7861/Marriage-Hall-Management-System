@@ -77,7 +77,7 @@ export async function request<T>(
   const config: RequestInit = {
     ...options,
     headers,
-  });
+  };
 
   try {
     let response: Response;
