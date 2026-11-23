@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -14,7 +14,6 @@ import {
   SEED_FLOOR_TABLES,
   SEED_REFILL_REQUESTS,
 } from '../../data/seedData';
-import { bookingsApi } from '../../api/client';
 
 export type TableStatus = 'Occupied' | 'Needs Cleaning' | 'Ready';
 
@@ -80,26 +79,9 @@ const TABLE_STATUS_STYLES: Record<
 
 export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
   const [tables] = useState<FloorTable[]>(SEED_FLOOR_TABLES);
-  const [assignedEvents, setAssignedEvents] = useState<string[]>([]);
-
-  useEffect(() => {
-    bookingsApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          const mapped = data.map(
-            (b: any) => `${b.hallName} — ${b.customerName || b.bookingRef} (${b.date})`
-          );
-          setAssignedEvents(mapped);
-          setSelectedHallEvent(mapped[0] || '');
-        } else {
-          const fallback = SEED_ASSIGNED_EVENTS.map((e) => `${e.hallName} — ${e.customerName}`);
-          setAssignedEvents(fallback);
-          setSelectedHallEvent(fallback[0] || '');
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const [assignedEvents] = useState<string[]>(
+    SEED_ASSIGNED_EVENTS.map((e) => `${e.hallName} — ${e.customerName}`)
+  );
 
   // Refill Dispatcher state
   const [selectedTable, setSelectedTable] = useState('');
@@ -119,7 +101,7 @@ export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
     if (!selectedTable || Number.isNaN(qty) || qty <= 0) return;
 
     const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const newReq: RefillRequest = {
       id: `RF-${Date.now().toString().slice(-4)}`,
@@ -142,7 +124,7 @@ export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
     }
 
     const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const record: OvertimeRequestRecord = {
       id: `OT-${Date.now().toString().slice(-4)}`,

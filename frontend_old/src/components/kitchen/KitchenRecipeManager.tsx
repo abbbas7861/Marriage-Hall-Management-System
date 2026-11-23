@@ -465,36 +465,75 @@ export const KitchenRecipeManager: React.FC = () => {
                       {pkg.description || 'Complete banquet catering setup with multi-course dinner service.'}
                     </p>
 
-                    {/* Financial Economics Card */}
-                    <div className="mt-4 p-3.5 rounded-xl bg-slate-800/50 border border-slate-700/60 grid grid-cols-3 gap-2 text-center">
+                    {/* FINANCIAL ECONOMICS CARD - FORCED INLINE DARK STYLES */}
+                    <div 
+                      className="mt-4 p-3.5 rounded-xl grid grid-cols-3 gap-2 text-center"
+                      style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                    >
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                        <span 
+                          className="text-[10px] uppercase tracking-wider block font-semibold mb-1" 
+                          style={{ color: '#94a3b8' }}
+                        >
                           Client Price
                         </span>
-                        <span className="text-sm font-black text-white">
+                        <span 
+                          className="text-sm font-black" 
+                          style={{ color: '#ffffff' }}
+                        >
                           Rs. {pkg.pricePerHead.toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-slate-500">per head</span>
+                        <span 
+                          className="text-[10px]" 
+                          style={{ color: '#64748b' }}
+                        >
+                          per head
+                        </span>
                       </div>
 
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                      <div 
+                        className="border-x px-1 flex flex-col justify-center" 
+                        style={{ borderColor: '#334155' }}
+                      >
+                        <span 
+                          className="text-[10px] uppercase tracking-wider block font-semibold mb-1" 
+                          style={{ color: '#94a3b8' }}
+                        >
                           Food Cost
                         </span>
-                        <span className="text-sm font-bold text-slate-300">
+                        <span 
+                          className="text-sm font-bold" 
+                          style={{ color: '#cbd5e1' }}
+                        >
                           Rs. {(pkg.costPerHead || Math.round(pkg.pricePerHead * 0.6)).toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-slate-500">est. ingredients</span>
+                        <span 
+                          className="text-[10px]" 
+                          style={{ color: '#64748b' }}
+                        >
+                          est. cost
+                        </span>
                       </div>
 
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">
+                      <div className="flex flex-col justify-center">
+                        <span 
+                          className="text-[10px] uppercase tracking-wider block font-semibold mb-1" 
+                          style={{ color: '#94a3b8' }}
+                        >
                           Gross Margin
                         </span>
-                        <span className="text-sm font-black text-emerald-400">
+                        <span 
+                          className="text-sm font-black" 
+                          style={{ color: '#34d399' }}
+                        >
                           {margin}%
                         </span>
-                        <span className="text-[10px] text-emerald-400/80">profit</span>
+                        <span 
+                          className="text-[10px]" 
+                          style={{ color: '#059669' }}
+                        >
+                          profit
+                        </span>
                       </div>
                     </div>
 
@@ -1232,4 +1271,3 @@ export const KitchenRecipeManager: React.FC = () => {
     </div>
   );
 };
-

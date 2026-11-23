@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ChefHat,
   DollarSign,
@@ -9,7 +9,6 @@ import {
   X,
 } from 'lucide-react';
 import { SEED_MENU_PACKAGES } from '../../data/seedData';
-import { menuApi } from '../../api/client';
 
 export type PackageTier = 'Royal' | 'Executive' | 'Budget';
 
@@ -33,32 +32,6 @@ export const MenuPackagesPage: React.FC = () => {
   const [packages, setPackages] = useState<MenuPackage[]>(SEED_MENU_PACKAGES);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    menuApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setPackages(
-            data.map((pkg: any) => ({
-              id: String(pkg.id),
-              name: pkg.name,
-              pricePerHead: Number(pkg.pricePerHead ?? pkg.price_per_head) || 0,
-              tier:
-                pkg.tier === 'Executive' || pkg.tier === 'Budget'
-                  ? pkg.tier
-                  : 'Royal',
-              dishes: Array.isArray(pkg.includedItems)
-                ? pkg.includedItems
-                : Array.isArray(pkg.dishes)
-                ? pkg.dishes
-                : [],
-            }))
-          );
-        }
-      })
-      .catch((err) => console.warn('Menu API error:', err));
-  }, []);
 
   // Form state
   const [packageName, setPackageName] = useState('');
@@ -105,7 +78,6 @@ export const MenuPackagesPage: React.FC = () => {
   };
 
   const handleDeletePackage = (id: string) => {
-    menuApi.delete(id).catch((err) => console.warn('Menu API delete error:', err));
     setPackages((prev) => prev.filter((pkg) => pkg.id !== id));
   };
 
@@ -120,19 +92,7 @@ export const MenuPackagesPage: React.FC = () => {
       .map((d) => d.trim())
       .filter((d) => d.length > 0);
 
-    const apiPayload = {
-      name: trimmedName,
-      pricePerHead: parsedPrice,
-      tier,
-      includedItems: parsedDishes,
-      status: 'Active',
-    };
-
     if (editingId) {
-      menuApi
-        .update(editingId, apiPayload)
-        .catch((err) => console.warn('Menu API update error:', err));
-
       setPackages((prev) =>
         prev.map((pkg) =>
           pkg.id === editingId
@@ -147,26 +107,14 @@ export const MenuPackagesPage: React.FC = () => {
         )
       );
     } else {
-      const tempId = `PKG-${Date.now().toString().slice(-5)}`;
       const created: MenuPackage = {
-        id: tempId,
+        id: `PKG-${Date.now().toString().slice(-5)}`,
         name: trimmedName,
         pricePerHead: parsedPrice,
         tier,
         dishes: parsedDishes,
       };
       setPackages((prev) => [created, ...prev]);
-
-      menuApi
-        .create(apiPayload)
-        .then((res: any) => {
-          if (res && res.id) {
-            setPackages((prev) =>
-              prev.map((p) => (p.id === tempId ? { ...p, id: String(res.id) } : p))
-            );
-          }
-        })
-        .catch((err) => console.warn('Menu API create error:', err));
     }
 
     setIsModalOpen(false);
@@ -378,7 +326,7 @@ export const MenuPackagesPage: React.FC = () => {
                   required
                   value={packageName}
                   onChange={(e) => setPackageName(e.target.value)}
-                  placeholder="e.g. Royal Shadi Buffet"
+                  placeholder="[--]"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 />
               </div>
@@ -399,7 +347,7 @@ export const MenuPackagesPage: React.FC = () => {
                     required
                     value={pricePerHead}
                     onChange={(e) => setPricePerHead(e.target.value)}
-                    placeholder="e.g. 2500"
+                    placeholder="[--]"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -438,7 +386,7 @@ export const MenuPackagesPage: React.FC = () => {
                   rows={3}
                   value={dishesInput}
                   onChange={(e) => setDishesInput(e.target.value)}
-                  placeholder="e.g. Mutton Qorma, Chicken Biryani, Roghni Naan, Kheer"
+                  placeholder="[--]"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 resize-none"
                 />
               </div>

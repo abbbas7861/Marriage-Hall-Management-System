@@ -1,22 +1,17 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   CheckCircle2,
   ClipboardCheck,
   Clock,
-  Package,
   Plus,
   Send,
   Trash2,
   Users,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
-import { bookingsApi, requisitionsApi, AssetRequisitionItem } from '../../api/client';
 
 interface UpcomingEventOption {
   id: string;
-  bookingRef: string;
-  hallName: string;
-  customerName: string;
   label: string;
   guestCount: number;
 }
@@ -32,12 +27,14 @@ interface IngredientRequirementRow {
 const QTY_UNITS = ['kg', 'g', 'liters', 'ml', 'pcs', 'packs', 'boxes'];
 
 export const KitchenRequisitionsPage: React.FC = () => {
-  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEventOption[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [submittedRequisitions, setSubmittedRequisitions] = useState<AssetRequisitionItem[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
+  const [upcomingEvents] = useState<UpcomingEventOption[]>(
+    SEED_ASSIGNED_EVENTS.map((e) => ({
+      id: e.id,
+      label: `${e.customerName} (${e.hallName} — ${e.eventDate})`,
+      guestCount: e.totalGuests,
+    }))
+  );
+  const [selectedEventId, setSelectedEventId] = useState(SEED_ASSIGNED_EVENTS[0]?.id ?? '');
   const [rows, setRows] = useState<IngredientRequirementRow[]>([
     {
       id: 'REQ-ROW-1',
@@ -54,61 +51,12 @@ export const KitchenRequisitionsPage: React.FC = () => {
       estimatedCost: '28000',
     },
   ]);
-
-  const loadEventRequisitions = async (eventRef: string) => {
-    if (!eventRef) return;
-    try {
-      const data = await requisitionsApi.list(eventRef);
-      setSubmittedRequisitions(data || []);
-    } catch (err) {
-      console.warn('Failed to load requisitions for event:', err);
-    }
-  };
-
-  useEffect(() => {
-    bookingsApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          const mapped = data.map((b: any) => ({
-            id: String(b.id),
-            bookingRef: b.bookingRef || `BK-${b.id}`,
-            hallName: b.hallName || 'Main Hall',
-            customerName: b.customerName || 'Client',
-            label: `${b.bookingRef || `BK-${b.id}`} — ${b.customerName || 'Client'} (${b.hallName} • ${b.date})`,
-            guestCount: Number(b.guestCount) || 100,
-          }));
-          setUpcomingEvents(mapped);
-          if (mapped.length > 0) {
-            setSelectedEventId(mapped[0].id);
-            loadEventRequisitions(mapped[0].bookingRef);
-          }
-        } else {
-          const fallback = SEED_ASSIGNED_EVENTS.map((e) => ({
-            id: e.id,
-            bookingRef: e.id,
-            hallName: e.hallName,
-            customerName: e.customerName,
-            label: `${e.customerName} (${e.hallName} — ${e.eventDate})`,
-            guestCount: e.totalGuests,
-          }));
-          setUpcomingEvents(fallback);
-          setSelectedEventId(fallback[0]?.id ?? '');
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const selectedEvent = useMemo(
     () => upcomingEvents.find((ev) => ev.id === selectedEventId) ?? null,
     [upcomingEvents, selectedEventId]
   );
-
-  useEffect(() => {
-    if (selectedEvent?.bookingRef) {
-      loadEventRequisitions(selectedEvent.bookingRef);
-    }
-  }, [selectedEvent?.bookingRef]);
 
   const totalEstimatedCost = useMemo(() => {
     if (rows.length === 0) return null;
@@ -146,31 +94,9 @@ export const KitchenRequisitionsPage: React.FC = () => {
     setRows((prev) => prev.filter((row) => row.id !== id));
   };
 
-  const handleSubmitRequisition = async () => {
-    if (rows.length === 0 || !selectedEvent) return;
-    setIsSubmitting(true);
-    try {
-      for (const row of rows) {
-        if (!row.ingredientName.trim()) continue;
-        await requisitionsApi.create({
-          eventRef: selectedEvent.bookingRef,
-          hallName: selectedEvent.hallName,
-          itemName: row.ingredientName.trim(),
-          requestedQuantity: parseFloat(row.requiredQty) || 1,
-          unit: row.unit,
-          estimatedCost: parseFloat(row.estimatedCost) || 0,
-          requestedBy: 'Kitchen Chef',
-          notes: `Estimated Cost: Rs. ${row.estimatedCost || '0'}`,
-        });
-      }
-      setIsSubmitted(true);
-      await loadEventRequisitions(selectedEvent.bookingRef);
-    } catch (err) {
-      console.error('Failed to submit requisition:', err);
-      alert('Error submitting requisition to manager. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmitRequisition = () => {
+    if (rows.length === 0) return;
+    setIsSubmitted(true);
   };
 
   return (
@@ -179,14 +105,14 @@ export const KitchenRequisitionsPage: React.FC = () => {
       <div className="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-2xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
-            Kitchen Event Requisitions
+            Event Requisitions
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Calculate raw ingredient requirements for upcoming events and forward requisitions directly to the Manager for review &amp; approval.
+            Calculate raw ingredient requirements for upcoming events and send requisitions to the Manager.
           </p>
         </div>
 
-        <div className="w-full lg:w-96 shrink-0">
+        <div className="w-full lg:w-80 shrink-0">
           <label
             htmlFor="upcoming-event-select"
             className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5"
@@ -202,7 +128,11 @@ export const KitchenRequisitionsPage: React.FC = () => {
             }}
             className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
           >
-            <option value="">Choose an upcoming event...</option>
+            <option value="">
+              {upcomingEvents.length === 0
+                ? 'Select Upcoming Event ([--])'
+                : 'Choose an upcoming event...'}
+            </option>
             {upcomingEvents.map((ev) => (
               <option key={ev.id} value={ev.id}>
                 {ev.label}
@@ -226,7 +156,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
                   Expected Guest Count
                 </p>
                 <p className="text-lg font-bold font-mono tabular-nums text-slate-900">
-                  {selectedEvent ? selectedEvent.guestCount : '—'}
+                  {selectedEvent ? selectedEvent.guestCount : '[--]'}
                 </p>
               </div>
             </div>
@@ -239,7 +169,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
               </p>
               <p className="text-lg font-bold font-mono tabular-nums text-teal-700">
                 {totalEstimatedCost === null
-                  ? 'Rs. 0'
+                  ? 'Rs. [--]'
                   : `Rs. ${totalEstimatedCost.toLocaleString()}`}
               </p>
             </div>
@@ -301,7 +231,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
                         onChange={(e) =>
                           handleUpdateRow(row.id, 'ingredientName', e.target.value)
                         }
-                        placeholder="e.g. Fresh Chicken / Tomatoes"
+                        placeholder="[--]"
                         disabled={isSubmitted}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 disabled:bg-slate-50 disabled:text-slate-500"
                       />
@@ -316,7 +246,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
                           onChange={(e) =>
                             handleUpdateRow(row.id, 'requiredQty', e.target.value)
                           }
-                          placeholder="e.g. 50"
+                          placeholder="[--]"
                           disabled={isSubmitted}
                           className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 disabled:bg-slate-50 disabled:text-slate-500"
                         />
@@ -346,7 +276,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
                         onChange={(e) =>
                           handleUpdateRow(row.id, 'estimatedCost', e.target.value)
                         }
-                        placeholder="e.g. 45000"
+                        placeholder="[--]"
                         disabled={isSubmitted}
                         className="w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 disabled:bg-slate-50 disabled:text-slate-500"
                       />
@@ -375,17 +305,18 @@ export const KitchenRequisitionsPage: React.FC = () => {
         {isSubmitted ? (
           <div className="flex flex-wrap items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-amber-700" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-mono font-semibold text-amber-800">
-                    Forwarded to Manager &bull; Pending Review
+                    [Pending Manager Approval]
                   </span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Your ingredient requisition has been saved and dispatched to the Manager Event Control Center.
+                  Your ingredient requisition ({rows.length} item{rows.length === 1 ? '' : 's'}) has been forwarded to the Manager.
                 </p>
               </div>
             </div>
@@ -398,7 +329,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
               }}
               className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors cursor-pointer"
             >
-              + Create Another Requisition
+              New Requisition
             </button>
           </div>
         ) : (
@@ -408,90 +339,21 @@ export const KitchenRequisitionsPage: React.FC = () => {
                 Ready to submit ingredient requisition?
               </p>
               <p className="text-xs text-slate-500 mt-0.5">
-                Once submitted, the Manager will see and approve the items in the Event Control Center.
+                Once submitted, the Manager will review and approve the purchase request.
               </p>
             </div>
             <button
               type="button"
               onClick={handleSubmitRequisition}
-              disabled={rows.length === 0 || isSubmitting}
+              disabled={rows.length === 0}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed px-6 py-3.5 text-sm sm:text-base font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
-              {isSubmitting ? 'Sending to Manager...' : 'Send Requisition to Manager for Approval'}
+              Send Requisition to Manager for Approval
             </button>
           </>
         )}
       </div>
-
-      {/* Submitted Requisitions Status Tracker */}
-      {submittedRequisitions.length > 0 && (
-        <section className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
-            <div>
-              <h2 className="font-['Plus_Jakarta_Sans'] text-base font-semibold text-slate-900 flex items-center gap-2">
-                <Package className="w-4 h-4 text-teal-700" />
-                Live Status of Requisitions Sent to Manager ({selectedEvent?.bookingRef})
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Track whether the Manager has approved or issued items requested by Kitchen
-              </p>
-            </div>
-            <span className="text-xs font-mono text-slate-400">
-              {submittedRequisitions.length} item{submittedRequisitions.length === 1 ? '' : 's'}
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-500 uppercase">
-                  <th className="py-3 px-5">Ref</th>
-                  <th className="py-3 px-5">Item Name</th>
-                  <th className="py-3 px-5">Qty Requested</th>
-                  <th className="py-3 px-5">Qty Issued</th>
-                  <th className="py-3 px-5">Estimated Cost</th>
-                  <th className="py-3 px-5 text-right">Manager Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {submittedRequisitions.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50/60">
-                    <td className="py-3 px-5 font-mono text-xs text-slate-500 font-semibold">
-                      {req.requisitionRef}
-                    </td>
-                    <td className="py-3 px-5 font-medium text-slate-900">
-                      {req.itemName}
-                    </td>
-                    <td className="py-3 px-5 font-mono">
-                      {req.requestedQuantity} {req.unit || 'units'}
-                    </td>
-                    <td className="py-3 px-5 font-mono">
-                      {req.issuedQuantity || 0} {req.unit || 'units'}
-                    </td>
-                    <td className="py-3 px-5 font-mono text-teal-800">
-                      Rs. {Number(req.estimatedCost || 0).toLocaleString()}
-                    </td>
-                    <td className="py-3 px-5 text-right">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold ${
-                          req.status === 'Approved' || req.status === 'Issued'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : req.status === 'Shortage'
-                              ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                        }`}
-                      >
-                        {req.status === 'Approved' ? 'Approved by Manager' : req.status === 'Issued' ? 'Issued' : 'Pending Manager Review'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
     </div>
   );
 };

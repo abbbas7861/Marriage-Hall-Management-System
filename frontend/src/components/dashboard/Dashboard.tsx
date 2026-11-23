@@ -103,7 +103,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Executive Dashboard
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
               <span>SYSTEM SYNCHRONIZED</span>
             </span>
           </div>
@@ -606,7 +606,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+          <span className="w-2 h-2 rounded-full bg-teal-600 animate-ping"></span>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-800 font-mono">
             [Live Stream Ready]
           </span>

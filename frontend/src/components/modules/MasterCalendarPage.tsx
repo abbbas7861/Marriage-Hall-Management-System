@@ -1,14 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  ArrowRight,
   X,
 } from 'lucide-react';
-import { bookingsApi, hallsApi } from '../../api/client';
-import { SEED_HALLS } from '../../data/seedData';
 
 export type EventSlot = 'Lunch/Afternoon' | 'Dinner/Evening';
 export type BookingType =
@@ -28,24 +25,14 @@ export interface CalendarBooking {
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const HALL_OPTIONS = ['All Halls', 'Hall A', 'Hall B', 'Hall C'];
+const BOOKABLE_HALLS = ['Hall A', 'Hall B', 'Hall C'];
 const EVENT_SLOTS: EventSlot[] = ['Lunch/Afternoon', 'Dinner/Evening'];
 const BOOKING_TYPES: BookingType[] = [
   'Full Hall',
   'Half Hall (Section A)',
   'Half Hall (Section B)',
 ];
-
-export interface MasterCalendarPageProps {
-  onProceedToBooking?: (prefill: {
-    date: string;
-    hall: string;
-    slot: string;
-    bookingType: string;
-    customerName: string;
-    eventType: string;
-    guestCount: string;
-  }) => void;
-}
 
 function formatDateKey(year: number, month: number, day: number): string {
   const m = String(month + 1).padStart(2, '0');
@@ -90,69 +77,20 @@ function isHallFullyBookedForDay(
   return slot1 === 'Fully Booked' && slot2 === 'Fully Booked';
 }
 
-export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
-  onProceedToBooking,
-}) => {
+export const MasterCalendarPage: React.FC = () => {
   const today = useMemo(() => new Date(), []);
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [selectedHall, setSelectedHall] = useState<string>('All Halls');
 
-  // Dynamic Halls from backend
-  const [availableHalls, setAvailableHalls] = useState<string[]>([]);
-
-  // Load bookings from backend
+  // Strictly empty initial state — no fake data
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    hallsApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setAvailableHalls(data.map((h: any) => h.name));
-        } else {
-          setAvailableHalls(SEED_HALLS.map((h) => h.name));
-        }
-      })
-      .catch(() => setAvailableHalls(SEED_HALLS.map((h) => h.name)));
-
-    bookingsApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setBookings(
-            data.map((b: any) => ({
-              id: String(b.id),
-              date: b.date || '',
-              hall: b.hallName || 'Royal Grand Hall',
-              slot:
-                b.slot && b.slot.toLowerCase().includes('lunch')
-                  ? 'Lunch/Afternoon'
-                  : 'Dinner/Evening',
-              bookingType: 'Full Hall',
-              customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
-              eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Barat',
-              guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
-            }))
-          );
-        }
-      })
-      .catch((err) => console.warn('Master calendar bookings API error:', err));
-  }, []);
-
-  const bookableHalls = useMemo(() => {
-    return availableHalls.length > 0 ? availableHalls : SEED_HALLS.map((h) => h.name);
-  }, [availableHalls]);
-
-  const hallOptions = useMemo(() => {
-    return ['All Halls', ...bookableHalls];
-  }, [bookableHalls]);
 
   // Create New Booking Modal state
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingDate, setBookingDate] = useState<string>('');
-  const [bookingHall, setBookingHall] = useState<string>('');
+  const [bookingHall, setBookingHall] = useState<string>('Hall A');
   const [bookingSlot, setBookingSlot] = useState<EventSlot>('Lunch/Afternoon');
   const [bookingType, setBookingType] = useState<BookingType>('Full Hall');
   const [customerName, setCustomerName] = useState<string>('');
@@ -204,7 +142,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
   };
 
   const handleDateCellClick = (dateKey: string) => {
-    const targetHall = selectedHall === 'All Halls' ? (bookableHalls[0] || 'Royal Grand Hall') : selectedHall;
+    const targetHall = selectedHall === 'All Halls' ? 'Hall A' : selectedHall;
 
     // Enforce max 2 bookings (Lunch + Dinner) per day per hall
     if (isHallFullyBookedForDay(bookings, dateKey, targetHall)) {
@@ -278,56 +216,18 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
       return;
     }
 
-    if (onProceedToBooking) {
-      onProceedToBooking({
-        date: bookingDate,
-        hall: bookingHall,
-        slot: bookingSlot,
-        bookingType,
-        customerName: customerName.trim(),
-        eventType,
-        guestCount: guestCount.trim(),
-      });
-      setIsBookingModalOpen(false);
-      return;
-    }
-
-    const tempId = `BK-${Date.now().toString().slice(-4)}`;
     const created: CalendarBooking = {
-      id: tempId,
+      id: `BK-${Date.now().toString().slice(-4)}`,
       date: bookingDate,
       hall: bookingHall,
       slot: bookingSlot,
       bookingType,
-      customerName: customerName.trim() || 'Walk-in Client',
+      customerName: customerName.trim() || '[--]',
       eventType,
-      guestCount: guestCount.trim() || '100',
+      guestCount: guestCount.trim() || '[--]',
     };
 
     setBookings((prev) => [...prev, created]);
-
-    const apiPayload = {
-      customerName: customerName.trim() || 'Walk-in Client',
-      eventType,
-      hallName: bookingHall,
-      date: bookingDate,
-      time: bookingSlot === 'Lunch/Afternoon' ? '12:00 PM – 04:00 PM' : '07:00 PM – 11:30 PM',
-      slot: bookingSlot,
-      guestCount: Number(guestCount) || 100,
-      status: 'Confirmed',
-    };
-
-    bookingsApi
-      .create(apiPayload)
-      .then((res: any) => {
-        if (res && res.id) {
-          setBookings((prev) =>
-            prev.map((b) => (b.id === tempId ? { ...b, id: String(res.id) } : b))
-          );
-        }
-      })
-      .catch((err) => console.warn('Master calendar API create error:', err));
-
     setIsBookingModalOpen(false);
   };
 
@@ -477,7 +377,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
               onChange={(e) => setSelectedHall(e.target.value)}
               className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
             >
-              {hallOptions.map((hall) => (
+              {HALL_OPTIONS.map((hall) => (
                 <option key={hall} value={hall}>
                   {hall}
                 </option>
@@ -522,7 +422,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
 
                 const dateKey = cell.dateKey;
                 const activeHallForDisplay =
-                  selectedHall === 'All Halls' ? (bookableHalls[0] || 'Royal Grand Hall') : selectedHall;
+                  selectedHall === 'All Halls' ? 'Hall A' : selectedHall;
                 const dayBookings = bookings.filter(
                   (b) =>
                     b.date === dateKey &&
@@ -566,6 +466,11 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
                       >
                         {cell.day}
                       </span>
+                      {dayBookings.length === 0 && (
+                        <span className="text-[10px] font-mono text-slate-300">
+                          [--]
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-2 space-y-1">
@@ -682,7 +587,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
                       }}
                       className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                     >
-                      {bookableHalls.map((h) => (
+                      {BOOKABLE_HALLS.map((h) => (
                         <option key={h} value={h}>
                           {h}
                         </option>
@@ -765,7 +670,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Usman Tariq"
+                    placeholder="[--]"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>
@@ -783,7 +688,7 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
                     min="1"
                     value={guestCount}
                     onChange={(e) => setGuestCount(e.target.value)}
-                    placeholder="e.g. 450"
+                    placeholder="[--]"
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>

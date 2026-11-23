@@ -16,7 +16,6 @@ import {
   Check,
 } from 'lucide-react';
 import { Booking } from '../../types';
-import { formatTo12Hour } from '../../utils/timeFormat';
 
 interface CreateBookingFormProps {
   onCancel: () => void;
@@ -56,7 +55,6 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
     initialBooking?.amount ? String(initialBooking.amount) : ''
   );
   const [advancePayment, setAdvancePayment] = useState('');
-  const [assignedManager, setAssignedManager] = useState(initialBooking?.assignedManager || 'Manager');
 
   const [validationError, setValidationError] = useState('');
 
@@ -107,16 +105,8 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
       eventType: eventType || 'Other Event',
       hallName: hallVenue,
       date: eventDate,
-      time: startTime && endTime
-        ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}`
-        : initialBooking?.time
-        ? formatTo12Hour(initialBooking.time)
-        : undefined,
-      slot: startTime && endTime
-        ? `${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}`
-        : initialBooking?.slot
-        ? formatTo12Hour(initialBooking.slot)
-        : 'Scheduled Time',
+      time: startTime && endTime ? `${startTime} - ${endTime}` : initialBooking?.time,
+      slot: startTime && endTime ? `${startTime} - ${endTime}` : (initialBooking?.slot || 'Scheduled Time'),
       status: initialBooking?.status || 'Confirmed',
       paymentStatus:
         calculatedRemainingBalance !== null && calculatedRemainingBalance <= 0
@@ -126,7 +116,6 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           : (initialBooking?.paymentStatus || 'Unpaid'),
       amount: totalBookingAmount ? parseFloat(totalBookingAmount) : undefined,
       guestCount: expectedGuests ? parseInt(expectedGuests, 10) : undefined,
-      assignedManager,
     };
 
     onSave(newBooking);
@@ -239,7 +228,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 type="text"
                 value={cnic}
                 onChange={(e) => setCnic(e.target.value)}
-                placeholder="e.g. 35202-1234567-1"
+                placeholder="[Enter CNIC / ID Number]"
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
             </div>

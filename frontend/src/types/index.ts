@@ -42,7 +42,6 @@ export interface Booking {
   paymentStatus?: 'Paid' | 'Partial' | 'Unpaid' | 'Pending';
   amount?: number;
   guestCount?: number;
-  assignedManager?: string;
 }
 
 export interface Hall {

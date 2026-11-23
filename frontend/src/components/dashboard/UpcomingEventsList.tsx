@@ -42,7 +42,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
           <thead>
             <tr className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider rounded-md">
               <th className="py-2.5 px-3 rounded-l-md">Event Name</th>
-              <th className="py-2.5 px-3">Date &amp; Time</th>
+              <th className="py-2.5 px-3">Date</th>
               <th className="py-2.5 px-3">Hall</th>
               <th className="py-2.5 px-3 text-right rounded-r-md">Status</th>
             </tr>
@@ -68,12 +68,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
                     {evt.eventType || evt.customerName}
                   </td>
                   <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
-                    <div>{evt.date}</div>
-                    {(evt.time || evt.slot) && (
-                      <div className="text-[10px] text-teal-700">
-                        {formatTo12Hour(evt.time || evt.slot)}
-                      </div>
-                    )}
+                    {evt.date}
                   </td>
                   <td className="py-3 px-3 text-slate-700">{evt.hallName}</td>
                   <td className="py-3 px-3 text-right">

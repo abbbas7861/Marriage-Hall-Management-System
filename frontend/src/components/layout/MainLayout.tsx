@@ -79,28 +79,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   const [activeNavId, setActiveNavId] = useState<string>(() => getDefaultNavId(activeRole));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [bookingPrefill, setBookingPrefill] = useState<{
-    date?: string;
-    hall?: string;
-    slot?: string;
-    bookingType?: string;
-    customerName?: string;
-    eventType?: string;
-    guestCount?: string;
-  } | null>(null);
 
   useEffect(() => {
     setActiveNavId(getDefaultNavId(activeRole));
   }, [activeRole]);
-
-  const handleProceedToBooking = (prefill: any) => {
-    setBookingPrefill(prefill);
-    setActiveNavId('bookings');
-  };
-
-  const handleNavigateToCalendar = () => {
-    setActiveNavId('master-calendar');
-  };
 
   const navItems = ROLE_NAV_ITEMS[activeRole];
   const activeItem = navItems.find((item) => item.id === activeNavId) || navItems[0];
@@ -131,13 +113,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           ) : activeRole === 'Admin' && activeNavId === 'halls-registry' ? (
             <HallsRegistryPage />
           ) : activeRole === 'Admin' && activeNavId === 'bookings' ? (
-            <BookingsManagementPage
-              onNavigateToCalendar={handleNavigateToCalendar}
-              prefillData={bookingPrefill}
-              onClearPrefill={() => setBookingPrefill(null)}
-            />
+            <BookingsManagementPage />
           ) : activeRole === 'Admin' && activeNavId === 'master-calendar' ? (
-            <MasterCalendarPage onProceedToBooking={handleProceedToBooking} />
+            <MasterCalendarPage />
           ) : activeRole === 'Admin' && activeNavId === 'menu-packages' ? (
             <MenuPackagesPage />
           ) : activeRole === 'Admin' && activeNavId === 'financial-reports' ? (
@@ -151,13 +129,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           ) : activeRole === 'Manager' && activeNavId === 'dashboard' ? (
             <ManagerDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Manager' && activeNavId === 'bookings' ? (
-            <BookingsManagementPage
-              onNavigateToCalendar={handleNavigateToCalendar}
-              prefillData={bookingPrefill}
-              onClearPrefill={() => setBookingPrefill(null)}
-            />
+            <BookingsManagementPage />
           ) : activeRole === 'Manager' && activeNavId === 'master-calendar' ? (
-            <MasterCalendarPage onProceedToBooking={handleProceedToBooking} />
+            <MasterCalendarPage />
           ) : activeRole === 'Manager' && activeNavId === 'assigned-events' ? (
             <ManagerEventSettlementPage initialView="list" />
           ) : activeRole === 'Manager' && activeNavId === 'table-monitoring' ? (

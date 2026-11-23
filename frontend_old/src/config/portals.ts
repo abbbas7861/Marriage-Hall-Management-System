@@ -77,7 +77,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
     defaultModule: 'admin-overview',
     navGroups: [
       {
-        groupTitle: 'Executive Operations',
+        groupTitle: 'Core Operations',
         items: [
           { id: 'admin-overview', label: 'Executive Dashboard', icon: LayoutDashboard },
           { id: 'admin-halls', label: 'Halls Registry', icon: Building2 },
@@ -87,16 +87,16 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         ],
       },
       {
-        groupTitle: 'Control & Closings',
+        groupTitle: 'Staff & Control',
         items: [
-          { id: 'admin-users', label: 'Staff & Role Management', icon: Users, badge: 'Roles' },
+          { id: 'admin-users', label: 'Staff & Role Management', icon: Users },
           { id: 'admin-closings', label: 'Period Closings', icon: Clock },
-          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
+          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, path: '/admin/fbr' },
           { id: 'admin-audit', label: 'System Audit Logs', icon: History },
         ],
       },
       {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
@@ -115,7 +115,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
     defaultModule: 'admin-overview',
     navGroups: [
       {
-        groupTitle: 'Executive Operations',
+        groupTitle: 'Core Operations',
         items: [
           { id: 'admin-overview', label: 'Executive Dashboard', icon: LayoutDashboard },
           { id: 'admin-halls', label: 'Halls Registry', icon: Building2 },
@@ -128,30 +128,25 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         groupTitle: 'Floor Command',
         items: [
           { id: 'manager-overview', label: 'Events Control Center', icon: CalendarDays },
-          { id: 'manager-kitchen-refills', label: 'Kitchen Buffet Refills', icon: Flame, badge: 'Live', path: '/manager/kitchen-refills' },
+          { id: 'manager-kitchen-refills', label: 'Kitchen Buffet Refills', icon: Flame, path: '/manager/kitchen-refills' },
           { id: 'manager-decor', label: 'Asset & Decor Requisitions', icon: Layers },
           { id: 'manager-readiness', label: 'Service Readiness & Curfew', icon: ClipboardCheck },
         ],
       },
       {
-        groupTitle: 'Control & Closings',
+        groupTitle: 'Staff & Control',
         items: [
-          { id: 'admin-users', label: 'Staff & Role Management', icon: Users, badge: 'Roles' },
+          { id: 'admin-users', label: 'Staff & Role Management', icon: Users },
           { id: 'admin-closings', label: 'Period Closings', icon: Clock },
-          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, badge: 'Optional', path: '/admin/fbr' },
+          { id: 'manager-roster', label: 'Staff Shift Rosters', icon: Users },
+          { id: 'manager-assets', label: 'Damage & Deposit Protocol', icon: Layers },
+          { id: 'feedback', label: 'Customer Reviews', icon: CheckCircle2 },
+          { id: 'admin-fbr', label: 'FBR Digital Invoicing', icon: Receipt, path: '/admin/fbr' },
           { id: 'admin-audit', label: 'System Audit Logs', icon: History },
         ],
       },
       {
-        groupTitle: 'Personnel & Assets',
-        items: [
-          { id: 'manager-roster', label: 'Staff Shift Rosters', icon: Users },
-          { id: 'manager-assets', label: 'Damage & Deposit Protocol', icon: Layers },
-          { id: 'feedback', label: 'Customer Reviews', icon: CheckCircle2 },
-        ],
-      },
-      {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
@@ -172,20 +167,20 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
       {
         groupTitle: 'Live Kitchen',
         items: [
-          { id: 'kitchen-kds', label: 'Kitchen Display Screen', icon: Tablet, badge: 'Live KDS' },
+          { id: 'kitchen-kds', label: 'Kitchen Display Screen', icon: Tablet },
           { id: 'kitchen-menu', label: 'Recipe & Menu Packages', icon: UtensilsCrossed },
         ],
       },
       {
-        groupTitle: 'Pantry & Formula',
+        groupTitle: 'Pantry & Inventory',
         items: [
           { id: 'kitchen-stock', label: 'Pantry Stock & Inventory', icon: Package },
-          { id: 'kitchen-calculator', label: 'Raw Material Calculator', icon: Calculator, badge: 'Formula' },
+          { id: 'kitchen-calculator', label: 'Raw Material Calculator', icon: Calculator },
           { id: 'kitchen-reorder', label: 'Reorder Requisitions', icon: AlertTriangle },
         ],
       },
       {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
@@ -204,15 +199,15 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
     defaultModule: 'waiter-kiosk',
     navGroups: [
       {
-        groupTitle: 'Floor Kiosk',
+        groupTitle: 'Floor Operations',
         items: [
           { id: 'waiter-kiosk', label: 'Floor Staff Tablet', icon: Tablet },
-          { id: 'waiter-refills', label: 'Dish Refill Dispatcher', icon: Coffee, badge: 'Urgent' },
-          { id: 'waiter-overtime', label: 'Overtime Extension Trigger', icon: Clock, badge: 'Emergency' },
+          { id: 'waiter-refills', label: 'Dish Refill Dispatcher', icon: Coffee },
+          { id: 'waiter-overtime', label: 'Overtime Extension Trigger', icon: Clock },
         ],
       },
       {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
@@ -234,7 +229,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         groupTitle: 'Contractors & Labor',
         items: [
           { id: 'vendors-directory', label: 'Vendor Directory', icon: Store },
-          { id: 'vendors-labor', label: 'Outside Labor Contractor', icon: UserCheck, badge: 'Staff Bill' },
+          { id: 'vendors-labor', label: 'Outside Labor Contractor', icon: UserCheck },
         ],
       },
       {
@@ -245,7 +240,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         ],
       },
       {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],
@@ -264,11 +259,11 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
     defaultModule: 'finance-overview',
     navGroups: [
       {
-        groupTitle: 'Accounting Core',
+        groupTitle: 'Core Financials',
         items: [
           { id: 'finance-overview', label: 'Financial Statement KPI', icon: BarChart3 },
           { id: 'finance-ledger', label: 'General Ledger (GL)', icon: Scale },
-          { id: 'finance-receivables', label: 'Accounts Receivable (A/R)', icon: ArrowDownLeft, badge: 'Invoices' },
+          { id: 'finance-receivables', label: 'Accounts Receivable (A/R)', icon: ArrowDownLeft },
           { id: 'finance-payables', label: 'Accounts Payable (A/P)', icon: ArrowUpRight },
         ],
       },
@@ -280,7 +275,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
         ],
       },
       {
-        groupTitle: 'Preferences',
+        groupTitle: 'System',
         items: [
           { id: 'settings', label: 'My Preferences', icon: Sliders, path: '/settings' },
         ],

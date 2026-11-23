@@ -236,24 +236,24 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200" />
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up" style={{ backgroundColor: '#059669', color: '#ffffff', border: '1px solid #34d399' }}>
+          <Sparkles className="w-5 h-5" style={{ color: '#a7f3d0' }} />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Banner */}
-      <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+      {/* Top Banner - FORCED DARK */}
+      <div className="rounded-2xl p-6 relative overflow-hidden" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-emerald-500/10 via-amber-500/10 to-transparent rounded-full blur-3xl -z-10" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: '#ffffff' }}>
               {activeView === 'orders'
                 ? 'Reorder Requisitions & Supplier Orders'
                 : 'Kitchen Pantry & Raw Ingredient Stock'}
             </h1>
-            <p className="!text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm mt-1 max-w-2xl" style={{ color: '#cbd5e1' }}>
               {activeView === 'orders'
                 ? 'Track pipeline grocery purchase orders, create emergency requisitions for low ingredients, and record stock replenishment.'
                 : 'Live tracking of raw meat, basmati rice, cooking oil, ghee, dairy, and spices with automated safety threshold warnings.'}
@@ -264,9 +264,10 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
             <button
               type="button"
               onClick={() => setActiveView(activeView === 'inventory' ? 'orders' : 'inventory')}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl !bg-slate-800 hover:bg-slate-700 !text-slate-200 text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer"
+              style={{ backgroundColor: '#1e293b', color: '#e2e8f0', border: '1px solid #334155' }}
             >
-              <Truck className="w-4 h-4 text-sky-400" />
+              <Truck className="w-4 h-4" style={{ color: '#38bdf8' }} />
               <span>
                 {activeView === 'inventory'
                   ? `Switch to Requisitions (${orders.length})`
@@ -277,7 +278,8 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
             <button
               type="button"
               onClick={() => setNewItemModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 !text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition cursor-pointer"
+              style={{ background: 'linear-gradient(to right, #10b981, #0d9488)', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.39)' }}
             >
               <Plus className="w-4 h-4" />
               <span>Add New Ingredient</span>
@@ -285,65 +287,65 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
           </div>
         </div>
 
-        {/* Aggregate KPI Ribbon */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
-          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
+        {/* Aggregate KPI Ribbon - FORCED DARK */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6" style={{ borderTop: '1px solid #1e293b' }}>
+          <div className="rounded-xl p-3.5" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <div className="flex items-center justify-between text-xs mb-1" style={{ color: '#94a3b8' }}>
               <span>Tracked Ingredients</span>
-              <Package className="w-3.5 h-3.5 text-sky-400" />
+              <Package className="w-3.5 h-3.5" style={{ color: '#38bdf8' }} />
             </div>
-            <p className="text-xl font-bold !text-white">{items.length} Items</p>
-            <span className="text-[11px] !text-slate-400">Active Pantry Catalog</span>
+            <p className="text-xl font-bold" style={{ color: '#ffffff' }}>{items.length} Items</p>
+            <span className="text-[11px]" style={{ color: '#64748b' }}>Active Pantry Catalog</span>
           </div>
 
-          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
+          <div className="rounded-xl p-3.5" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <div className="flex items-center justify-between text-xs mb-1" style={{ color: '#94a3b8' }}>
               <span>Low Stock Alerts</span>
-              <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+              <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#fb7185' }} />
             </div>
-            <p className="text-xl font-bold text-rose-400">{lowStockItems.length} Items</p>
-            <span className="text-[11px] text-rose-300 font-medium">Below Safety Threshold</span>
+            <p className="text-xl font-bold" style={{ color: '#fb7185' }}>{lowStockItems.length} Items</p>
+            <span className="text-[11px]" style={{ color: '#fda4af' }}>Below Safety Threshold</span>
           </div>
 
-          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
+          <div className="rounded-xl p-3.5" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <div className="flex items-center justify-between text-xs mb-1" style={{ color: '#94a3b8' }}>
               <span>Orders in Pipeline</span>
-              <Truck className="w-3.5 h-3.5 text-amber-400" />
+              <Truck className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
             </div>
-            <p className="text-xl font-bold text-amber-400">{activeOrdersCount} Pending</p>
-            <span className="text-[11px] !text-slate-400">Awaiting Supplier Delivery</span>
+            <p className="text-xl font-bold" style={{ color: '#fbbf24' }}>{activeOrdersCount} Pending</p>
+            <span className="text-[11px]" style={{ color: '#64748b' }}>Awaiting Supplier Delivery</span>
           </div>
 
-          <div className="!bg-slate-800/40 rounded-xl p-3.5 border border-slate-700/50">
-            <div className="flex items-center justify-between text-xs !text-slate-400 mb-1">
+          <div className="rounded-xl p-3.5" style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}>
+            <div className="flex items-center justify-between text-xs mb-1" style={{ color: '#94a3b8' }}>
               <span>Total Stock Value</span>
-              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+              <DollarSign className="w-3.5 h-3.5" style={{ color: '#34d399' }} />
             </div>
-            <p className="text-xl font-bold text-emerald-400">
+            <p className="text-xl font-bold" style={{ color: '#34d399' }}>
               Rs. {totalPantryValue.toLocaleString()}
             </p>
-            <span className="text-[11px] !text-slate-400">Asset Cost Basis</span>
+            <span className="text-[11px]" style={{ color: '#64748b' }}>Asset Cost Basis</span>
           </div>
         </div>
       </div>
 
       {/* Prominent Low-Stock Warning Ribbon (If Any) */}
       {lowStockItems.length > 0 && activeView === 'inventory' && (
-        <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ backgroundColor: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(244, 63, 94, 0.2)', border: '1px solid rgba(244, 63, 94, 0.4)', color: '#fb7185' }}>
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
                 <span>Immediate Kitchen Restock Required!</span>
-                <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold uppercase">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase" style={{ backgroundColor: '#e11d48', color: '#ffffff' }}>
                   {lowStockItems.length} LOW ITEMS
                 </span>
               </h3>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs mt-0.5" style={{ color: '#cbd5e1' }}>
                 The following essentials are below safety threshold for upcoming banquets:{' '}
-                <span className="font-semibold text-rose-200">
+                <span className="font-semibold" style={{ color: '#fecdd3' }}>
                   {lowStockItems.map((it) => `${it.name} (${it.currentStock} ${it.unit})`).join(', ')}
                 </span>
               </p>
@@ -352,7 +354,8 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
 
           <button
             onClick={() => handleOpenOrderModal(lowStockItems[0])}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/20 transition whitespace-nowrap self-start md:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition whitespace-nowrap self-start md:self-auto"
+            style={{ backgroundColor: '#e11d48', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(225, 29, 72, 0.39)' }}
           >
             <ShoppingCart className="w-4 h-4" />
             <span>Reorder {lowStockItems[0].name.split(' ')[0]}</span>
@@ -363,8 +366,8 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
       {/* Main Content Area */}
       {activeView === 'inventory' ? (
         <div className="space-y-6">
-          {/* Filter Bar */}
-          <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Filter Bar - FORCED DARK */}
+          <div className="rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
             {/* Category tabs */}
             <div className="flex flex-wrap items-center gap-1.5">
               {[
@@ -381,9 +384,14 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
                   onClick={() => setCategoryFilter(cat)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
                     categoryFilter === cat
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm'
-                      : 'bg-slate-800 text-slate-400 border-slate-700/80 hover:bg-slate-700 hover:text-white'
+                      ? ''
+                      : 'hover:bg-slate-700'
                   }`}
+                  style={
+                    categoryFilter === cat
+                      ? { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.4)' }
+                      : { backgroundColor: '#1e293b', color: '#94a3b8', borderColor: '#334155' }
+                  }
                 >
                   {cat}
                 </button>
@@ -392,13 +400,14 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
 
             {/* Search */}
             <div className="relative min-w-[240px]">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#64748b' }} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search ingredients, supplier..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-1.5 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full rounded-xl pl-9 pr-4 py-1.5 text-xs focus:outline-none"
+                style={{ backgroundColor: '#1e293b', color: '#ffffff', border: '1px solid #334155' }}
               />
             </div>
           </div>
@@ -412,31 +421,28 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`bg-slate-900/60 backdrop-blur-md rounded-2xl p-5 border transition-all shadow-md flex flex-col justify-between ${
-                    isLow
-                      ? 'border-rose-500/60 shadow-rose-500/10'
-                      : 'border-slate-800 hover:border-slate-700'
-                  }`}
+                  className="rounded-2xl p-5 transition-all shadow-md flex flex-col justify-between"
+                  style={{ backgroundColor: '#0f172a', border: isLow ? '1px solid rgba(244, 63, 94, 0.6)' : '1px solid #1e293b' }}
                 >
                   <div>
                     {/* Top Meta */}
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid #1e293b' }}>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded" style={{ backgroundColor: '#1e293b', color: '#94a3b8', border: '1px solid #334155' }}>
                           {item.itemCode}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-medium">
+                        <span className="text-[11px] font-medium" style={{ color: '#94a3b8' }}>
                           {item.category}
                         </span>
                       </div>
 
                       {isLow ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold" style={{ backgroundColor: 'rgba(244, 63, 94, 0.2)', color: '#fda4af', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
                           <AlertTriangle className="w-3 h-3" />
                           LOW STOCK
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                           <CheckCircle2 className="w-3 h-3" />
                           IN STOCK
                         </span>
@@ -445,66 +451,66 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
 
                     {/* Title & Current Stock Level */}
                     <div className="mt-3">
-                      <h3 className="text-base font-bold text-white leading-tight">
+                      <h3 className="text-base font-bold leading-tight" style={{ color: '#ffffff' }}>
                         {item.name}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>
                         Storage: {item.storageLocation}
                       </p>
                     </div>
 
                     {/* Stock Meter */}
-                    <div className="mt-4 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
+                    <div className="mt-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(51, 65, 85, 0.5)' }}>
                       <div className="flex items-end justify-between mb-1.5">
                         <div>
-                          <span className="text-xs text-slate-400 block">Available Balance</span>
+                          <span className="text-xs block" style={{ color: '#94a3b8' }}>Available Balance</span>
                           <span
-                            className={`text-2xl font-black ${
-                              isLow ? 'text-rose-400' : 'text-emerald-400'
-                            }`}
+                            className="text-2xl font-black"
+                            style={{ color: isLow ? '#fb7185' : '#34d399' }}
                           >
                             {item.currentStock.toLocaleString()}{' '}
-                            <span className="text-xs font-bold text-slate-300">{item.unit}</span>
+                            <span className="text-xs font-bold" style={{ color: '#cbd5e1' }}>{item.unit}</span>
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[11px] text-slate-400 block">Safety Min:</span>
-                          <span className="text-xs font-bold text-slate-300 font-mono">
+                          <span className="text-[11px] block" style={{ color: '#94a3b8' }}>Safety Min:</span>
+                          <span className="text-xs font-bold font-mono" style={{ color: '#cbd5e1' }}>
                             {item.minThreshold} {item.unit}
                           </span>
                         </div>
                       </div>
 
                       {/* Visual Health Bar */}
-                      <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                      <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'rgba(51, 65, 85, 0.5)' }}>
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            isLow ? 'bg-rose-500' : ratio < 150 ? 'bg-amber-400' : 'bg-emerald-500'
-                          }`}
-                          style={{ width: `${Math.min(100, Math.max(10, ratio))}%` }}
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(100, Math.max(10, ratio))}%`,
+                            backgroundColor: isLow ? '#f43f5e' : ratio < 150 ? '#fbbf24' : '#10b981'
+                          }}
                         />
                       </div>
                     </div>
 
                     {/* Supplier Info */}
-                    <div className="mt-3.5 space-y-1.5 text-xs text-slate-400">
+                    <div className="mt-3.5 space-y-1.5 text-xs" style={{ color: '#94a3b8' }}>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Unit Cost:</span>
-                        <span className="font-semibold text-white">
+                        <span style={{ color: '#64748b' }}>Unit Cost:</span>
+                        <span className="font-semibold" style={{ color: '#ffffff' }}>
                           Rs. {item.unitPrice.toLocaleString()} / {item.unit}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Vendor:</span>
-                        <span className="font-medium text-slate-300 truncate max-w-[180px]">
+                        <span style={{ color: '#64748b' }}>Vendor:</span>
+                        <span className="font-medium truncate max-w-[180px]" style={{ color: '#cbd5e1' }}>
                           {item.preferredSupplier || 'Wholesale Mandi'}
                         </span>
                       </div>
                       {item.supplierContact && (
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500">Phone:</span>
-                          <span className="font-mono text-slate-300 text-[11px] flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-sky-400" />
+                          <span style={{ color: '#64748b' }}>Phone:</span>
+                          <span className="font-mono text-[11px] flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                            <Phone className="w-3 h-3" style={{ color: '#38bdf8' }} />
                             {item.supplierContact}
                           </span>
                         </div>
@@ -513,24 +519,26 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-5 pt-3 border-t border-slate-800 grid grid-cols-2 gap-2">
+                  <div className="mt-5 pt-3 grid grid-cols-2 gap-2" style={{ borderTop: '1px solid #1e293b' }}>
                     <button
                       type="button"
                       onClick={() => handleOpenAdjustModal(item)}
-                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center justify-center gap-1.5"
+                      className="py-2 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                      style={{ backgroundColor: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
                     >
-                      <Scale className="w-3.5 h-3.5 text-amber-400" />
+                      <Scale className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
                       <span>Log Usage</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleOpenOrderModal(item)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md ${
+                      className="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md"
+                      style={
                         isLow
-                          ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/20'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
-                      }`}
+                          ? { backgroundColor: '#e11d48', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(225, 29, 72, 0.2)' }
+                          : { backgroundColor: '#059669', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(5, 150, 105, 0.2)' }
+                      }
                     >
                       <ShoppingCart className="w-3.5 h-3.5" />
                       <span>Order Restock</span>
@@ -543,20 +551,21 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
         </div>
       ) : (
         /* Purchase Orders View */
-        <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+        <div className="rounded-2xl p-6" style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}>
+          <div className="flex items-center justify-between pb-4 mb-4" style={{ borderBottom: '1px solid #1e293b' }}>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Truck className="w-5 h-5 text-sky-400" />
+              <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: '#ffffff' }}>
+                <Truck className="w-5 h-5" style={{ color: '#38bdf8' }} />
                 <span>Supplier Purchase Orders & Deliveries</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>
                 Track dispatched grocery requisitions and log incoming deliveries directly into pantry balance.
               </p>
             </div>
             <button
               onClick={() => setActiveView('inventory')}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 hover:bg-slate-700"
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+              style={{ backgroundColor: '#1e293b', color: '#cbd5e1', border: '1px solid #334155' }}
             >
               Back to Inventory
             </button>
@@ -564,7 +573,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-800/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+              <thead className="uppercase text-[10px] tracking-wider" style={{ backgroundColor: 'rgba(30, 41, 59, 0.6)', color: '#94a3b8', borderBottom: '1px solid #334155' }}>
                 <tr>
                   <th className="py-3 px-4">PO Ref</th>
                   <th className="py-3 px-4">Ingredient Name</th>
@@ -576,58 +585,60 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-300">
+              <tbody className="divide-y" style={{ borderColor: '#1e293b', color: '#cbd5e1' }}>
                 {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500">
+                    <td colSpan={8} className="py-8 text-center" style={{ color: '#64748b' }}>
                       No purchase orders recorded yet.
                     </td>
                   </tr>
                 ) : (
                   orders.map((po) => (
-                    <tr key={po.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-white">
+                    <tr key={po.id} className="transition hover:bg-slate-800/30">
+                      <td className="py-3.5 px-4 font-mono font-bold" style={{ color: '#ffffff' }}>
                         {po.orderRef}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-white">
+                      <td className="py-3.5 px-4 font-semibold" style={{ color: '#ffffff' }}>
                         {po.itemName}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-emerald-400 font-mono">
+                      <td className="py-3.5 px-4 font-bold font-mono" style={{ color: '#34d399' }}>
                         {po.quantity} {po.unit}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-white">
+                      <td className="py-3.5 px-4 font-semibold" style={{ color: '#ffffff' }}>
                         Rs. {po.totalCost.toLocaleString()}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="block font-medium text-slate-200">{po.supplierName}</span>
+                        <span className="block font-medium" style={{ color: '#e2e8f0' }}>{po.supplierName}</span>
                         {po.supplierContact && (
-                          <span className="text-[11px] text-slate-500 font-mono">
+                          <span className="text-[11px] font-mono" style={{ color: '#64748b' }}>
                             {po.supplierContact}
                           </span>
                         )}
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                          className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold"
+                          style={
                             po.urgency === 'Critical Emergency'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? { backgroundColor: 'rgba(244, 63, 94, 0.2)', color: '#fda4af', border: '1px solid rgba(244, 63, 94, 0.3)' }
                               : po.urgency === 'Urgent'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-slate-800 text-slate-300'
-                          }`}
+                              ? { backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#fcd34d', border: '1px solid rgba(245, 158, 11, 0.3)' }
+                              : { backgroundColor: '#1e293b', color: '#cbd5e1' }
+                          }
                         >
                           {po.urgency}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                          style={
                             po.status === 'Received & Stocked'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                              ? { backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }
                               : po.status === 'Cancelled'
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                              : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
-                          }`}
+                              ? { backgroundColor: 'rgba(244, 63, 94, 0.1)', color: '#fb7185', border: '1px solid rgba(244, 63, 94, 0.3)' }
+                              : { backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }
+                          }
                         >
                           {po.status === 'Received & Stocked' && <Check className="w-3 h-3" />}
                           {po.status}
@@ -638,14 +649,15 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
                           <button
                             type="button"
                             onClick={() => handleMarkReceived(po)}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition flex items-center gap-1 ml-auto"
+                            className="px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition flex items-center gap-1 ml-auto"
+                            style={{ backgroundColor: '#059669', color: '#ffffff' }}
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Receive & Stock</span>
                           </button>
                         )}
                         {po.status === 'Received & Stocked' && (
-                          <span className="text-xs text-slate-500 italic">
+                          <span className="text-xs italic" style={{ color: '#64748b' }}>
                             Stocked on {new Date(po.receivedAt || po.orderedAt || '').toLocaleDateString()}
                           </span>
                         )}
@@ -659,7 +671,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
         </div>
       )}
 
-      {/* Supplier Order Modal */}
+      {/* Supplier Order Modal (Original Dark Theme) */}
       {orderModalOpen && selectedItemForOrder && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative">
@@ -822,7 +834,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
         </div>
       )}
 
-      {/* Stock Adjust Modal */}
+      {/* Stock Adjust Modal (Original Dark Theme) */}
       {adjustModalOpen && selectedItemForAdjust && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
@@ -926,7 +938,7 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
         </div>
       )}
 
-      {/* Add New Ingredient Modal */}
+      {/* Add New Ingredient Modal (Original Dark Theme) */}
       {newItemModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
@@ -1090,4 +1102,3 @@ export const KitchenPantryInventory: React.FC<KitchenPantryInventoryProps> = ({
     </div>
   );
 };
-

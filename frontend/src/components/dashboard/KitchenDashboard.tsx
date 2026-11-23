@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   AlertTriangle,
   Box,
@@ -11,8 +11,6 @@ import {
   SEED_KDS_REQUESTS,
   SEED_PANTRY_INGREDIENTS,
 } from '../../data/seedData';
-import { formatTo12Hour } from '../../utils/timeFormat';
-import { inventoryApi } from '../../api/client';
 
 interface PendingKdsItem {
   id: string;
@@ -35,17 +33,6 @@ interface KitchenDashboardProps {
 export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
   onNavigate,
 }) => {
-  const [ingredients, setIngredients] = useState<any[]>(SEED_PANTRY_INGREDIENTS);
-
-  useEffect(() => {
-    inventoryApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) setIngredients(data);
-      })
-      .catch(() => {});
-  }, []);
-
   const pendingRequests: PendingKdsItem[] = SEED_KDS_REQUESTS.map((r) => ({
     id: r.id,
     tableNo: r.location,
@@ -54,17 +41,13 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
     status: r.status === 'new' ? 'New' : r.status === 'preparing' ? 'Preparing' : 'Ready',
   }));
 
-  const lowStockItems: LowStockIngredient[] = ingredients
-    .filter(
-      (item: any) =>
-        Number(item.currentStock ?? item.current_stock ?? 0) <=
-        Number(item.minThreshold ?? item.min_threshold ?? 10)
-    )
-    .map((item: any) => ({
-      id: String(item.id),
-      name: item.name || item.itemName,
-      currentStock: `${item.currentStock ?? item.current_stock} ${item.unit || 'kg'}`,
-    }));
+  const lowStockItems: LowStockIngredient[] = SEED_PANTRY_INGREDIENTS.filter(
+    (item) => item.currentStock <= item.minThreshold
+  ).map((item) => ({
+    id: item.id,
+    name: item.name,
+    currentStock: `${item.currentStock} ${item.unit}`,
+  }));
 
   const kpiCards = [
     {
@@ -85,7 +68,7 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
     },
     {
       label: 'Total Ingredients',
-      value: String(ingredients.length),
+      value: String(SEED_PANTRY_INGREDIENTS.length),
       caption: 'Tracked pantry inventory SKUs',
       icon: Box,
       iconBox:
@@ -244,7 +227,7 @@ export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
                         {req.item}
                       </td>
                       <td className="py-3.5 px-5 text-sm font-mono tabular-nums text-slate-500">
-                        {formatTo12Hour(req.time)}
+                        {req.time}
                       </td>
                       <td className="py-3.5 px-6 text-right">
                         <span

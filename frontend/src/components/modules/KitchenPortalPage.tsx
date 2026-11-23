@@ -288,7 +288,7 @@ export const KitchenPortalPage: React.FC<KitchenPortalPageProps> = ({ view }) =>
               <Bell
                 className={`w-4 h-4 transition-colors ${
                   isBellRinging
-                    ? 'text-emerald-600'
+                    ? 'text-emerald-600 animate-pulse'
                     : 'text-gray-500 group-hover:text-teal-700'
                 }`}
               />

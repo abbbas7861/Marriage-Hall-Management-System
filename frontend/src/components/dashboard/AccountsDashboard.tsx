@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   BarChart3,
   Clock,
@@ -18,7 +18,6 @@ import {
   YAxis,
 } from 'recharts';
 import { SEED_FINANCIAL_TREND, SEED_INVOICES } from '../../data/seedData';
-import { invoicesApi, expensesApi, dashboardApi } from '../../api/client';
 
 interface RecentInvoiceItem {
   id: string;
@@ -34,65 +33,18 @@ interface AccountsDashboardProps {
 export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
   onNavigate,
 }) => {
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-
-  useEffect(() => {
-    invoicesApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) setInvoices(data);
-      })
-      .catch(() => {});
-
-    expensesApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) setExpenses(data);
-      })
-      .catch(() => {});
-
-    dashboardApi
-      .getStats()
-      .then((data) => {
-        if (data) setStats(data);
-      })
-      .catch(() => {});
-  }, []);
-
-  const chartData = stats?.revenueTrend?.length
-    ? stats.revenueTrend.map((item: any) => ({
-        month: item.period || item.month,
-        revenue: item.bookedRevenue || item.revenue || 0,
-        expenses: item.ancillaryCatering || item.expenses || 0,
-      }))
-    : SEED_FINANCIAL_TREND;
-
-  const recentInvoices: RecentInvoiceItem[] =
-    invoices.length > 0
-      ? invoices.slice(0, 5).map((inv: any) => ({
-          id: String(inv.id),
-          customer: inv.customerName || inv.customer_name || 'Valued Client',
-          amount: `Rs. ${(Number(inv.totalAmount || inv.total_amount) || 0).toLocaleString('en-PK')}`,
-          status: inv.paymentStatus === 'Paid' ? 'Paid' : inv.paymentStatus === 'Partial' ? 'Partial' : 'Unpaid',
-        }))
-      : SEED_INVOICES.map((inv) => ({
-          id: inv.id,
-          customer: inv.customerName,
-          amount: `Rs. ${inv.totalAmount.toLocaleString('en-PK')}`,
-          status: inv.status,
-        }));
-
-  const totalRev = stats?.totalRevenue ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => sum + (Number(inv.totalAmount || inv.total_amount) || 0), 0) : 5931000);
-  const totalExp = expenses.length > 0 ? expenses.reduce((sum, exp: any) => sum + (Number(exp.amount) || 0), 0) : 1940000;
-  const netProf = totalRev - totalExp;
-  const pendingAmt = stats?.pendingPayments ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => sum + (Number(inv.remainingBalance || inv.remaining_balance) || 0), 0) : 850000);
+  const chartData = SEED_FINANCIAL_TREND;
+  const recentInvoices: RecentInvoiceItem[] = SEED_INVOICES.map((inv) => ({
+    id: inv.id,
+    customer: inv.customerName,
+    amount: `Rs. ${inv.totalAmount.toLocaleString('en-PK')}`,
+    status: inv.status,
+  }));
 
   const kpiCards = [
     {
       label: 'Total Revenue',
-      value: `Rs. ${totalRev.toLocaleString('en-PK')}`,
+      value: 'Rs. 5,931,000',
       caption: 'Collected & billed period total',
       icon: TrendingUp,
       iconBox:
@@ -100,7 +52,7 @@ export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
     },
     {
       label: 'Pending Receivables',
-      value: `Rs. ${pendingAmt.toLocaleString('en-PK')}`,
+      value: 'Rs. 3,251,000',
       caption: 'Awaiting customer settlement',
       icon: Clock,
       iconBox:
@@ -108,7 +60,7 @@ export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
     },
     {
       label: 'Total Expenses',
-      value: `Rs. ${totalExp.toLocaleString('en-PK')}`,
+      value: 'Rs. 2,290,000',
       caption: 'Catering, utilities & payroll',
       icon: TrendingDown,
       iconBox:
@@ -116,7 +68,7 @@ export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
     },
     {
       label: 'Net Profit',
-      value: `Rs. ${netProf.toLocaleString('en-PK')}`,
+      value: 'Rs. 3,641,000',
       caption: 'Net operating margin',
       icon: DollarSign,
       iconBox:

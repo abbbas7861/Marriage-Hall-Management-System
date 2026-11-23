@@ -325,14 +325,15 @@ export const WaiterOvertimeTrigger: React.FC<WaiterOvertimeTriggerProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3.5 bg-amber-500/10 rounded-2xl border border-amber-500/30">
+              {/* FIXED YELLOW BOX 1 */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.5)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold" style={{ backgroundColor: 'rgba(245, 158, 11, 0.3)', color: '#b45309' }}>
                     <AlertTriangle className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs text-amber-300 font-bold block">Strict 1-Hour Buffer</span>
-                    <span className="text-xs text-amber-200/80">
+                    <span className="text-xs font-bold block" style={{ color: '#92400e' }}>Strict 1-Hour Buffer</span>
+                    <span className="text-xs" style={{ color: '#b45309' }}>
                       Mandatory sanitization & turnover window after event.
                     </span>
                   </div>
@@ -496,12 +497,12 @@ export const WaiterOvertimeTrigger: React.FC<WaiterOvertimeTriggerProps> = ({
                 />
               </div>
 
-              {/* Buffer Turnover Warning */}
-              <div className="mt-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-200 leading-relaxed">
-                  <span className="font-bold text-amber-300 block mb-0.5">Automated Hall Buffer Check:</span>
-                  Adding <span className="font-bold text-white">+{requestedHours} hour(s)</span> will shift the mandatory 1-hour sanitization buffer to finish later. Ensure the cleaning crew is alerted and that no subsequent morning booking has setup conflict.
+              {/* FIXED YELLOW BOX 2 */}
+              <div className="mt-5 p-4 rounded-2xl flex items-start gap-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.5)' }}>
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#b45309' }} />
+                <div className="text-xs leading-relaxed" style={{ color: '#92400e' }}>
+                  <span className="font-bold block mb-0.5" style={{ color: '#78350f' }}>Automated Hall Buffer Check:</span>
+                  Adding <span className="font-bold" style={{ color: '#000000' }}>+{requestedHours} hour(s)</span> will shift the mandatory 1-hour sanitization buffer to finish later. Ensure the cleaning crew is alerted and that no subsequent morning booking has setup conflict.
                 </div>
               </div>
             </div>
