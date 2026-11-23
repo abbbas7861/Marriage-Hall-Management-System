@@ -99,29 +99,29 @@ class Command(BaseCommand):
         event_types = [
             {
                 "name": "Barat Ceremony",
-                "default_start_time": "19:30",
-                "default_end_time": "00:00",
+                "default_start_time": "07:30 PM",
+                "default_end_time": "12:00 AM",
                 "calendar_color": "#00685f",
                 "description": "Traditional primary wedding banquet and dinner ceremony"
             },
             {
                 "name": "Walima Reception",
-                "default_start_time": "20:00",
-                "default_end_time": "00:30",
+                "default_start_time": "08:00 PM",
+                "default_end_time": "12:30 AM",
                 "calendar_color": "#0284c7",
                 "description": "Formal groom reception dinner with couple stage and musical ambiance"
             },
             {
                 "name": "Mehendi / Sangeet",
-                "default_start_time": "19:00",
-                "default_end_time": "23:45",
+                "default_start_time": "07:00 PM",
+                "default_end_time": "11:45 PM",
                 "calendar_color": "#d97706",
                 "description": "Vibrant festive music night with dance floor and floral stage"
             },
             {
                 "name": "Corporate Annual Gala",
-                "default_start_time": "18:00",
-                "default_end_time": "22:30",
+                "default_start_time": "06:00 PM",
+                "default_end_time": "10:30 PM",
                 "calendar_color": "#475569",
                 "description": "Formal corporate dinner, awards presentation, and business symposium"
             }

@@ -16,6 +16,11 @@ from .auth_views import (
     LogoutView,
     UserDirectoryViewSet,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenBlacklistView,
+)
 
 router = DefaultRouter()
 router.register(r'audit-logs', AuditLogEntryViewSet, basename='audit-log')
@@ -25,6 +30,9 @@ urlpatterns = [
     path('auth/has-admin/', HasAdminView.as_view(), name='auth-has-admin'),
     path('auth/register-admin/', AdminRegisterView.as_view(), name='auth-register-admin'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),
+    path('auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt-obtain-pair'),
+    path('auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt-refresh'),
+    path('auth/jwt/blacklist/', TokenBlacklistView.as_view(), name='jwt-blacklist'),
     path('auth/me/', CurrentUserView.as_view(), name='auth-me'),
     path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/users/', UserDirectoryViewSet.as_view(), name='auth-users'),

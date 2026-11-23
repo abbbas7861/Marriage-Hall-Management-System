@@ -49,11 +49,17 @@ class BookingSerializer(serializers.ModelSerializer):
         time_val = attrs.get('time') or (self.instance.time if self.instance else None)
         slot_val = attrs.get('slot') or (self.instance.slot if self.instance else None)
 
+        from .availability import check_hall_availability, format_time_str_to_12h
+
+        if time_val:
+            formatted_time = format_time_str_to_12h(time_val)
+            attrs['time'] = formatted_time
+            time_val = formatted_time
+
         date_str = str(date_val) if date_val else None
         status_val = attrs.get('status') or (self.instance.status if self.instance else 'Confirmed')
 
         if status_val not in ['Cancelled', 'Rejected'] and hall_name and date_str:
-            from .availability import check_hall_availability
             is_avail, error_msg, details = check_hall_availability(
                 hall_name=hall_name,
                 date_str=date_str,
@@ -63,6 +69,7 @@ class BookingSerializer(serializers.ModelSerializer):
             )
             if not is_avail:
                 raise serializers.ValidationError({
+                    'error': error_msg,
                     'non_field_errors': [error_msg],
                     'conflict': True,
                     'details': error_msg

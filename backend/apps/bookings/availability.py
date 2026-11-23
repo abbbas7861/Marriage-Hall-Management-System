@@ -52,6 +52,18 @@ def format_minutes_to_12h(total_minutes):
     return f"{h12:02d}:{minutes:02d} {period}"
 
 
+def format_time_str_to_12h(time_str):
+    """Converts any time string or range (e.g. '18:00 - 23:00') into 12-hour format ('06:00 PM – 11:00 PM')."""
+    if not time_str:
+        return ""
+    start_m, end_m = extract_start_end_minutes(time_str)
+    if start_m is not None and end_m is not None:
+        return f"{format_minutes_to_12h(start_m)} – {format_minutes_to_12h(end_m)}"
+    elif start_m is not None:
+        return format_minutes_to_12h(start_m)
+    return str(time_str)
+
+
 def extract_start_end_minutes(time_or_slot_str):
     """
     Extracts (start_minutes, end_minutes) from strings like:
@@ -75,10 +87,16 @@ def extract_start_end_minutes(time_or_slot_str):
             return start_m, end_m
 
     lower = str(time_or_slot_str).lower()
-    if 'morning' in lower or 'lunch' in lower:
+    if 'morning' in lower or 'lunch' in lower or 'afternoon' in lower:
         return 12 * 60, 16 * 60  # 12:00 PM to 04:00 PM
-    if 'evening' in lower or 'dinner' in lower:
-        return 19 * 60, 23 * 60 + 30  # 07:00 PM to 11:30 PM
+    if 'evening' in lower or 'dinner' in lower or 'night' in lower:
+        return 18 * 60, 23 * 60 + 30  # 06:00 PM to 11:30 PM
+
+    # Single time like '18:00' or '6:00 PM'
+    single_m = parse_to_minutes(time_or_slot_str)
+    if single_m is not None:
+        end_m = min(24 * 60 - 1, single_m + 5 * 60)
+        return single_m, end_m
 
     return None, None
 
@@ -181,8 +199,13 @@ def check_hall_availability(
             # Fallback slot comparison if exact minutes could not be resolved
             b_slot = (b.slot or b.time or '').lower()
             req_slot = (slot_str or time_str or '').lower()
-            if ('morning' in b_slot and 'morning' in req_slot) or ('evening' in b_slot and 'evening' in req_slot):
-                error_msg = f"Conflict: '{hall_name}' is already booked for this shift on {date_str} by {b.customer_name} ({b.booking_ref})."
+            is_b_lunch = any(k in b_slot for k in ['morning', 'lunch', 'afternoon'])
+            is_b_dinner = any(k in b_slot for k in ['evening', 'dinner', 'night'])
+            is_req_lunch = any(k in req_slot for k in ['morning', 'lunch', 'afternoon'])
+            is_req_dinner = any(k in req_slot for k in ['evening', 'dinner', 'night'])
+
+            if (is_b_lunch and is_req_lunch) or (is_b_dinner and is_req_dinner):
+                error_msg = f"Conflict: '{hall_name}' is already booked for this slot on {date_str} by {b.customer_name} ({b.booking_ref})."
                 return False, error_msg, {
                     'conflictType': 'SlotCollision',
                     'hall': hall_name,

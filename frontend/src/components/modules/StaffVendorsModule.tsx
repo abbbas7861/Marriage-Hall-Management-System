@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Store,
@@ -21,8 +21,10 @@ import {
   Layers,
   Sparkles,
   Tablet,
+  Loader2,
 } from 'lucide-react';
 import { StaffMember, VendorPartner } from '../../types';
+import { fetchStaff, fetchVendors } from '../../api/client';
 
 interface StaffVendorsModuleProps {
   initialTab?: 'staff' | 'vendors';
@@ -42,11 +44,31 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
   initialTab = 'staff',
   onLaunchTabletMode,
 }) => {
-  // STRICT DATA RULE: DO NOT hardcode any dummy data.
-  // Both datasets start strictly as empty arrays [].
   const [activeTab, setActiveTab] = useState<'staff' | 'vendors'>(initialTab);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [vendorList, setVendorList] = useState<VendorPartner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch staff and vendors from client.ts in useEffect
+  const loadStaffAndVendors = async () => {
+    try {
+      setIsLoading(true);
+      const [staffData, vendorData] = await Promise.all([
+        fetchStaff().catch(() => []),
+        fetchVendors().catch(() => []),
+      ]);
+      setStaffList(staffData || []);
+      setVendorList(vendorData || []);
+    } catch (err: any) {
+      console.error('Failed to fetch staff or vendors:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStaffAndVendors();
+  }, []);
 
   // Filter States for Staff
   const [staffSearch, setStaffSearch] = useState('');
@@ -327,7 +349,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Add Staff</span>
+                <span>+ Add Staff</span>
               </button>
             ) : (
               <button
@@ -336,7 +358,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <Store className="w-4 h-4" />
-                <span>Add Vendor</span>
+                <span>+ Add Vendor</span>
               </button>
             )}
           </div>
@@ -449,8 +471,14 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
             </div>
           </div>
 
-          {/* Table / Empty State */}
-          {filteredStaff.length === 0 ? (
+          {/* Table / Empty State / Loading */}
+          {isLoading ? (
+            <div className="py-20 px-4 flex flex-col items-center justify-center text-center">
+              <Loader2 className="w-8 h-8 text-[#00685f] animate-spin mb-3" />
+              <h3 className="text-sm font-bold text-slate-800">Loading Staff Directory...</h3>
+              <p className="text-xs text-slate-400 mt-1">Retrieving employee roster from backend API</p>
+            </div>
+          ) : filteredStaff.length === 0 ? (
             <div className="py-20 px-4 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200/80 flex items-center justify-center text-teal-800 mb-4 shadow-xs">
                 <Users className="w-8 h-8 stroke-[1.5]" />
@@ -467,7 +495,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Add Staff</span>
+                <span>+ Add Staff</span>
               </button>
 
               {/* Structural Placeholder Schema Preview */}
@@ -558,8 +586,17 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                         </td>
                         <td className="py-3 px-4">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadge}`}
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadge}`}
                           >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                staff.status === 'Active'
+                                  ? 'bg-emerald-500'
+                                  : staff.status === 'On Leave'
+                                  ? 'bg-amber-500'
+                                  : 'bg-slate-400'
+                              }`}
+                            />
                             <span>{staff.status}</span>
                           </span>
                         </td>
@@ -642,8 +679,14 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
             </div>
           </div>
 
-          {/* Table / Empty State */}
-          {filteredVendors.length === 0 ? (
+          {/* Table / Empty State / Loading */}
+          {isLoading ? (
+            <div className="py-20 px-4 flex flex-col items-center justify-center text-center">
+              <Loader2 className="w-8 h-8 text-[#00685f] animate-spin mb-3" />
+              <h3 className="text-sm font-bold text-slate-800">Loading Vendor Partners...</h3>
+              <p className="text-xs text-slate-400 mt-1">Retrieving external vendors from backend API</p>
+            </div>
+          ) : filteredVendors.length === 0 ? (
             <div className="py-20 px-4 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200/80 flex items-center justify-center text-teal-800 mb-4 shadow-xs">
                 <Store className="w-8 h-8 stroke-[1.5]" />
@@ -660,7 +703,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <Store className="w-4 h-4" />
-                <span>Add Vendor</span>
+                <span>+ Add Vendor</span>
               </button>
 
               {/* Structural Placeholder Schema Preview */}
@@ -766,7 +809,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
       {/* Simulated "Add / Edit Staff" Modal */}
       {isStaffModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">
@@ -905,7 +948,7 @@ export const StaffVendorsModule: React.FC<StaffVendorsModuleProps> = ({
       {/* Simulated "Add / Edit Vendor" Modal */}
       {isVendorModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="text-base font-bold text-slate-900 font-['Plus_Jakarta_Sans']">

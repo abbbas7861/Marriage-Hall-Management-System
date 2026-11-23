@@ -1,15 +1,3 @@
-export type UserRole = 'admin' | 'manager' | 'kitchen' | 'waiter' | 'accountant';
-
-export type PortalType = 'admin' | 'manager' | 'kitchen' | 'waiter' | 'vendors' | 'finance';
-
-export interface AuthUser {
-  id: number | string;
-  username: string;
-  email: string;
-  fullName: string;
-  role: UserRole;
-}
-
 export type NavModuleId =
   | 'dashboard'
   | 'halls'
@@ -27,45 +15,7 @@ export type NavModuleId =
   | 'audit-logs'
   | 'settings'
   | 'card-studio'
-  | 'feedback'
-  // Admin Portal Tabs
-  | 'admin-overview'
-  | 'admin-halls'
-  | 'admin-bookings'
-  | 'admin-users'
-  | 'admin-closings'
-  | 'admin-fbr'
-  | 'admin-audit'
-  // Manager Portal Tabs
-  | 'manager-overview'
-  | 'manager-kitchen-refills'
-  | 'manager-decor'
-  | 'manager-roster'
-  | 'manager-readiness'
-  | 'manager-assets'
-  // Kitchen Portal Tabs
-  | 'kitchen-kds'
-  | 'kitchen-menu'
-  | 'kitchen-stock'
-  | 'kitchen-calculator'
-  | 'kitchen-reorder'
-  // Waiter Portal Tabs
-  | 'waiter-kiosk'
-  | 'waiter-refills'
-  | 'waiter-tables'
-  | 'waiter-overtime'
-  // Vendors Portal Tabs
-  | 'vendors-directory'
-  | 'vendors-labor'
-  | 'vendors-payables'
-  | 'vendors-deliveries'
-  // Finance Portal Tabs
-  | 'finance-overview'
-  | 'finance-ledger'
-  | 'finance-receivables'
-  | 'finance-payables'
-  | 'finance-statements'
-  | 'finance-expenses';
+  | 'feedback';
 
 export interface FeedbackLogEntry {
   id: string;
@@ -78,63 +28,21 @@ export interface FeedbackLogEntry {
   generatedReview?: string;
 }
 
-export type OperationalStatus =
-  | 'Setup in Progress'
-  | 'Guests Arrived'
-  | 'Food Service Active'
-  | 'Event Concluded'
-  | 'In Progress'
-  | 'Ready for Event';
-
 export interface Booking {
   id: string;
   bookingRef: string;
-  booking_ref?: string;
   customerName: string;
-  customer_name?: string;
   contactRef: string;
-  contact_ref?: string;
-  cnic?: string;
-  address?: string;
   eventType: string;
-  event_type?: string;
   hallName: string;
-  hall_name?: string;
   date: string;
   time?: string;
   slot: string;
   status: 'Confirmed' | 'Pending' | 'Cancelled' | 'Under Review' | 'Deposit Paid' | 'Completed';
   paymentStatus?: 'Paid' | 'Partial' | 'Unpaid' | 'Pending';
   amount?: number;
-  advancePayment?: number;
   guestCount?: number;
-  seatingArrangement?: string;
-  menuPackage?: string;
-  customMenuItems?: string[];
-  extraServices?: Array<{
-    id?: string;
-    title: string;
-    price: number;
-    category?: string;
-    notes?: string;
-    added_by?: string;
-    timestamp?: string;
-  }>;
-  damagesRecord?: Array<{
-    id?: string;
-    item: string;
-    amount: number;
-    deduction_type?: string;
-    notes?: string;
-    recorded_by?: string;
-    timestamp?: string;
-  }>;
-  specialInstructions?: string;
-  extraHours?: number;
-  ratePerHour?: number;
-  operationalStatus?: OperationalStatus;
   assignedManager?: string;
-  securityDeposit?: number;
 }
 
 export interface Hall {
@@ -184,37 +92,10 @@ export interface MenuPackage {
   id: string;
   packageCode?: string;
   name: string;
-  tier?: 'Royal' | 'Executive' | 'Budget' | 'Corporate';
   pricePerHead: number;
-  costPerHead?: number;
-  profitMarginPct?: number;
   description: string;
   includedItems: string[];
   status: 'Active' | 'Inactive';
-}
-
-export interface RecipeIngredient {
-  name: string;
-  quantity: number;
-  unit: string;
-  unitPrice: number;
-  cost: number;
-}
-
-export interface Recipe {
-  id: string;
-  recipeCode: string;
-  dishName: string;
-  category: string;
-  servingYield: number;
-  prepTimeMinutes: number;
-  ingredients: RecipeIngredient[];
-  totalBatchCost: number;
-  costPerServing: number;
-  recommendedSalePrice: number;
-  marginPct: number;
-  instructions?: string;
-  createdAt?: string;
 }
 
 export interface MenuItem {
@@ -254,13 +135,31 @@ export interface PaymentTransaction {
 
 export interface ExpenseRecord {
   id: string;
-  expenseRef: string;
+  expenseRef?: string;
+  bookingRef?: string;
+  description?: string;
   category: string;
   vendor: string;
   amount: number;
-  approvedBy: string;
+  approvedBy?: string;
   date: string;
-  paymentMethod: string;
+  paymentMethod?: string;
+  status?: string;
+}
+
+export interface ManagerFundRequest {
+  id: string;
+  requestRef?: string;
+  bookingRef?: string;
+  eventName?: string;
+  requestedBy: string;
+  reason: string;
+  amount: number;
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  approvedBy?: string;
+  approvedAt?: string;
+  createdAt?: string;
 }
 
 export interface SparklinePoint {
@@ -326,38 +225,9 @@ export interface VendorPartner {
   id: string;
   vendorId: string;
   businessName: string;
-  category: string;
+  category: 'Decorator' | 'Caterer' | 'Photographer' | 'Sound/Lights' | 'Other' | string;
   contactPerson: string;
   phoneNumber: string;
-  ntnNumber?: string;
-  paymentTerms?: string;
-  totalBilled?: number;
-  totalPaid?: number;
-  balanceDue?: number;
-  rating?: number;
-  status?: 'Active' | 'Suspended' | 'Preferred' | string;
-  address?: string;
-  bankDetails?: string;
-}
-
-export interface ContractorLaborShift {
-  id: string;
-  bookingRef: string;
-  eventDate: string;
-  contractorName: string;
-  maleCount: number;
-  femaleCount: number;
-  totalHeadcount: number;
-  maleRatePerShift: number;
-  femaleRatePerShift: number;
-  overtimeHours: number;
-  overtimeRatePerHour: number;
-  totalCost: number;
-  supervisorName?: string;
-  shiftType?: string;
-  status: 'Scheduled' | 'In Progress' | 'Completed' | 'Settled' | string;
-  notes?: string;
-  expenseRef?: string;
 }
 
 export interface AuditLogEntry {

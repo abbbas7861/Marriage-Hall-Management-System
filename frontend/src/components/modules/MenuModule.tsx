@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Utensils,
   ChefHat,
@@ -15,91 +15,26 @@ import {
   CheckCircle2,
   Layers,
   Sparkles,
-  RefreshCw,
 } from 'lucide-react';
 import { MenuPackage } from '../../types';
-import { menuPackagesApi } from '../../api/client';
 
 // Suggested popular dishes for quick selection in the tag input
 const QUICK_DISH_SUGGESTIONS = [
   'Chicken Biryani',
-  'Beef Biryani',
-  'Mutton Biryani',
   'Mutton Karahi',
-  'Chicken Karahi',
-  'Beef Seekh Kabab',
-  'Chicken Tikka Boti',
-  'Beef Bihari Boti',
+  'Seekh Kabab',
+  'Chicken Tikka',
   'Roghnai Naan',
-  'Kandahari Naan',
-  'Fresh Salad & Mint Raita',
-  'Shahi Gulab Jamun',
-  'Kheer / Zafrani Firni',
-  'Kulfi Falooda',
-  'Mint Lemonade & Soft Drinks',
-];
-
-const DEFAULT_BANQUET_TEMPLATES: Array<Partial<MenuPackage>> = [
-  {
-    name: 'Royal Shadi Buffet (Beef & Chicken)',
-    tier: 'Royal',
-    pricePerHead: 2450,
-    costPerHead: 1750,
-    description: 'Premier banquet feast featuring Beef Biryani, Chicken Karahi, Live BBQ & Sweets',
-    includedItems: [
-      'Special Beef Biryani',
-      'Desi Ghee Chicken Karahi',
-      'Live Beef Seekh Kabab',
-      'Chicken Malai Boti',
-      'Fresh Roghnai Naan',
-      'Mint Raita & Kachumber Salad',
-      'Zafrani Kheer',
-      'Hot Gulab Jamun',
-      'Mineral Water & Cold Drinks',
-    ],
-    status: 'Active',
-  },
-  {
-    name: 'Executive Mutton & Chicken Banquet',
-    tier: 'Executive',
-    pricePerHead: 2850,
-    costPerHead: 2050,
-    description: 'Luxury celebration menu with tender Mutton Karahi and aromatic Chicken Pulao/Biryani',
-    includedItems: [
-      'Special Mutton Karahi',
-      'Mughlai Chicken Biryani',
-      'Reshmi Kabab',
-      'Chicken Tikka Boti',
-      'Special Roghnai & Garlic Naan',
-      'Zeera Raita & Russian Salad',
-      'Shahi Tukray',
-      'Pistachio Kulfi',
-      'Green Tea / Kashmiri Chai',
-    ],
-    status: 'Active',
-  },
-  {
-    name: 'Traditional Economy Feast',
-    tier: 'Budget',
-    pricePerHead: 1850,
-    costPerHead: 1350,
-    description: 'Classic wedding meal offering delicious taste with cost efficiency',
-    includedItems: [
-      'Chicken Dum Biryani',
-      'Chicken Qorma / Karahi',
-      'Live Beef Kabab',
-      'Tandoori Roghnai Naan',
-      'Raita & Fresh Salad',
-      'Traditional Firni',
-      'Soft Drinks',
-    ],
-    status: 'Active',
-  },
+  'Fresh Salad & Raita',
+  'Gulab Jamun',
+  'Kheer / Firni',
+  'Mint Lemonade',
 ];
 
 export const MenuModule: React.FC = () => {
+  // STRICT DATA RULE: DO NOT hardcode any dummy data.
+  // Must start as empty array []
   const [packages, setPackages] = useState<MenuPackage[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,14 +46,12 @@ export const MenuModule: React.FC = () => {
 
   // Form Fields
   const [formName, setFormName] = useState('');
-  const [formTier, setFormTier] = useState<'Royal' | 'Executive' | 'Budget' | 'Corporate'>('Executive');
   const [formPricePerHead, setFormPricePerHead] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDishes, setFormDishes] = useState<string[]>([]);
   const [dishInput, setDishInput] = useState('');
   const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
   const [formError, setFormError] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -126,49 +59,9 @@ export const MenuModule: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const loadPackages = async () => {
-    try {
-      setLoading(true);
-      const data = await menuPackagesApi.list();
-      setPackages(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      console.error('Failed to load menu packages:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPackages();
-  }, []);
-
-  const handleSeedDefaults = async () => {
-    try {
-      setActionLoading(true);
-      for (const tpl of DEFAULT_BANQUET_TEMPLATES) {
-        await menuPackagesApi.create({
-          name: tpl.name || '',
-          tier: tpl.tier || 'Executive',
-          pricePerHead: tpl.pricePerHead || 2000,
-          costPerHead: tpl.costPerHead || 1500,
-          description: tpl.description || '',
-          includedItems: tpl.includedItems || [],
-          status: 'Active',
-        });
-      }
-      await loadPackages();
-      showToast('Standard Pakistani banquet menus loaded into system.');
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to load templates.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const openCreateModal = () => {
     setEditingPackage(null);
     setFormName('');
-    setFormTier('Executive');
     setFormPricePerHead('');
     setFormDescription('');
     setFormDishes([]);
@@ -181,9 +74,8 @@ export const MenuModule: React.FC = () => {
   const openEditModal = (pkg: MenuPackage) => {
     setEditingPackage(pkg);
     setFormName(pkg.name);
-    setFormTier(pkg.tier || 'Executive');
     setFormPricePerHead(String(pkg.pricePerHead));
-    setFormDescription(pkg.description || '');
+    setFormDescription(pkg.description);
     setFormDishes(pkg.includedItems || []);
     setDishInput('');
     setFormStatus(pkg.status);
@@ -219,7 +111,7 @@ export const MenuModule: React.FC = () => {
     }
   };
 
-  const handleSavePackage = async (e: React.FormEvent) => {
+  const handleSavePackage = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formName.trim()) {
@@ -233,52 +125,46 @@ export const MenuModule: React.FC = () => {
       return;
     }
 
-    setActionLoading(true);
-    try {
-      if (editingPackage) {
-        // Update
-        const updated = await menuPackagesApi.update(editingPackage.id, {
-          name: formName.trim(),
-          tier: formTier,
-          pricePerHead: priceNum,
-          description: formDescription.trim(),
-          includedItems: formDishes,
-          status: formStatus,
-        });
-        setPackages((prev) =>
-          prev.map((p) => (p.id === editingPackage.id ? updated : p))
-        );
-        showToast(`Menu package "${formName.trim()}" updated successfully.`);
-      } else {
-        // Create new
-        const created = await menuPackagesApi.create({
-          name: formName.trim(),
-          tier: formTier,
-          pricePerHead: priceNum,
-          description: formDescription.trim(),
-          includedItems: formDishes,
-          status: formStatus,
-        });
-        setPackages((prev) => [...prev, created]);
-        showToast(`New menu package "${formName.trim()}" created successfully.`);
-      }
-      closeModal();
-    } catch (err: any) {
-      setFormError(err?.message || 'Failed to save menu package.');
-    } finally {
-      setActionLoading(false);
+    if (editingPackage) {
+      // Update
+      setPackages((prev) =>
+        prev.map((p) =>
+          p.id === editingPackage.id
+            ? {
+                ...p,
+                name: formName.trim(),
+                pricePerHead: priceNum,
+                description: formDescription.trim(),
+                includedItems: formDishes,
+                status: formStatus,
+              }
+            : p
+        )
+      );
+      showToast(`Menu package "${formName.trim()}" updated successfully.`);
+    } else {
+      // Create new
+      const newPackage: MenuPackage = {
+        id: `pkg-${Date.now()}`,
+        packageCode: `PKG-${String(packages.length + 1).padStart(2, '0')}`,
+        name: formName.trim(),
+        pricePerHead: priceNum,
+        description: formDescription.trim(),
+        includedItems: formDishes,
+        status: formStatus,
+      };
+
+      setPackages((prev) => [...prev, newPackage]);
+      showToast(`New menu package "${formName.trim()}" created successfully.`);
     }
+
+    closeModal();
   };
 
-  const handleDeletePackage = async (id: string, name: string) => {
+  const handleDeletePackage = (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete package "${name}"?`)) {
-      try {
-        await menuPackagesApi.delete(id);
-        setPackages((prev) => prev.filter((p) => p.id !== id));
-        showToast(`Package "${name}" removed.`);
-      } catch (err: any) {
-        showToast(err?.message || 'Failed to delete package.');
-      }
+      setPackages((prev) => prev.filter((p) => p.id !== id));
+      showToast(`Package "${name}" removed.`);
     }
   };
 
@@ -329,26 +215,26 @@ export const MenuModule: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Plus_Jakarta_Sans']">
               Menu &amp; Catering Management
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-mono font-semibold">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-mono font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00685f]"></span>
               CULINARY SERVICES
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure food packages, dishes, per-head pricing, and substitutions. Live changes sync with the Booking System.
+            Configure food packages, per-head pricing, and dish catalogs.
           </p>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {packages.length === 0 && (
+          {packages.length > 0 && (
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={handleSeedDefaults}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              onClick={handleResetToEmpty}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>Load Pakistani Standard Menus</span>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset to Empty</span>
             </button>
           )}
 
@@ -358,7 +244,7 @@ export const MenuModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Create Menu Package</span>
+            <span>+ Create Menu Package</span>
           </button>
         </div>
       </div>
@@ -472,7 +358,7 @@ export const MenuModule: React.FC = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Create Menu Package</span>
+              <span>+ Create Menu Package</span>
             </button>
           </div>
 

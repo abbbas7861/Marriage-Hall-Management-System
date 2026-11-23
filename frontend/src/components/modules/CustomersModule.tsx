@@ -233,7 +233,7 @@ export const CustomersModule: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
           >
             <UserPlus className="w-4 h-4 stroke-[2.2]" />
-            <span>Add New Customer</span>
+            <span>+ Add New Customer</span>
           </button>
         </div>
       </div>
@@ -323,7 +323,7 @@ export const CustomersModule: React.FC = () => {
                           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00685f] hover:bg-[#00524b] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-[0.98]"
                         >
                           <UserPlus className="w-4 h-4 stroke-[2.2]" />
-                          <span>Add New Customer</span>
+                          <span>+ Add New Customer</span>
                         </button>
                       </div>
 
@@ -400,12 +400,17 @@ export const CustomersModule: React.FC = () => {
                       {/* Status Badge: Active, Inactive */}
                       <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                             isActive
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}
                         >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          ></span>
                           <span>{cust.status}</span>
                         </span>
                       </td>
@@ -620,7 +625,7 @@ export const CustomersModule: React.FC = () => {
       {/* "View Profile" Modal */}
       {isViewModalOpen && selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto flex flex-col">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
             <div className="p-6 bg-gradient-to-r from-slate-900 to-teal-950 text-white flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-teal-300">

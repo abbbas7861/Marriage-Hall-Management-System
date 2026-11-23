@@ -101,6 +101,32 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(event_ref__iexact=event_ref)
         return qs
 
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        req = self.get_object()
+        req.status = 'Approved'
+        if req.requested_quantity and not req.issued_quantity:
+            req.issued_quantity = req.requested_quantity
+        req.save()
+
+        if req.item:
+            item = req.item
+            item.in_use_quantity += req.requested_quantity
+            item.available_quantity = max(0, item.total_quantity - item.in_use_quantity)
+            item.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name="Manager",
+            user_role="Manager",
+            action="Approved",
+            module="Inventory",
+            details=f"Approved requisition {req.requisition_ref} for {req.item_name} ({req.event_ref})",
+            ip_address="127.0.0.1"
+        )
+
+        return Response(AssetRequisitionSerializer(req).data)
+
     @action(detail=True, methods=['post'], url_path='approve-issue')
     def approve_issue(self, request, pk=None):
         req = self.get_object()

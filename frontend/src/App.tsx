@@ -1,131 +1,100 @@
-import React, { useState, useEffect } from "react";
-import { MainLayout } from "./components/layout/MainLayout";
-import { LoginScreen } from "./components/auth/LoginScreen";
-import { AdminRegisterScreen } from "./components/auth/AdminRegisterScreen";
-import { authApi } from "./api/client";
-import { AuthUser } from "./types";
-import { Sparkles } from "lucide-react";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { useState, useEffect } from 'react';
+import {
+  LoginScreen,
+  type AuthUser,
+  type UserRole,
+} from './components/auth/LoginScreen';
+import { MainLayout } from './components/layout/MainLayout';
+import { authApi } from './api/client';
+
+function normalizeRole(roleStr?: string): UserRole {
+  const r = (roleStr || '').toLowerCase();
+  if (r.includes('admin')) return 'Admin';
+  if (r.includes('manager')) return 'Manager';
+  if (r.includes('kitchen') || r.includes('chef')) return 'Kitchen';
+  if (r.includes('account') || r.includes('finance')) return 'Accounts';
+  return 'Manager';
+}
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("mhms_auth_token"),
-  );
-  const [hasAdmin, setHasAdmin] = useState<boolean>(true);
-  const [authView, setAuthView] = useState<"login" | "register-admin">("login");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [activeRole, setActiveRole] = useState<UserRole | null>(null);
+  const [userIdentifier, setUserIdentifier] = useState<string>('');
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // Initialize auth state
   useEffect(() => {
-    let isMounted = true;
+    const token = localStorage.getItem('mhms_auth_token');
+    const cachedUser = localStorage.getItem('mhms_user');
 
-    async function initAuth() {
-      setLoading(true);
-      try {
-        // 1. Check if an admin exists
-        const adminCheck = await authApi
-          .hasAdmin()
-          .catch(() => ({ hasAdmin: true }));
-        if (isMounted) setHasAdmin(adminCheck.hasAdmin);
-
-        // 2. If token exists, verify with backend /me endpoint
-        const storedToken = localStorage.getItem("mhms_auth_token");
-        if (storedToken) {
-          try {
-            const user = await authApi.getMe();
-            if (isMounted) {
-              setCurrentUser(user);
-              setToken(storedToken);
-            }
-          } catch (err) {
-            console.warn("Session expired or invalid token:", err);
-            localStorage.removeItem("mhms_auth_token");
-            localStorage.removeItem("mhms_user");
-            if (isMounted) {
-              setCurrentUser(null);
-              setToken(null);
-              if (!adminCheck.hasAdmin) {
-                setAuthView("register-admin");
-              }
-            }
-          }
-        } else if (!adminCheck.hasAdmin) {
-          if (isMounted) setAuthView("register-admin");
+    if (token) {
+      if (cachedUser) {
+        try {
+          const user = JSON.parse(cachedUser);
+          setActiveRole(normalizeRole(user.role));
+          setUserIdentifier(user.username || user.fullName || 'User');
+        } catch {
+          // ignore
         }
-      } catch (err) {
-        console.error("Auth initialization error:", err);
-      } finally {
-        if (isMounted) setLoading(false);
       }
+
+      authApi
+        .getMe()
+        .then((user) => {
+          setActiveRole(normalizeRole(user.role));
+          setUserIdentifier(user.username || user.fullName || 'User');
+        })
+        .catch(() => {
+          // If token expired/invalid, clear session
+          localStorage.removeItem('mhms_auth_token');
+          localStorage.removeItem('mhms_user');
+          setActiveRole(null);
+          setUserIdentifier('');
+        })
+        .finally(() => {
+          setIsInitializing(false);
+        });
+    } else {
+      setIsInitializing(false);
     }
-
-    initAuth();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
-  const handleLoginSuccess = (user: AuthUser, authToken: string) => {
-    setCurrentUser(user);
-    setToken(authToken);
-    setHasAdmin(true);
+  const handleLogin = (user: AuthUser) => {
+    setActiveRole(user.role);
+    setUserIdentifier(user.identifier);
   };
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await authApi.logout();
-    } catch (err) {
-      console.warn("Logout error:", err);
-    } finally {
-      setCurrentUser(null);
-      setToken(null);
-      setAuthView("login");
+    } catch {
+      localStorage.removeItem('mhms_auth_token');
+      localStorage.removeItem('mhms_user');
     }
+    setActiveRole(null);
+    setUserIdentifier('');
   };
 
-  if (loading) {
+  if (isInitializing) {
     return (
-      <div className="min-h-screen bg-[#071318] text-slate-100 flex flex-col items-center justify-center p-6">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-500 to-amber-400 animate-pulse flex items-center justify-center shadow-2xl shadow-teal-950/60">
-            <Sparkles className="w-8 h-8 text-slate-950" />
-          </div>
-        </div>
-        <div className="mt-5 text-center">
-          <h2 className="text-base font-bold text-white tracking-wide">
-            Marriage Hall Management System
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Initializing Secure Operations Console...
-          </p>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-teal-700 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  // Not authenticated
-  if (!token || !currentUser) {
-    if (authView === "register-admin") {
-      return (
-        <AdminRegisterScreen
-          onRegisterSuccess={(user, newToken) =>
-            handleLoginSuccess(user, newToken)
-          }
-          onBackToLogin={() => setAuthView("login")}
-        />
-      );
-    }
-
-    return (
-      <LoginScreen
-        hasAdmin={hasAdmin}
-        onLoginSuccess={(user, newToken) => handleLoginSuccess(user, newToken)}
-        onGoToRegisterAdmin={() => setAuthView("register-admin")}
-      />
-    );
+  if (!activeRole) {
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
-  // Authenticated: Render Main System
-  return <MainLayout currentUser={currentUser} onLogout={handleLogout} />;
+  return (
+    <MainLayout
+      activeRole={activeRole}
+      userIdentifier={userIdentifier}
+      onSignOut={handleSignOut}
+    />
+  );
 }

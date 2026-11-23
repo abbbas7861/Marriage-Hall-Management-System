@@ -2,8 +2,8 @@ from django.db import models
 
 class EventTypeConfig(models.Model):
     name = models.CharField(max_length=150, unique=True)
-    default_start_time = models.CharField(max_length=20, default='18:00', blank=True)
-    default_end_time = models.CharField(max_length=20, default='23:00', blank=True)
+    default_start_time = models.CharField(max_length=20, default='06:00 PM', blank=True)
+    default_end_time = models.CharField(max_length=20, default='11:00 PM', blank=True)
     calendar_color = models.CharField(max_length=30, default='#00685f')
     description = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
