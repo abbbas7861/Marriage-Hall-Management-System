@@ -134,13 +134,31 @@ export interface PaymentTransaction {
 
 export interface ExpenseRecord {
   id: string;
-  expenseRef: string;
+  expenseRef?: string;
+  bookingRef?: string;
+  description?: string;
   category: string;
   vendor: string;
   amount: number;
-  approvedBy: string;
+  approvedBy?: string;
   date: string;
-  paymentMethod: string;
+  paymentMethod?: string;
+  status?: string;
+}
+
+export interface ManagerFundRequest {
+  id: string;
+  requestRef?: string;
+  bookingRef?: string;
+  eventName?: string;
+  requestedBy: string;
+  reason: string;
+  amount: number;
+  notes?: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  approvedBy?: string;
+  approvedAt?: string;
+  createdAt?: string;
 }
 
 export interface SparklinePoint {

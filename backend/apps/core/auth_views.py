@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from .models import UserProfile, SystemSetting, AuditLogEntry
@@ -76,6 +77,9 @@ class AdminRegisterView(APIView):
             settings.save(update_fields=['business_name'])
 
         token, _ = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
 
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
@@ -88,7 +92,9 @@ class AdminRegisterView(APIView):
         )
 
         return Response({
-            'token': token.key,
+            'token': access_token,
+            'access': access_token,
+            'refresh': refresh_token,
             'user': {
                 'id': user.id,
                 'username': user.username,
@@ -133,6 +139,9 @@ class LoginView(APIView):
             profile = UserProfile.objects.create(user=user, role=role, full_name=full_name)
 
         token, _ = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
 
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
@@ -145,7 +154,9 @@ class LoginView(APIView):
         )
 
         return Response({
-            'token': token.key,
+            'token': access_token,
+            'access': access_token,
+            'refresh': refresh_token,
             'user': {
                 'id': user.id,
                 'username': user.username,
@@ -176,11 +187,22 @@ class CurrentUserView(APIView):
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        Token.objects.filter(user=request.user).delete()
-        return Response({'message': 'Logged out successfully.'})
+        if request.user and request.user.is_authenticated:
+            Token.objects.filter(user=request.user).delete()
+
+        # Blacklist JWT refresh token if provided
+        refresh_token = request.data.get('refresh') or request.data.get('refreshToken')
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception:
+                pass
+
+        return Response({'message': 'Logged out successfully and token blacklisted.'})
 
 
 class UserDirectoryViewSet(APIView):

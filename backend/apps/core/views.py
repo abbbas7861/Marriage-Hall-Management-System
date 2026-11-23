@@ -62,7 +62,7 @@ class AuditLogEntryViewSet(viewsets.ModelViewSet):
         writer.writerow(['Log ID', 'Timestamp', 'User', 'Role', 'Action', 'Module', 'Details', 'IP Address'])
         for log in logs:
             writer.writerow([
-                log.log_id, log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.log_id, log.timestamp.strftime('%Y-%m-%d %I:%M:%S %p'),
                 log.user_name, log.user_role, log.action, log.module,
                 log.details, log.ip_address
             ])

@@ -3,8 +3,8 @@ from .models import EventTypeConfig, MenuPackage, EventChecklist, KitchenOrderTi
 import random
 
 class EventTypeConfigSerializer(serializers.ModelSerializer):
-    defaultStartTime = serializers.CharField(source='default_start_time', required=False, allow_blank=True, default='18:00')
-    defaultEndTime = serializers.CharField(source='default_end_time', required=False, allow_blank=True, default='23:00')
+    defaultStartTime = serializers.CharField(source='default_start_time', required=False, allow_blank=True, default='06:00 PM')
+    defaultEndTime = serializers.CharField(source='default_end_time', required=False, allow_blank=True, default='11:00 PM')
     calendarColor = serializers.CharField(source='calendar_color', required=False, default='#00685f')
 
     class Meta:

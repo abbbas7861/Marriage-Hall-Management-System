@@ -50,12 +50,15 @@ class PaymentTransaction(models.Model):
 
 class ExpenseRecord(models.Model):
     expense_ref = models.CharField(max_length=50, unique=True, db_index=True)
+    booking_ref = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    description = models.CharField(max_length=255, blank=True, default='')
     category = models.CharField(max_length=100)
     vendor = models.CharField(max_length=150)
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     approved_by = models.CharField(max_length=100, default='Admin')
     date = models.DateField(db_index=True)
     payment_method = models.CharField(max_length=50, default='Bank Transfer')
+    status = models.CharField(max_length=30, default='Paid')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -63,6 +66,33 @@ class ExpenseRecord(models.Model):
 
     def __str__(self):
         return f"[{self.expense_ref}] {self.category} - Rs. {self.amount}"
+
+
+class ManagerFundRequest(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+
+    request_ref = models.CharField(max_length=50, unique=True, db_index=True)
+    booking_ref = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    event_name = models.CharField(max_length=200, blank=True, default='')
+    requested_by = models.CharField(max_length=150, default='Manager')
+    reason = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    notes = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Pending')
+    approved_by = models.CharField(max_length=150, blank=True, default='')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.request_ref}] {self.booking_ref} - Rs. {self.amount} ({self.status})"
 
 
 class SecurityDepositSettlement(models.Model):

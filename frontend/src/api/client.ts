@@ -157,3 +157,49 @@ export default {
   fetchExpenses,
   fetchAuditLogs,
 };
+
+// -------------------------------------------------------------
+// Backward compatibility helper exports
+// -------------------------------------------------------------
+export const fetchDashboardStats = dashboardApi.getStats;
+export const fetchHalls = hallsApi.list;
+export const fetchBookings = bookingsApi.list;
+export const fetchStaff = staffApi.list;
+export const fetchVendors = vendorsApi.list;
+export const fetchInventory = inventoryApi.list;
+export const fetchMenuItems = menuApi.list;
+export const fetchCustomers = customersApi.list;
+export const fetchPayments = paymentsApi.list;
+export const fetchExpenses = expensesApi.list;
+export const fetchAuditLogs = auditLogsApi.list;
+
+export default {
+  bookings: bookingsApi,
+  halls: hallsApi,
+  menu: menuApi,
+  invoices: invoicesApi,
+  expenses: expensesApi,
+  fundRequests: fundRequestsApi,
+  requisitions: requisitionsApi,
+  vendors: vendorsApi,
+  staff: staffApi,
+  inventory: inventoryApi,
+  customers: customersApi,
+  payments: paymentsApi,
+  dashboard: dashboardApi,
+  reports: reportsApi,
+  auditLogs: auditLogsApi,
+  settings: settingsApi,
+  auth: authApi,
+  fetchDashboardStats,
+  fetchHalls,
+  fetchBookings,
+  fetchStaff,
+  fetchVendors,
+  fetchInventory,
+  fetchMenuItems,
+  fetchCustomers,
+  fetchPayments,
+  fetchExpenses,
+  fetchAuditLogs,
+};

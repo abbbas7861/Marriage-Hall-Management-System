@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarCheck, ChevronRight, Inbox, PlusCircle } from 'lucide-react';
 import { Booking } from '../../types';
+import { formatTo12Hour } from '../../utils/timeFormat';
 
 interface UpcomingEventsListProps {
   events?: Booking[];
@@ -31,7 +32,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
           onClick={onViewCalendar}
           className="inline-flex items-center gap-1 text-xs text-teal-700 font-semibold hover:text-teal-800 transition-colors"
         >
-          <span>[View Calendar]</span>
+          <span>View Calendar</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>

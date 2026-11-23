@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord, SecurityDepositSettlement
+from .models import InvoiceRecord, PaymentTransaction, ExpenseRecord, SecurityDepositSettlement, ManagerFundRequest
 from apps.bookings.models import Booking
 from apps.core.models import AuditLogEntry
 from django.utils import timezone
@@ -51,7 +51,7 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
         if not validated_data.get('txn_ref'):
             validated_data['txn_ref'] = f"TXN-{random.randint(10000, 99999)}"
         if not validated_data.get('timestamp'):
-            validated_data['timestamp'] = timezone.now().strftime('%Y-%m-%d %H:%M')
+            validated_data['timestamp'] = timezone.now().strftime('%Y-%m-%d %I:%M %p')
 
         txn = super().create(validated_data)
 
@@ -89,16 +89,44 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
 
 class ExpenseRecordSerializer(serializers.ModelSerializer):
     expenseRef = serializers.CharField(source='expense_ref', required=False)
+    bookingRef = serializers.CharField(source='booking_ref', required=False, allow_blank=True, default='')
+    description = serializers.CharField(required=False, allow_blank=True, default='')
     approvedBy = serializers.CharField(source='approved_by', required=False, default='Admin')
     paymentMethod = serializers.CharField(source='payment_method', required=False, default='Bank Transfer')
 
     class Meta:
         model = ExpenseRecord
-        fields = ['id', 'expenseRef', 'category', 'vendor', 'amount', 'approvedBy', 'date', 'paymentMethod']
+        fields = [
+            'id', 'expenseRef', 'bookingRef', 'description', 'category',
+            'vendor', 'amount', 'approvedBy', 'date', 'paymentMethod', 'status'
+        ]
 
     def create(self, validated_data):
         if not validated_data.get('expense_ref'):
             validated_data['expense_ref'] = f"EXP-{random.randint(1000, 9999)}"
+        return super().create(validated_data)
+
+
+class ManagerFundRequestSerializer(serializers.ModelSerializer):
+    requestRef = serializers.CharField(source='request_ref', required=False)
+    bookingRef = serializers.CharField(source='booking_ref', required=False, allow_blank=True, default='')
+    eventName = serializers.CharField(source='event_name', required=False, allow_blank=True, default='')
+    requestedBy = serializers.CharField(source='requested_by', required=False, default='Manager')
+    approvedBy = serializers.CharField(source='approved_by', required=False, allow_blank=True, default='')
+    approvedAt = serializers.DateTimeField(source='approved_at', required=False, allow_null=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = ManagerFundRequest
+        fields = [
+            'id', 'requestRef', 'bookingRef', 'eventName', 'requestedBy',
+            'reason', 'amount', 'notes', 'status', 'approvedBy',
+            'approvedAt', 'createdAt'
+        ]
+
+    def create(self, validated_data):
+        if not validated_data.get('request_ref'):
+            validated_data['request_ref'] = f"REQ-{random.randint(1000, 9999)}"
         return super().create(validated_data)
 
 

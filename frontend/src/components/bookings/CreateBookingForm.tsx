@@ -233,6 +233,23 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               />
             </div>
 
+            {/* Supervising Manager */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Supervising Manager
+              </label>
+              <select
+                aria-label="Supervising Manager"
+                value={assignedManager}
+                onChange={(e) => setAssignedManager(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+              >
+                <option value="Manager">Manager</option>
+                <option value="Operational Manager">Operational Manager</option>
+                <option value="ali">ali</option>
+              </select>
+            </div>
+
             {/* Address */}
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -437,6 +454,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 onChange={(e) => setStartTime(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
+              {startTime && (
+                <span className="block mt-1 text-[11px] text-teal-700 font-mono font-medium">
+                  {formatTo12Hour(startTime)}
+                </span>
+              )}
             </div>
 
             {/* End Time */}
@@ -450,6 +472,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 onChange={(e) => setEndTime(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all"
               />
+              {endTime && (
+                <span className="block mt-1 text-[11px] text-teal-700 font-mono font-medium">
+                  {formatTo12Hour(endTime)}
+                </span>
+              )}
             </div>
 
             {/* Extra Time Add-on Box */}
