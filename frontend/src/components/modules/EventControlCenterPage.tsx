@@ -2002,24 +2002,34 @@ export const EventControlCenterPage: React.FC = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 p-6 text-white flex items-start justify-between">
-              <div>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-teal-300 bg-teal-900/60 px-2.5 py-0.5 rounded-full border border-teal-500/30">
-                  <Receipt className="w-3.5 h-3.5" /> Official Event Settlement Statement
-                </span>
-                <h3 className="text-xl font-bold mt-2 font-['Plus_Jakarta_Sans']">
-                  Royal Palace Marriage Hall &amp; Banquets
-                </h3>
-                <p className="text-xs text-teal-200/80 mt-0.5">
-                  Final Event Settlement &amp; Billing Reconciliation Slip
-                </p>
+          <div className="printable-settlement-area w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+            {/* Header: Royal Letterhead */}
+            <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 p-6 text-white flex items-start justify-between border-b-2 border-amber-400/40">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-teal-900/90 text-amber-400 flex items-center justify-center border border-amber-400/40 shadow-xs shrink-0">
+                  <Crown className="w-6 h-6 text-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold tracking-tight text-white font-['Playfair_Display','Cormorant_Garamond',serif]">
+                      Mehar Palace Marquee
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30">
+                      Official Statement
+                    </span>
+                  </div>
+                  <p className="text-xs text-teal-100/90 mt-1">
+                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                  </p>
+                  <p className="text-[11px] text-amber-300/90 font-mono mt-0.5">
+                    Phone: <strong className="text-white">0321 1000806</strong> &bull; Event Operations &amp; Billing Reconciliation
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSettlementSlipData(null)}
-                className="text-white/70 hover:text-white p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                className="no-print text-white/70 hover:text-white p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

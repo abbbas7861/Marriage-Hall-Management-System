@@ -12,7 +12,9 @@ import {
   X,
 } from 'lucide-react';
 import { SEED_EXPENSES } from '../../data/seedData';
-import { expensesApi, bookingsApi } from '../../api/client';
+import { expensesApi, bookingsApi, vendorsApi } from '../../api/client';
+import { EventSearchSelect, BookingEventOption } from '../common/EventSearchSelect';
+import { CreatableVendorInput, VendorOption } from '../common/CreatableVendorInput';
 
 export type ExpenseCategory =
   | 'Utilities'
@@ -61,7 +63,8 @@ const STATUS_BADGE_STYLES: Record<ExpenseStatus, string> = {
 
 export const ExpensesManagementPage: React.FC = () => {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>(SEED_EXPENSES);
-  const [bookings, setBookings] = useState<Array<{ id: string; bookingRef: string; customerName: string; hallName: string; date: string }>>([]);
+  const [bookings, setBookings] = useState<BookingEventOption[]>([]);
+  const [vendorsList, setVendorsList] = useState<VendorOption[]>([]);
 
   const loadExpenses = () => {
     expensesApi
@@ -94,17 +97,56 @@ export const ExpensesManagementPage: React.FC = () => {
         if (data && data.length > 0) {
           setBookings(
             data.map((b: any) => ({
+              ref: b.bookingRef || `BK-${b.id}`,
               id: String(b.id),
-              bookingRef: b.bookingRef || `BK-${b.id}`,
               customerName: b.customerName || 'Client',
+              cnic: b.cnic || '',
+              contactRef: b.contactRef || b.phone || '',
               hallName: b.hallName || 'Main Hall',
               date: b.date || '',
+              remainingBalance: Math.max(0, (Number(b.amount || b.totalAmount) || 0) - (Number(b.advancePayment || b.paidAmount) || 0)),
+              totalAmount: Number(b.amount || b.totalAmount) || 0,
             }))
           );
         }
       })
       .catch((err) => console.warn('Bookings API error:', err));
+
+    vendorsApi
+      .list()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setVendorsList(
+            data.map((v: any) => ({
+              id: String(v.id),
+              name: v.businessName || v.name || 'Vendor',
+              category: v.category || '',
+              phone: v.phoneNumber || v.phone || '',
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn('Vendors API error in expenses:', err));
   }, []);
+
+  // Combined list of vendor suggestions from registry + past expenses
+  const allVendorOptions = useMemo(() => {
+    const map = new Map<string, VendorOption>();
+    vendorsList.forEach((v) => {
+      if (v.name && v.name.trim()) {
+        map.set(v.name.trim().toLowerCase(), v);
+      }
+    });
+    expenses.forEach((e) => {
+      if (e.paidTo && e.paidTo.trim() && !map.has(e.paidTo.trim().toLowerCase())) {
+        map.set(e.paidTo.trim().toLowerCase(), {
+          name: e.paidTo.trim(),
+          category: e.category,
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [vendorsList, expenses]);
 
   // Filter bar state
   const [searchQuery, setSearchQuery] = useState('');
@@ -575,32 +617,24 @@ export const ExpensesManagementPage: React.FC = () => {
               </div>
 
               <div>
-                <label
-                  htmlFor="exp-booking"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between"
-                >
-                  <span>Associated Event / Booking (Required for Outside Waiters)</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Associated Event / Booking (Search by Name, CNIC, or Ref)</span>
                   {category === 'Outside Waiters' && (
                     <span className="text-[11px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
                       Linked to Event Expenses
                     </span>
                   )}
                 </label>
-                <select
-                  id="exp-booking"
-                  value={bookingRef}
-                  onChange={(e) => setBookingRef(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
-                >
-                  <option value="">-- General Hall Facility Expense (Not Tied to Single Event) --</option>
-                  {bookings.map((b) => (
-                    <option key={b.bookingRef} value={b.bookingRef}>
-                      {b.bookingRef} - {b.customerName} ({b.hallName} • {b.date})
-                    </option>
-                  ))}
-                </select>
+                <EventSearchSelect
+                  bookings={bookings}
+                  selectedRef={bookingRef}
+                  onSelect={(ref) => setBookingRef(ref)}
+                  allowClear={true}
+                  clearLabel="-- General Hall Facility Expense (Not Tied to Single Event) --"
+                  placeholder="Search by Client Name, CNIC, or Booking Ref..."
+                />
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Tagging an event adds this cost to that event's final total expense and net profitability ledger.
+                  Tagging an event automatically logs this cost to that event's final total expense and net profitability ledger.
                 </p>
               </div>
 
@@ -655,21 +689,19 @@ export const ExpensesManagementPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label
-                    htmlFor="exp-vendor"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
-                  >
-                    Paid To / Vendor Name
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Paid To / Vendor Name <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    id="exp-vendor"
-                    type="text"
-                    required
+                  <CreatableVendorInput
                     value={paidTo}
-                    onChange={(e) => setPaidTo(e.target.value)}
-                    placeholder="e.g. Royal Waiter Staff Suppliers"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                    onChange={(name) => setPaidTo(name)}
+                    vendors={allVendorOptions}
+                    placeholder="Search vendor or type new name..."
+                    theme="light"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Select an existing vendor or type a new name to register automatically.
+                  </p>
                 </div>
 
                 <div>

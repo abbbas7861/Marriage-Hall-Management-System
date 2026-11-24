@@ -8,6 +8,8 @@ from .views import (
     DashboardChartsView,
     ReportsSummaryView,
 )
+from .notification_views import PortalNotificationViewSet
+from .system_views import SystemUpdateView
 from .auth_views import (
     HasAdminView,
     AdminRegisterView,
@@ -24,6 +26,7 @@ from rest_framework_simplejwt.views import (
 
 router = DefaultRouter()
 router.register(r'audit-logs', AuditLogEntryViewSet, basename='audit-log')
+router.register(r'portal-notifications', PortalNotificationViewSet, basename='portal-notification')
 
 urlpatterns = [
     # Auth & User Directory endpoints
@@ -40,6 +43,7 @@ urlpatterns = [
 
     # Existing endpoints
     path('settings/', SystemSettingView.as_view(), name='system-settings'),
+    path('system/update/', SystemUpdateView.as_view(), name='system-update'),
     path('dashboard/metrics/', DashboardMetricsView.as_view(), name='dashboard-metrics'),
     path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard-stats'),
     path('dashboard/charts/', DashboardChartsView.as_view(), name='dashboard-charts'),

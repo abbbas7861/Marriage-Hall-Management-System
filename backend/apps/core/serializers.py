@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SystemSetting, AuditLogEntry
+from .models import SystemSetting, AuditLogEntry, PortalNotification
 import random
 
 class AuditLogEntrySerializer(serializers.ModelSerializer):
@@ -45,4 +45,24 @@ class SystemSettingSerializer(serializers.ModelSerializer):
             'logoFileName', 'isFbrEnabled', 'ntn', 'strn', 'fbrIntegrator', 'fbrPosId',
             'apiClientId', 'apiClientSecret', 'currencySymbol', 'defaultTaxRate',
             'invoicePrefix', 'termsAndConditions', 'customRoles'
+        ]
+
+
+class PortalNotificationSerializer(serializers.ModelSerializer):
+    targetRole = serializers.CharField(source='target_role')
+    senderRole = serializers.CharField(source='sender_role', required=False, allow_blank=True)
+    senderName = serializers.CharField(source='sender_name', required=False, allow_blank=True)
+    type = serializers.CharField(source='notification_type', required=False)
+    targetNavId = serializers.CharField(source='target_nav_id', required=False)
+    actionLabel = serializers.CharField(source='action_label', required=False)
+    relatedId = serializers.CharField(source='related_id', required=False, allow_blank=True)
+    isRead = serializers.BooleanField(source='is_read', required=False)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = PortalNotification
+        fields = [
+            'id', 'targetRole', 'senderRole', 'senderName', 'type', 'title',
+            'description', 'targetNavId', 'actionLabel', 'relatedId', 'status',
+            'isRead', 'createdAt'
         ]

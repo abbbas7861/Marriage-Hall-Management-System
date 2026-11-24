@@ -914,14 +914,14 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl font-black tracking-tight text-slate-950 uppercase">
-                      Royal Banquet Palace
+                      Mehar Palace Marquee
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300">
                       OFFICIAL SETTLEMENT
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Main Boulevard, Gulberg III, Lahore • Tel: (042) 3578-9000
+                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000 • Phone: 0321 1000806
                   </p>
                   <p className="text-xs text-slate-500">
                     NTN: 8291039-4 • STRN: 3277876123456

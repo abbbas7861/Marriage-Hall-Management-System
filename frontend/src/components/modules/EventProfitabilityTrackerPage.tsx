@@ -766,7 +766,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   <Receipt className="w-3.5 h-3.5" /> Event Financial Statement &amp; Settlement
                 </span>
                 <h3 className="text-xl font-bold mt-2 font-['Plus_Jakarta_Sans']">
-                  Royal Palace Banquets &middot; Cashflow &amp; P&amp;L Analysis
+                  Mehar Palace Marquee &middot; Cashflow &amp; P&amp;L Analysis
                 </h3>
                 <p className="text-xs text-teal-200/80 mt-0.5">
                   {selectedEventRef === 'All Events'

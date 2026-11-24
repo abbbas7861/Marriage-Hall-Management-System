@@ -33,8 +33,9 @@
 
 @media print {
   @page {
-    size: A5 portrait;
-    margin: 10mm;
+    /* Set margin to 0 or 8mm to remove browser auto header (URL/title) and footer (date/page/localhost) */
+    margin: 8mm 10mm;
+    size: auto;
   }
 
   html,
@@ -43,9 +44,11 @@
     margin: 0 !important;
     padding: 0 !important;
     color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* Hide everything on the page */
+  /* Hide everything on screen except print container */
   body * {
     visibility: hidden;
   }
@@ -56,30 +59,38 @@
   .print-only,
   .print-only *,
   .printable-receipt-area,
-  .printable-receipt-area * {
+  .printable-receipt-area *,
+  .printable-settlement-area,
+  .printable-settlement-area * {
     visibility: visible;
   }
 
-  /* Position the receipt at the top left of the page */
+  /* Position the receipt cleanly at the top of the physical page */
   #printable-receipt,
   .print-only,
-  .printable-receipt-area {
+  .printable-receipt-area,
+  .printable-settlement-area {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    border: none;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
     background: #ffffff !important;
-    color: #000000 !important;
-    overflow: visible;
+    color: #0f172a !important;
+    overflow: visible !important;
   }
 
-  /* Hide the print and close buttons during print */
-  .no-print {
+  /* Hide print, close, and interactive action buttons during printing */
+  .no-print,
+  button,
+  .modal-backdrop,
+  nav,
+  aside,
+  header {
     display: none !important;
   }
 }

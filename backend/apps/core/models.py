@@ -22,10 +22,10 @@ class UserProfile(models.Model):
 
 
 class SystemSetting(models.Model):
-    business_name = models.CharField(max_length=200, default='MHMS Enterprise', blank=True)
-    head_office_address = models.TextField(blank=True, default='')
-    contact_phone = models.CharField(max_length=50, blank=True, default='')
-    contact_email = models.CharField(max_length=100, blank=True, default='')
+    business_name = models.CharField(max_length=200, default='Mehar Palace Marquee', blank=True)
+    head_office_address = models.TextField(blank=True, default='Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000')
+    contact_phone = models.CharField(max_length=50, blank=True, default='0321 1000806')
+    contact_email = models.CharField(max_length=100, blank=True, default='info@meharpalace.com')
     logo_file_name = models.CharField(max_length=255, blank=True, null=True)
 
     # Tax & FBR compliance
@@ -72,3 +72,33 @@ class AuditLogEntry(models.Model):
 
     def __str__(self):
         return f"[{self.log_id}] {self.user_name} - {self.action} ({self.module})"
+
+
+class PortalNotification(models.Model):
+    TYPE_CHOICES = [
+        ('requisition_request', 'Requisition Request'),
+        ('requisition_status', 'Requisition Status'),
+        ('fund_request', 'Fund Request'),
+        ('fund_status', 'Fund Status'),
+        ('system', 'System Alert'),
+    ]
+
+    target_role = models.CharField(max_length=50) # 'Admin', 'Manager', 'Kitchen', 'Accounts'
+    sender_role = models.CharField(max_length=50, blank=True, default='')
+    sender_name = models.CharField(max_length=150, blank=True, default='')
+    notification_type = models.CharField(max_length=50, choices=TYPE_CHOICES, default='system')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    target_nav_id = models.CharField(max_length=100, default='dashboard')
+    action_label = models.CharField(max_length=100, default='View Details')
+    related_id = models.CharField(max_length=100, blank=True, default='')
+    status = models.CharField(max_length=30, default='Pending') # 'Pending', 'Accepted', 'Rejected', 'Info'
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.target_role}] {self.title} - {self.status}"
+

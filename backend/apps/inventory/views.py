@@ -10,7 +10,7 @@ from .serializers import (
     PantryStockItemSerializer,
     PantryPurchaseOrderSerializer,
 )
-from apps.core.models import AuditLogEntry
+from apps.core.models import AuditLogEntry, PortalNotification
 import random
 
 class InventoryItemViewSet(viewsets.ModelViewSet):
@@ -101,6 +101,23 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
             qs = qs.filter(event_ref__iexact=event_ref)
         return qs
 
+    def perform_create(self, serializer):
+        req = serializer.save()
+        # When Kitchen creates an asset/ingredient requisition, notify Manager
+        PortalNotification.objects.create(
+            target_role='Manager',
+            sender_role='Kitchen',
+            sender_name=req.requested_by or 'Chef / Kitchen',
+            notification_type='requisition_request',
+            title=f"Requisition: {req.item_name} ({req.requested_quantity} {req.unit or 'units'})",
+            description=f"Kitchen requested {req.requested_quantity} {req.unit or 'units'} of {req.item_name} for {req.event_ref or 'Event'}.",
+            target_nav_id='event-control-center',
+            action_label='Review Requisition',
+            related_id=req.requisition_ref,
+            status='Pending',
+            is_read=False
+        )
+
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):
         req = self.get_object()
@@ -108,6 +125,22 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
         if req.requested_quantity and not req.issued_quantity:
             req.issued_quantity = req.requested_quantity
         req.save()
+
+        # Update incoming notification and notify Kitchen that requisition was accepted
+        PortalNotification.objects.filter(related_id=req.requisition_ref, target_role='Manager').update(status='Accepted', is_read=True)
+        PortalNotification.objects.create(
+            target_role='Kitchen',
+            sender_role='Manager',
+            sender_name=request.user.username if request.user.is_authenticated else 'Manager',
+            notification_type='requisition_status',
+            title=f"Requisition Approved: {req.item_name}",
+            description=f"Manager has APPROVED your requisition for {req.requested_quantity} {req.unit or 'units'} of {req.item_name} ({req.event_ref}).",
+            target_nav_id='event-requisitions',
+            action_label='View Requisition',
+            related_id=req.requisition_ref,
+            status='Accepted',
+            is_read=False
+        )
 
         if req.item:
             item = req.item

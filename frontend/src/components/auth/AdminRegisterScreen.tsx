@@ -13,7 +13,7 @@ export const AdminRegisterScreen: React.FC<AdminRegisterScreenProps> = ({
   onBackToLogin,
 }) => {
   const [username, setUsername] = useState('admin');
-  const [businessName, setBusinessName] = useState('Royal Palace Banquet Hall');
+  const [businessName, setBusinessName] = useState('Mehar Palace Marquee');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -120,7 +120,7 @@ export const AdminRegisterScreen: React.FC<AdminRegisterScreenProps> = ({
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. Royal Palace Banquet"
+                    placeholder="e.g. Mehar Palace Marquee"
                     className="w-full pl-9 pr-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400/50 transition-all"
                   />
                 </div>

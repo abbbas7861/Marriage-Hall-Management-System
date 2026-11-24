@@ -969,6 +969,69 @@ export const authApi = {
   },
 };
 
+export const systemApi = {
+  async getStatus(): Promise<{ success: boolean; gitInfo: { branch: string; commit: string; message: string; date: string } }> {
+    return request<{ success: boolean; gitInfo: { branch: string; commit: string; message: string; date: string } }>('system/update/');
+  },
+
+  async triggerUpdate(buildFrontend: boolean = true): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+    gitInfo?: { branch: string; commit: string; message: string; date: string };
+    logs?: string[];
+  }> {
+    return request<{
+      success: boolean;
+      message?: string;
+      error?: string;
+      gitInfo?: { branch: string; commit: string; message: string; date: string };
+      logs?: string[];
+    }>('system/update/', {
+      method: 'POST',
+      body: JSON.stringify({ buildFrontend }),
+    });
+  },
+};
+
+export interface PortalNotificationItem {
+  id: string | number;
+  targetRole: string;
+  senderRole?: string;
+  senderName?: string;
+  type: string;
+  title: string;
+  description: string;
+  targetNavId: string;
+  actionLabel: string;
+  relatedId?: string;
+  status: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const portalNotificationsApi = {
+  async list(role?: string): Promise<PortalNotificationItem[]> {
+    const qs = role ? `?role=${encodeURIComponent(role)}` : '';
+    const data = await request<any>(`portal-notifications${qs}`);
+    return normalizeList<PortalNotificationItem>(data);
+  },
+
+  async markAllRead(role?: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>('portal-notifications/mark-all-read/', {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  async respond(id: string | number, action: 'accept' | 'reject', reviewerName?: string): Promise<{ success: boolean; status: string; message: string }> {
+    return request<{ success: boolean; status: string; message: string }>(`portal-notifications/${id}/respond/`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reviewerName }),
+    });
+  },
+};
+
 // -------------------------------------------------------------
 // Backward compatibility helper exports
 // -------------------------------------------------------------
@@ -1001,6 +1064,7 @@ export default {
   reports: reportsApi,
   auditLogs: auditLogsApi,
   settings: settingsApi,
+  system: systemApi,
   auth: authApi,
   fetchDashboardStats,
   fetchHalls,

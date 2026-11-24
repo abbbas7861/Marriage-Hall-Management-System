@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="mpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="50%" stop-color="#042f2e" />
+      <stop offset="100%" stop-color="#021a19" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="64" height="64" rx="16" fill="url(#mpGrad)" />
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-opacity="0.6" />
+
+  <!-- Marquee Palace Canopy & Minaret Crown -->
+  <path d="M32 10 L33.5 13.5 L37 14 L34.5 16.5 L35 20 L32 18.5 L29 20 L29.5 16.5 L27 14 L30.5 13.5 Z" fill="url(#goldGrad)" />
+  
+  <!-- Palace Dome / Arch Profile -->
+  <path d="M18 29 C18 20 26 16 32 16 C38 16 46 20 46 29 L46 51 C46 52.5 44.5 54 43 54 L21 54 C19.5 54 18 52.5 18 51 Z" fill="#042f2e" stroke="url(#goldGrad)" stroke-width="1.5" />
+
+  <!-- Stylized Royal "M" & "P" Monogram -->
+  <!-- "M" Pillar Structure -->
+  <path d="M23 48 L23 30 L32 39 L41 30 L41 48" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Center Archway Highlight -->
+  <path d="M28 48 L28 42 C28 39.8 29.8 38 32 38 C34.2 38 36 39.8 36 42 L36 48" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Bottom Accent Line -->
+  <line x1="21" y1="51" x2="43" y2="51" stroke="url(#goldGrad)" stroke-width="1" stroke-linecap="round" />
+</svg>

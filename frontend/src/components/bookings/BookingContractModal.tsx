@@ -24,7 +24,7 @@ interface BookingContractModalProps {
 
 export const BookingContractModal: React.FC<BookingContractModalProps> = ({
   booking,
-  venueName = 'Royal Palace Banquet Hall',
+  venueName = 'Mehar Palace Marquee',
   onClose,
 }) => {
   const handlePrint = () => {
@@ -80,11 +80,11 @@ export const BookingContractModal: React.FC<BookingContractModalProps> = ({
               </p>
               <div className="flex items-center gap-3 text-[11px] text-slate-600 mt-2 font-mono">
                 <span className="flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-slate-400" /> +92 (300) 123-4567
+                  <Phone className="w-3 h-3 text-slate-400" /> 0321 1000806
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-slate-400" /> Main Boulevard, Gulberg III, Lahore
+                  <MapPin className="w-3 h-3 text-slate-400" /> Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
                 </span>
               </div>
             </div>

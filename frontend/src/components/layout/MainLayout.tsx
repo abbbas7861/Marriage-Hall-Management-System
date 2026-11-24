@@ -23,6 +23,7 @@ import { AccountsDashboard } from '../dashboard/AccountsDashboard';
 import { ManagerDashboard } from '../dashboard/ManagerDashboard';
 import { KitchenDashboard } from '../dashboard/KitchenDashboard';
 import { VendorDirectoryPage } from '../modules/VendorDirectoryPage';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import type { UserRole } from '../auth/LoginScreen';
 
 interface MainLayoutProps {
@@ -126,6 +127,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         />
 
         <main className="flex-1 w-full max-w-6xl print:max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 print:p-0">
+          <ErrorBoundary fallbackTitle={`${activeItem.label} Error`}>
           {activeRole === 'Admin' && activeNavId === 'dashboard' ? (
             <AdminExecutiveDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Admin' && activeNavId === 'halls-registry' ? (
@@ -280,6 +282,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               </div>
             </div>
           )}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

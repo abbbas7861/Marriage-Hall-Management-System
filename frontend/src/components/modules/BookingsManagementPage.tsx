@@ -18,6 +18,7 @@ import {
   FileText,
   Check,
   ShieldAlert,
+  Crown,
 } from 'lucide-react';
 import { SEED_BOOKINGS, SEED_HALLS, SEED_MENU_PACKAGES } from '../../data/seedData';
 import { bookingsApi, hallsApi, menuApi, authApi } from '../../api/client';
@@ -2885,16 +2886,38 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-[560px] overflow-hidden my-auto">
               {/* Printable A5 Receipt Sheet */}
               <div className="printable-receipt-area bg-white p-7 text-gray-900">
-                {/* Header */}
-                <div className="text-center pb-4 border-b border-gray-200">
-                  <h2 className="text-lg font-bold tracking-tight text-gray-900 font-['Plus_Jakarta_Sans']">
-                    Marriage Hall &amp; Banquet Management
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-1">Address: Main Boulevard, Gulberg III, Lahore</p>
-                  <p className="text-xs text-gray-500">Contact: +92 42 3578 9000</p>
-                  <div className="mt-2.5 inline-block px-3 py-0.5 rounded border border-gray-200 bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-700">
-                    Booking Receipt
+                {/* Header: Royal Letterhead */}
+                <div className="pb-4 border-b-2 border-teal-900/40">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-teal-900 text-amber-400 flex items-center justify-center border border-amber-400/40 shadow-xs shrink-0">
+                        <Crown className="w-6 h-6 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
+                            Mehar Palace Marquee
+                          </h2>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            Banquets
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 mt-0.5">
+                          Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono">
+                          Phone: <strong className="text-slate-800">0321 1000806</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="inline-block px-2.5 py-0.5 rounded border border-teal-800 bg-teal-900 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                        Booking Slip
+                      </div>
+                    </div>
                   </div>
+                  {/* Decorative Letterhead Bar */}
+                  <div className="mt-3 h-1 w-full bg-gradient-to-r from-teal-900 via-amber-500 to-teal-900 rounded-full" />
                 </div>
 
                 {/* Receipt Details */}

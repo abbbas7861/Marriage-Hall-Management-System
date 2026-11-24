@@ -7,6 +7,7 @@ import {
   Plus,
   Printer,
   Search,
+  Crown,
   X,
 } from 'lucide-react';
 import {
@@ -16,6 +17,7 @@ import {
   SEED_MENU_PACKAGES,
 } from '../../data/seedData';
 import { invoicesApi, bookingsApi } from '../../api/client';
+import { EventSearchSelect } from '../common/EventSearchSelect';
 
 export type InvoiceStatus = 'Paid' | 'Partial' | 'Unpaid' | 'Cancelled';
 
@@ -691,27 +693,17 @@ export const InvoicesBillingPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleGenerateInvoice} className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-              {/* Select Booking */}
+              {/* Select Booking Event with Searchable Combobox */}
               <div>
-                <label
-                  htmlFor="inv-booking"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
-                >
-                  Select Booking Event
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Select Booking Event <span className="text-teal-700 font-normal">(Search by Name, CNIC, Booking Ref, or Invoice #)</span>
                 </label>
-                <select
-                  id="inv-booking"
-                  value={selectedBookingRef}
-                  onChange={(e) => handleBookingChange(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
-                >
-                  <option value="">Select a booking event...</option>
-                  {bookings.map((b) => (
-                    <option key={b.ref} value={b.ref}>
-                      {b.ref} — {b.customerName} {b.remainingBalance > 0 ? `(Pending: Rs. ${b.remainingBalance.toLocaleString()})` : '(Settled)'}
-                    </option>
-                  ))}
-                </select>
+                <EventSearchSelect
+                  bookings={bookings}
+                  selectedRef={selectedBookingRef}
+                  onSelect={(ref) => handleBookingChange(ref)}
+                  invoices={invoices}
+                />
               </div>
 
               {/* Customer Name */}
@@ -1237,26 +1229,45 @@ export const InvoicesBillingPage: React.FC = () => {
                 id="printable-receipt"
                 className="print-only flex-1 min-h-0 overflow-y-auto bg-white text-black p-6 sm:p-7 print:p-6 print:overflow-visible print:max-h-none text-xs"
               >
-                {/* Header: System Name, Address, Contact */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3 border-b-2 border-black">
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight text-black font-['Plus_Jakarta_Sans']">
-                      Royal Palace Marriage Hall &amp; Banquets
-                    </h2>
-                    <p className="text-[11px] text-slate-700 mt-0.5">Main Boulevard, Gulberg, Lahore, Pakistan &bull; Contact: +92 42 3578 9000</p>
-                    <p className="text-[10px] text-slate-500">Official Client Invoice &amp; Settlement Statement</p>
+                {/* Header: Royal Letterhead with Gold & Emerald Accents */}
+                <div className="pb-4 border-b-2 border-teal-900/40">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-teal-900 text-amber-400 flex items-center justify-center border border-amber-400/40 shadow-xs shrink-0">
+                        <Crown className="w-6 h-6 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
+                            Mehar Palace Marquee
+                          </h2>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            Luxury Banquets
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                          Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Official Accounts &amp; Billing Desk
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="sm:text-right shrink-0">
+                      <div className="inline-block px-3 py-1 bg-teal-900 text-amber-300 font-bold uppercase tracking-wider text-[11px] rounded border border-teal-700">
+                        Official Payment Receipt
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1 font-mono">
+                        Status:{' '}
+                        <span className={`font-bold uppercase ${balanceDue <= 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+                          {balanceDue <= 0 ? 'PAID / CLEAR' : printingInvoice.status}
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="sm:text-right">
-                    <span className="inline-block px-2.5 py-0.5 border border-black text-[11px] font-bold uppercase tracking-widest text-black bg-slate-50">
-                      Official Receipt
-                    </span>
-                    <p className="text-[11px] text-slate-600 mt-1">
-                      Status:{' '}
-                      <span className={`font-bold uppercase ${balanceDue <= 0 ? 'text-emerald-700' : 'text-black'}`}>
-                        {balanceDue <= 0 ? 'PAID / CLEAR' : printingInvoice.status}
-                      </span>
-                    </p>
-                  </div>
+                  {/* Decorative Letterhead Bar */}
+                  <div className="mt-3.5 h-1 w-full bg-gradient-to-r from-teal-900 via-amber-500 to-teal-900 rounded-full" />
                 </div>
 
                 {/* Meta Grid: Invoice ID, Date, Customer & Event Details */}
@@ -1618,7 +1629,7 @@ export const InvoicesBillingPage: React.FC = () => {
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
                       Authorized Accounts Officer
                     </p>
-                    <p className="text-[9px] text-slate-500">Royal Palace Banquets &middot; Finance Dept</p>
+                    <p className="text-[9px] text-slate-500">Mehar Palace Marquee &middot; Finance Dept</p>
                   </div>
                 </div>
               </div>

@@ -20,6 +20,7 @@ import {
   Clock,
   LayoutGrid,
   Store,
+  Crown,
   X,
 } from 'lucide-react';
 import type { UserRole } from '../auth/LoginScreen';
@@ -114,12 +115,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Header */}
         <div className="h-14 px-5 flex items-center justify-between border-b border-slate-200/80 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-teal-700 text-white flex items-center justify-center shrink-0">
-              <Building2 className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-teal-800 text-amber-400 flex items-center justify-center shrink-0 border border-amber-400/30 shadow-xs">
+              <Crown className="w-4 h-4 text-amber-400" />
             </div>
-            <span className="font-semibold text-sm text-slate-900 tracking-tight font-['Plus_Jakarta_Sans'] whitespace-nowrap truncate">
-              Marriage Hall ERP
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-sm text-slate-900 tracking-tight font-['Plus_Jakarta_Sans'] whitespace-nowrap truncate">
+                Mehar Palace
+              </span>
+              <span className="text-[10px] text-teal-700 font-medium tracking-wide uppercase">
+                Marquee ERP
+              </span>
+            </div>
           </div>
 
           {onCloseMobile && (

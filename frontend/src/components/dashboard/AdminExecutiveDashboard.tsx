@@ -11,6 +11,7 @@ import {
   Receipt,
   TrendingUp,
   Users,
+  GitPullRequest,
 } from 'lucide-react';
 import {
   Area,
@@ -32,6 +33,7 @@ import {
   SEED_OCCUPANCY_DATA,
 } from '../../data/seedData';
 import { dashboardApi, hallsApi, bookingsApi, invoicesApi, DashboardStatsResponse } from '../../api/client';
+import { SystemUpdateModal } from '../admin/SystemUpdateModal';
 
 interface AdminExecutiveDashboardProps {
   onNavigate?: (navId: string) => void;
@@ -49,6 +51,7 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
   const [activeHalls, setActiveHalls] = useState<number>(
     SEED_HALLS.filter((h) => h.status === 'Active').length
   );
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   useEffect(() => {
     dashboardApi
@@ -99,27 +102,30 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
   const upcomingEvents = liveBookings.length > 0
     ? liveBookings.slice(0, 5).map((b: any) => ({
         id: String(b.id),
-        bookingRef: b.bookingRef,
-        customerName: b.customerName || 'Client',
-        eventType: b.eventType || 'Event',
-        hallName: b.hallName || 'Main Hall',
-        date: b.date || '',
+        bookingRef: b.bookingRef || b.bookingId || `BK-${b.id}`,
+        customerName: b.customerName || b.customer_name || 'Client',
+        eventType: b.eventType || b.event_type || 'Event',
+        hallName: b.hallName || b.hall_name || 'Main Hall',
+        eventDate: b.date || b.eventDate || b.event_date || '',
+        date: b.date || b.eventDate || b.event_date || '',
         time: b.time || b.slot || '12:00 PM – 04:00 PM',
         status: b.status || 'Confirmed',
-        totalAmount: Number(b.amount) || 0,
-        remainingBalance: Math.max(0, (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)),
+        totalAmount: Number(b.amount || b.totalAmount || b.total_amount) || 0,
+        remainingBalance: Math.max(0, (Number(b.amount || b.totalAmount || b.total_amount) || 0) - (Number(b.advancePayment || b.advance_payment) || 0)),
       }))
     : SEED_BOOKINGS;
 
   const recentTransactions = liveInvoices.length > 0
     ? liveInvoices.slice(0, 5).map((inv: any) => ({
-        id: String(inv.id),
-        invoiceNumber: inv.invoiceNumber || inv.invoice_number || `INV-${inv.id}`,
+        id: inv.invoiceNumber || inv.invoice_number || (inv.id ? `INV-${inv.id}` : 'INV-000'),
+        invoiceNumber: inv.invoiceNumber || inv.invoice_number || (inv.id ? `INV-${inv.id}` : 'INV-000'),
         customerName: inv.customerName || inv.customer_name || 'Client',
         hallName: inv.hallName || 'Hall',
-        amount: Number(inv.totalAmount || inv.total_amount) || 0,
-        paymentStatus: inv.paymentStatus || inv.payment_status || 'Unpaid',
-        date: inv.date || '',
+        totalAmount: Number(inv.totalAmount || inv.total_amount || inv.amount) || 0,
+        amount: Number(inv.totalAmount || inv.total_amount || inv.amount) || 0,
+        status: inv.paymentStatus || inv.payment_status || inv.status || 'Unpaid',
+        paymentStatus: inv.paymentStatus || inv.payment_status || inv.status || 'Unpaid',
+        date: inv.date || inv.dueDate || '',
       }))
     : SEED_INVOICES;
 
@@ -224,6 +230,15 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsUpdateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-teal-400/40 bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+            >
+              <GitPullRequest className="w-4 h-4 text-teal-300" />
+              <span>Update System</span>
+            </button>
+
             <button
               type="button"
               onClick={() => onNavigate?.('users')}
@@ -576,24 +591,24 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
                     </td>
                   </tr>
                 ) : (
-                  recentTransactions.map((inv) => (
+                  recentTransactions.map((inv: any) => (
                     <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-6 font-mono font-semibold text-slate-900 whitespace-nowrap">
-                        {inv.id}
+                        {inv.invoiceNumber || inv.id}
                       </td>
                       <td className="py-3.5 px-4 text-slate-700 font-medium whitespace-nowrap">
                         {inv.customerName}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono tabular-nums font-semibold text-slate-900 whitespace-nowrap">
-                        Rs. {inv.totalAmount.toLocaleString('en-PK')}
+                        Rs. {Number(inv.totalAmount ?? inv.amount ?? 0).toLocaleString('en-PK')}
                       </td>
                       <td className="py-3.5 px-6 text-right whitespace-nowrap">
                         <span
                           className={`inline-flex px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${getInvoiceStatusBadge(
-                            inv.status
+                            inv.status || inv.paymentStatus || 'Unpaid'
                           )}`}
                         >
-                          {inv.status}
+                          {inv.status || inv.paymentStatus || 'Unpaid'}
                         </span>
                       </td>
                     </tr>
@@ -604,6 +619,12 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
           </div>
         </div>
       </section>
+
+      {/* System Update Modal */}
+      <SystemUpdateModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+      />
     </div>
   );
 };

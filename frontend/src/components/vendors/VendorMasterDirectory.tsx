@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { VendorPartner } from '../../types';
 import { workforceApi } from '../../api/client';
+import { CreatableCategoryInput } from '../common/CreatableCategoryInput';
 
 interface VendorMasterDirectoryProps {
   onNavigateToTab?: (tabId: string) => void;
@@ -119,6 +120,17 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
     return { total, active, totalBilled, balanceDue };
   }, [vendors]);
 
+  // Dynamic list of categories from defaults + existing vendors
+  const allAvailableCategories = useMemo(() => {
+    const set = new Set<string>(VENDOR_CATEGORIES.filter((c) => c !== 'All'));
+    vendors.forEach((v) => {
+      if (v.category && v.category.trim()) {
+        set.add(v.category.trim());
+      }
+    });
+    return Array.from(set);
+  }, [vendors]);
+
   const handleOpenCreateModal = () => {
     setEditingVendor(null);
     setFormData({
@@ -155,13 +167,20 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
     e.preventDefault();
     if (!formData.businessName.trim()) return;
 
+    const effectiveCategory = formData.category.trim() || 'Other';
+
+    const payload = {
+      ...formData,
+      category: effectiveCategory,
+    };
+
     try {
       if (editingVendor) {
-        const updated = await workforceApi.updateVendor(editingVendor.id, formData);
+        const updated = await workforceApi.updateVendor(editingVendor.id, payload);
         setVendors((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
         showToast(`Vendor "${updated.businessName}" updated successfully!`);
       } else {
-        const created = await workforceApi.createVendor(formData);
+        const created = await workforceApi.createVendor(payload);
         setVendors((prev) => [created, ...prev]);
         showToast(`New vendor "${created.businessName}" registered!`);
       }
@@ -471,18 +490,19 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Category</label>
-                  <select
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Category <span className="text-rose-400">*</span>
+                  </label>
+                  <CreatableCategoryInput
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-teal-500 transition"
-                  >
-                    {VENDOR_CATEGORIES.filter((c) => c !== 'All').map((cat) => (
-                      <option key={cat} value={cat} className="bg-slate-900 text-white">
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, category: val })}
+                    categories={allAvailableCategories}
+                    placeholder="Type or select category (e.g. Floral Decor, Fireworks)..."
+                    theme="dark"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Type to search existing categories. If unmatched, it is treated as a new category.
+                  </p>
                 </div>
               </div>
 

@@ -246,7 +246,7 @@ export const AdminPeriodicClosings: React.FC = () => {
                 Official Period Closing Audit Certificate
               </h3>
               <p className="text-xs text-slate-400 font-mono">
-                Jurisdiction: Royal Palace Banquet Hall • Verified by General Manager
+                Jurisdiction: Mehar Palace Marquee • Verified by General Manager
               </p>
             </div>
           </div>

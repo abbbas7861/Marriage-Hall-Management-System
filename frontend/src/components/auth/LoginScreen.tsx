@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, Crown } from 'lucide-react';
 import { authApi } from '../../api/client';
 
 export type UserRole = 'Admin' | 'Manager' | 'Kitchen' | 'Accounts';
@@ -38,13 +38,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fillCredentials = (role: UserRole, user: string, pass: string) => {
-    setSelectedRole(role);
-    setIdentifier(user);
-    setPassword(pass);
-    setError(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,14 +95,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-[400px]">
         {/* Brand Mark */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-11 h-11 rounded-xl bg-teal-700 text-white flex items-center justify-center shadow-xs mb-4">
-            <Building2 className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-teal-800 text-amber-400 flex items-center justify-center shadow-md mb-4 border border-amber-400/30">
+            <Crown className="w-6 h-6 text-amber-400" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
-            Marriage Hall ERP
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
+            Mehar Palace Marquee
           </h1>
-          <p className="text-sm text-slate-500 mt-1.5">
-            Sign in to access your workspace
+          <p className="text-xs text-slate-500 mt-1 max-w-xs">
+            Main Canal Road, near PSO Petrol Pump, Mughalpura, Lahore
+          </p>
+          <p className="text-xs font-semibold text-teal-700 mt-0.5">
+            Phone: 0321 1000806
           </p>
         </div>
 
@@ -235,47 +231,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               </button>
             </div>
           </form>
-
-          {/* Quick-Fill Local Test Credentials */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 mb-2.5 text-center">
-              Quick Test Logins (Local SQLite)
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillCredentials('Admin', 'admin', 'admin123')}
-                className="px-2.5 py-1.5 rounded-md bg-teal-50 hover:bg-teal-100 border border-teal-200/80 text-teal-800 font-medium text-left transition-colors cursor-pointer"
-              >
-                <span className="font-semibold block">Admin</span>
-                <span className="text-[10px] text-teal-600 font-mono">admin / admin123</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('Manager', 'manager', 'manager123')}
-                className="px-2.5 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200/80 text-blue-800 font-medium text-left transition-colors cursor-pointer"
-              >
-                <span className="font-semibold block">Manager</span>
-                <span className="text-[10px] text-blue-600 font-mono">manager / manager123</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('Kitchen', 'kitchen', 'kitchen123')}
-                className="px-2.5 py-1.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 font-medium text-left transition-colors cursor-pointer"
-              >
-                <span className="font-semibold block">Kitchen</span>
-                <span className="text-[10px] text-amber-600 font-mono">kitchen / kitchen123</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('Accounts', 'accounts', 'accounts123')}
-                className="px-2.5 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-800 font-medium text-left transition-colors cursor-pointer"
-              >
-                <span className="font-semibold block">Accounts</span>
-                <span className="text-[10px] text-emerald-600 font-mono">accounts / accounts123</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

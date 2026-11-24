@@ -12,7 +12,7 @@ from .serializers import (
     ManagerFundRequestSerializer,
 )
 from apps.bookings.models import Booking
-from apps.core.models import AuditLogEntry
+from apps.core.models import AuditLogEntry, PortalNotification
 import random
 
 class InvoiceRecordViewSet(viewsets.ModelViewSet):
@@ -284,6 +284,23 @@ class ManagerFundRequestViewSet(viewsets.ModelViewSet):
             qs = qs.filter(booking_ref__iexact=booking_ref)
         return qs
 
+    def perform_create(self, serializer):
+        fund_req = serializer.save()
+        # Notify Accounts role that Manager submitted a fund request
+        PortalNotification.objects.create(
+            target_role='Accounts',
+            sender_role='Manager',
+            sender_name=fund_req.requested_by or 'Manager',
+            notification_type='fund_request',
+            title=f"Fund Request: Rs. {fund_req.amount:,.0f}",
+            description=f"Manager requested Rs. {fund_req.amount:,.0f} for {fund_req.event_name or fund_req.booking_ref}: '{fund_req.reason}'.",
+            target_nav_id='event-tracker',
+            action_label='Review & Approve Funds',
+            related_id=fund_req.request_ref,
+            status='Pending',
+            is_read=False
+        )
+
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):
         fund_req = self.get_object()
@@ -292,6 +309,22 @@ class ManagerFundRequestViewSet(viewsets.ModelViewSet):
         fund_req.approved_by = approver
         fund_req.approved_at = timezone.now()
         fund_req.save()
+
+        # Update or create notification to Manager that fund request is Accepted
+        PortalNotification.objects.filter(related_id=fund_req.request_ref, target_role='Accounts').update(status='Accepted', is_read=True)
+        PortalNotification.objects.create(
+            target_role='Manager',
+            sender_role='Accounts',
+            sender_name=approver,
+            notification_type='fund_status',
+            title=f"Fund Request Approved (Rs. {fund_req.amount:,.0f})",
+            description=f"Accounts ({approver}) has APPROVED and disbursed your fund request of Rs. {fund_req.amount:,.0f} for {fund_req.booking_ref}.",
+            target_nav_id='event-control-center',
+            action_label='View Funds',
+            related_id=fund_req.request_ref,
+            status='Accepted',
+            is_read=False
+        )
 
         # Automatically disburse and record as ExpenseRecord
         ExpenseRecord.objects.create(
@@ -326,6 +359,21 @@ class ManagerFundRequestViewSet(viewsets.ModelViewSet):
         fund_req.status = 'Rejected'
         fund_req.approved_by = approver
         fund_req.save()
+
+        PortalNotification.objects.filter(related_id=fund_req.request_ref, target_role='Accounts').update(status='Rejected', is_read=True)
+        PortalNotification.objects.create(
+            target_role='Manager',
+            sender_role='Accounts',
+            sender_name=approver,
+            notification_type='fund_status',
+            title=f"Fund Request Declined (Rs. {fund_req.amount:,.0f})",
+            description=f"Accounts ({approver}) declined your fund request of Rs. {fund_req.amount:,.0f} for {fund_req.booking_ref}.",
+            target_nav_id='event-control-center',
+            action_label='View Details',
+            related_id=fund_req.request_ref,
+            status='Rejected',
+            is_read=False
+        )
 
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
