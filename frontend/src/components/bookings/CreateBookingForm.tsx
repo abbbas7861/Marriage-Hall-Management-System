@@ -42,6 +42,9 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
   const [expectedGuests, setExpectedGuests] = useState(
     initialBooking?.guestCount ? String(initialBooking.guestCount) : ''
   );
+  const [personsPerTable, setPersonsPerTable] = useState(
+    initialBooking?.personsPerTable ? String(initialBooking.personsPerTable) : '10'
+  );
   const [seatingArrangement, setSeatingArrangement] = useState('');
 
   const [menuPackage, setMenuPackage] = useState('');
@@ -126,6 +129,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
           : (initialBooking?.paymentStatus || 'Unpaid'),
       amount: totalBookingAmount ? parseFloat(totalBookingAmount) : undefined,
       guestCount: expectedGuests ? parseInt(expectedGuests, 10) : undefined,
+      personsPerTable: personsPerTable ? parseInt(personsPerTable, 10) : 10,
       assignedManager,
     };
 
@@ -361,8 +365,25 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               />
             </div>
 
+            {/* Persons Per Table */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Persons Per Table
+              </label>
+              <select
+                value={personsPerTable}
+                onChange={(e) => setPersonsPerTable(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all cursor-pointer"
+              >
+                <option value="6">6 Persons per Table</option>
+                <option value="8">8 Persons per Table</option>
+                <option value="10">10 Persons per Table</option>
+                <option value="12">12 Persons per Table</option>
+              </select>
+            </div>
+
             {/* Seating Arrangement */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Seating Arrangement
               </label>
@@ -377,6 +398,24 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 <option value="Mixed">Mixed</option>
               </select>
             </div>
+
+            {/* Live Calculated Table Count Badge */}
+            {expectedGuests && parseInt(expectedGuests, 10) > 0 && (
+              <div className="md:col-span-2 rounded-lg border border-teal-200 bg-teal-50/70 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse" />
+                  <span className="text-xs font-semibold text-teal-900">
+                    Calculated Banquet Requirement:
+                  </span>
+                  <span className="text-xs font-bold text-teal-800 font-mono">
+                    {Math.ceil(parseInt(expectedGuests, 10) / (parseInt(personsPerTable, 10) || 10))} Tables
+                  </span>
+                </div>
+                <span className="text-[11px] text-teal-700 font-medium">
+                  {expectedGuests} guests @ {personsPerTable} persons/table
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

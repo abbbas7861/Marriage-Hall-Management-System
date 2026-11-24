@@ -11,6 +11,7 @@ from .serializers import (
     SecurityDepositSettlementSerializer,
     ManagerFundRequestSerializer,
 )
+from apps.bookings.models import Booking
 from apps.core.models import AuditLogEntry
 import random
 
@@ -22,6 +23,109 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
     search_fields = ['invoice_id', 'booking_id', 'customer_name']
     ordering_fields = ['date', 'total_amount', 'paid_amount', 'remaining_balance']
     ordering = ['-date']
+
+    def create(self, request, *args, **kwargs):
+        is_remaining_payment = (
+            request.data.get('isRemainingPayment') is True or
+            str(request.data.get('isRemainingPayment', '')).lower() in ['true', '1']
+        )
+        booking_id = request.data.get('bookingId') or request.data.get('booking_id')
+
+        if is_remaining_payment and booking_id:
+            # Payment collected against pending remaining balance (DOES NOT add to total contract)
+            amount_collected = float(
+                request.data.get('amountPaidNow') or
+                request.data.get('paidAmount') or
+                request.data.get('totalAmount') or
+                0
+            )
+            if amount_collected <= 0:
+                return Response(
+                    {'error': 'Payment collection amount must be greater than 0.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            channel = request.data.get('channel') or request.data.get('paymentMethod', 'Cash')
+            notes = request.data.get('notes', '')
+            date_val = request.data.get('date') or timezone.now().strftime('%Y-%m-%d')
+
+            booking = Booking.objects.filter(booking_ref=booking_id).first()
+            invoice = InvoiceRecord.objects.filter(booking_id=booking_id).order_by('created_at').first()
+
+            if invoice:
+                # Deduct from existing invoice's balance & increment paid amount
+                invoice.paid_amount = float(invoice.paid_amount) + amount_collected
+                invoice.remaining_balance = max(0.0, float(invoice.total_amount) - float(invoice.paid_amount))
+                invoice.payment_status = 'Paid' if invoice.remaining_balance <= 0 else 'Partial'
+                payment_note = f"[Remaining Balance Payment on {date_val}]: Rs. {amount_collected:,.0f} via {channel}"
+                invoice.notes = f"{invoice.notes}\n{payment_note}".strip() if invoice.notes else payment_note
+                invoice.save()
+            else:
+                contract_total = float(booking.amount) if booking else amount_collected
+                rem_bal = max(0.0, contract_total - amount_collected)
+                invoice = InvoiceRecord.objects.create(
+                    invoice_id=f"INV-{random.randint(10000, 99999)}",
+                    booking_id=booking_id,
+                    customer_name=booking.customer_name if booking else (request.data.get('customerName') or 'Client'),
+                    total_amount=contract_total,
+                    paid_amount=amount_collected,
+                    remaining_balance=rem_bal,
+                    payment_status='Paid' if rem_bal <= 0 else 'Partial',
+                    date=date_val,
+                    notes=notes or f"Remaining balance payment via {channel}"
+                )
+
+            if booking:
+                booking.advance_payment = float(booking.advance_payment) + amount_collected
+                rem_booking = max(0.0, float(booking.amount) - float(booking.advance_payment))
+                booking.payment_status = 'Paid' if rem_booking <= 0 else 'Partial'
+                booking.save()
+
+            # Log payment transaction
+            txn_ref = f"TXN-{random.randint(10000, 99999)}"
+            PaymentTransaction.objects.create(
+                txn_ref=txn_ref,
+                category=f"Remaining Balance Collection ({booking_id})",
+                channel=channel,
+                billing_status="Settled",
+                amount=amount_collected,
+                timestamp=str(date_val),
+                booking_ref=booking_id
+            )
+
+            # Audit log
+            user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Accountant'
+            AuditLogEntry.objects.create(
+                log_id=f"LOG-{random.randint(1000, 9999)}",
+                user_name=user_name,
+                user_role="Finance",
+                action="Payment Collected",
+                module="Finance",
+                details=f"Deducted Rs. {amount_collected:,.0f} from remaining balance of {booking_id}. New balance: Rs. {invoice.remaining_balance:,.0f} (Contract total unchanged: Rs. {invoice.total_amount:,.0f})",
+                ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+            )
+
+            serializer = self.get_serializer(invoice)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Standard / Additional New Charge invoice creation
+        response = super().create(request, *args, **kwargs)
+        if booking_id:
+            booking = Booking.objects.filter(booking_ref=booking_id).first()
+            if booking:
+                # If creating an additional charge invoice for an existing booking, reflect in booking.amount
+                add_amount = float(request.data.get('totalAmount') or request.data.get('total_amount', 0))
+                add_paid = float(request.data.get('paidAmount') or request.data.get('paid_amount', 0))
+                # Only sync if this is a distinct additional charge
+                existing_inv_count = InvoiceRecord.objects.filter(booking_id=booking_id).count()
+                if existing_inv_count > 1 and add_amount > 0:
+                    booking.amount = float(booking.amount) + add_amount
+                    booking.advance_payment = float(booking.advance_payment) + add_paid
+                    rem_booking = max(0.0, float(booking.amount) - float(booking.advance_payment))
+                    booking.payment_status = 'Paid' if rem_booking <= 0 else 'Partial'
+                    booking.save()
+
+        return response
 
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
@@ -64,6 +168,14 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
         else:
             invoice.payment_status = 'Partial'
         invoice.save()
+
+        # Sync booking advance and payment status
+        booking = Booking.objects.filter(booking_ref=invoice.booking_id).first()
+        if booking:
+            booking.advance_payment = float(booking.advance_payment) + amount
+            rem_booking = max(0.0, float(booking.amount) - float(booking.advance_payment))
+            booking.payment_status = 'Paid' if rem_booking <= 0 else 'Partial'
+            booking.save()
 
         # Log payment transaction
         PaymentTransaction.objects.create(

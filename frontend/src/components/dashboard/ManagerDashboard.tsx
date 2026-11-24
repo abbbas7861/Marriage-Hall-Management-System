@@ -27,20 +27,21 @@ interface ManagerDashboardProps {
 export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
   onNavigate,
 }) => {
-  const [eventsList, setEventsList] = useState<LiveEventItem[]>(
-    SEED_ASSIGNED_EVENTS.map((e) => ({
-      id: e.id,
-      eventName: e.customerName,
-      hall: e.hallName,
-      status: e.status,
-    }))
-  );
+  const [eventsList, setEventsList] = useState<LiveEventItem[]>([]);
+  const [totalActiveTables, setTotalActiveTables] = useState<number>(0);
 
   useEffect(() => {
     bookingsApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) {
+        if (Array.isArray(data)) {
+          const tablesCount = data.slice(0, 5).reduce((acc: number, b: any) => {
+            const g = Number(b.guestCount) || 100;
+            const ppt = Number(b.personsPerTable) || 10;
+            return acc + Math.ceil(g / ppt);
+          }, 0);
+          setTotalActiveTables(tablesCount);
+
           setEventsList(
             data.slice(0, 5).map((b: any) => ({
               id: String(b.id),
@@ -89,7 +90,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({
     {
       label: 'Table Occupancy',
       value: '75%',
-      caption: 'Live banquet hall seating',
+      caption: `${totalActiveTables} active banquet tables`,
       icon: Grid,
       iconBox:
         'bg-gradient-to-br from-blue-50 to-blue-100/90 border border-blue-200/70 text-blue-600',

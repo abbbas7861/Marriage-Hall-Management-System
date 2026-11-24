@@ -61,14 +61,14 @@ export const AdminExecutiveDashboard: React.FC<AdminExecutiveDashboardProps> = (
     bookingsApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) setLiveBookings(data);
+        if (Array.isArray(data)) setLiveBookings(data);
       })
       .catch(() => {});
 
     invoicesApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) setLiveInvoices(data);
+        if (Array.isArray(data)) setLiveInvoices(data);
       })
       .catch(() => {});
 

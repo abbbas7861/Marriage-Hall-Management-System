@@ -92,20 +92,40 @@ export const FinanceGeneralLedger: React.FC<FinanceGeneralLedgerProps> = ({
 
     // Customer payments & inflows
     transactions.forEach((t) => {
-      const isDepositRefund = (t.category || '').toLowerCase().includes('refund');
-      if (isDepositRefund) {
+      const isRefund = (t.category || '').toLowerCase().includes('refund');
+      const isRetainedCredit =
+        (t.category || '').toLowerCase().includes('retained credit') ||
+        (t.channel || '').toLowerCase().includes('customer credit');
+
+      if (isRefund) {
         rawList.push({
           date: t.timestamp ? t.timestamp.slice(0, 10) : '2026-11-01',
           refId: t.txnRef || '',
           type: 'Credit (Outflow)',
-          category: t.category || '',
+          category: t.category || 'Refund',
           account: '1010 - Bank / Cash Disbursement',
           entity: t.bookingRef ? `Booking Ref: ${t.bookingRef}` : 'Client Refund',
           debit: 0,
-          credit: Number(t.amount) || 0,
+          credit: Math.abs(Number(t.amount)) || 0,
           channel: t.channel || 'Cash',
           status: t.billingStatus || 'Settled',
-          notes: `Deposit refund settlement for ${t.bookingRef}`,
+          notes: (t.category || '').toLowerCase().includes('cancellation')
+            ? `Emergency cancellation refund settlement for ${t.bookingRef}`
+            : `Deposit refund settlement for ${t.bookingRef}`,
+        });
+      } else if (isRetainedCredit) {
+        rawList.push({
+          date: t.timestamp ? t.timestamp.slice(0, 10) : '2026-11-01',
+          refId: t.txnRef || '',
+          type: 'Credit (Outflow)',
+          category: t.category || 'Retained Credit Adjustment',
+          account: '2050 - Customer Advance Retained Liability',
+          entity: t.bookingRef ? `Booking Ref: ${t.bookingRef}` : 'Client Credit Voucher',
+          debit: 0,
+          credit: Math.abs(Number(t.amount)) || 0,
+          channel: t.channel || 'Customer Credit',
+          status: t.billingStatus || 'Settled',
+          notes: `Advance converted to retained customer credit voucher for rescheduled event (${t.bookingRef})`,
         });
       } else {
         rawList.push({
@@ -115,7 +135,7 @@ export const FinanceGeneralLedger: React.FC<FinanceGeneralLedgerProps> = ({
           category: t.category || '',
           account: '4010 - Banquet Operating Revenue',
           entity: t.bookingRef ? `Booking Ref: ${t.bookingRef}` : 'Client Receipt',
-          debit: Number(t.amount) || 0,
+          debit: Math.abs(Number(t.amount)) || 0,
           credit: 0,
           channel: t.channel || 'Cash',
           status: t.billingStatus || 'Settled',

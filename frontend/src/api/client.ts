@@ -207,9 +207,20 @@ export const bookingsApi = {
     return normalizeId(data);
   },
 
-  async cancel(id: string): Promise<Booking> {
-    const data = await request<Booking>(`bookings/${id}/cancel`, { method: 'POST' });
-    return normalizeId(data);
+  async cancel(
+    id: string,
+    payload?: {
+      cancellation_type: 'refund' | 'pause_and_adjust';
+      reason: string;
+      deduction_amount?: number;
+      notes?: string;
+    }
+  ): Promise<{ message: string; booking: Booking; cancellation: any }> {
+    const data = await request<any>(`bookings/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return data;
   },
 
   async updateOperationalStatus(id: string, operationalStatus: string): Promise<Booking> {
@@ -244,12 +255,28 @@ export const bookingsApi = {
     return normalizeId(data);
   },
 
+  async closeEvent(
+    id: string,
+    payload: {
+      extraServices?: Array<{ title: string; price: number; category?: string; notes?: string }>;
+      damages?: Array<{ item: string; amount: number; deductionType?: 'invoice' | 'security_deposit'; notes?: string }>;
+      notes?: string;
+    }
+  ): Promise<{ message: string; booking: Booking; invoice: any }> {
+    const data = await request<any>(`bookings/${id}/close-event`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return data;
+  },
+
   async checkAvailability(params: {
     hall: string;
     date: string;
     startTime?: string;
     endTime?: string;
     slot?: string;
+    bookingType?: string;
     excludeId?: string;
   }): Promise<{
     available: boolean;
@@ -264,6 +291,7 @@ export const bookingsApi = {
     if (params.startTime) query.set('startTime', params.startTime);
     if (params.endTime) query.set('endTime', params.endTime);
     if (params.slot) query.set('slot', params.slot);
+    if (params.bookingType) query.set('bookingType', params.bookingType);
     if (params.excludeId) query.set('excludeId', params.excludeId);
     return await request<{
       available: boolean;
@@ -378,7 +406,20 @@ export const invoicesApi = {
     });
     return normalizeId(data);
   },
+
+  async listInvoices(params?: { search?: string; status?: string }): Promise<InvoiceRecord[]> {
+    return invoicesApi.list(params);
+  },
+
+  async recordCollection(id: string, payload: any): Promise<any> {
+    return request<any>(`invoices/${id}/record-collection/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
+
+export const financeApi = invoicesApi;
 
 // -------------------------------------------------------------
 // Expenses API
@@ -469,6 +510,45 @@ export const fundRequestsApi = {
 // -------------------------------------------------------------
 // Asset & Kitchen Requisitions API (Kitchen <-> Manager)
 // -------------------------------------------------------------
+export interface EventChecklistItem {
+  id: string;
+  eventRef: string;
+  phase: 'Pre-Event Setup' | 'During Event' | 'Post-Event / Wrap-up' | string;
+  taskName: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  completedBy?: string;
+  notes?: string;
+}
+
+export const checklistsApi = {
+  async list(eventRef?: string): Promise<EventChecklistItem[]> {
+    const query = eventRef ? `?eventRef=${encodeURIComponent(eventRef)}` : '';
+    const data = await request<EventChecklistItem[]>(`checklists${query}`);
+    return normalizeList(data);
+  },
+
+  async create(payload: Partial<EventChecklistItem>): Promise<EventChecklistItem> {
+    const data = await request<EventChecklistItem>('checklists/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async toggle(id: string, completedBy?: string): Promise<EventChecklistItem> {
+    const data = await request<EventChecklistItem>(`checklists/${id}/toggle/`, {
+      method: 'POST',
+      body: JSON.stringify({ completedBy }),
+    });
+    return normalizeId(data);
+  },
+
+  async delete(id: string): Promise<void> {
+    await request(`checklists/${id}/`, { method: 'DELETE' });
+  },
+};
+
 export interface AssetRequisitionItem {
   id: string | number;
   requisitionRef: string;
@@ -712,11 +792,14 @@ export const dashboardApi = {
 };
 
 export const reportsApi = {
-  async getSummary(params?: { startDate?: string; endDate?: string; hall?: string }): Promise<any> {
+  async getSummary(params?: { startDate?: string; endDate?: string; hall?: string; bookingRef?: string }): Promise<any> {
     const query = new URLSearchParams();
     if (params?.startDate) query.set('startDate', params.startDate);
     if (params?.endDate) query.set('endDate', params.endDate);
     if (params?.hall && params.hall !== 'All Halls') query.set('hall', params.hall);
+    if (params?.bookingRef && params.bookingRef !== 'All' && params.bookingRef !== 'All Events') {
+      query.set('bookingRef', params.bookingRef);
+    }
     const qs = query.toString();
     return request<any>(`reports/summary${qs ? `?${qs}` : ''}`);
   },

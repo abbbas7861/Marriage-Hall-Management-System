@@ -512,23 +512,41 @@ export const FinanceReceivablesCollector: React.FC<FinanceReceivablesCollectorPr
                 </span>
               </div>
 
-              <div className="p-3 bg-slate-800/60 rounded-xl border border-slate-700 space-y-1 font-mono text-xs">
-                <div className="flex justify-between text-slate-300">
-                  <span>Contract Total:</span>
-                  <span>Rs. {Math.round(Number(receiptData.invoice.totalAmount || 0)).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Total Amount Paid to Date:</span>
-                  <span className="text-emerald-400 font-bold">
-                    Rs. {Math.round(Number(receiptData.invoice.paidAmount || 0)).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-white font-bold border-t border-slate-700 pt-1">
-                  <span>Remaining Balance Due:</span>
-                  <span className="text-amber-400">
-                    Rs. {Math.round(Number(receiptData.invoice.remainingBalance || 0)).toLocaleString()}
-                  </span>
-                </div>
+              <div className="rounded-xl border border-slate-700 overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs font-mono">
+                  <thead>
+                    <tr className="bg-slate-800 text-slate-300 border-b border-slate-700">
+                      <th className="py-2 px-3 uppercase text-[10px]">Payment Ledger Item</th>
+                      <th className="py-2 px-3 text-right uppercase text-[10px]">Amount (PKR)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 bg-slate-900/60">
+                    <tr>
+                      <td className="py-2 px-3 text-slate-300 font-sans">Total Contract Value</td>
+                      <td className="py-2 px-3 text-right text-white font-bold">
+                        Rs. {Math.round(Number(receiptData.invoice.totalAmount || 0)).toLocaleString()}
+                      </td>
+                    </tr>
+                    <tr className="bg-emerald-500/10">
+                      <td className="py-2.5 px-3 text-emerald-300 font-bold font-sans">Payment Received (This Receipt)</td>
+                      <td className="py-2.5 px-3 text-right text-emerald-300 font-bold text-sm">
+                        Rs. {Number(receiptData.amountPaid || 0).toLocaleString()}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 text-slate-300 font-sans">Total Paid to Date</td>
+                      <td className="py-2 px-3 text-right text-emerald-400 font-semibold">
+                        Rs. {Math.round(Number(receiptData.invoice.paidAmount || 0)).toLocaleString()}
+                      </td>
+                    </tr>
+                    <tr className="bg-slate-800/80 font-bold border-t border-slate-700">
+                      <td className="py-2.5 px-3 text-amber-300 font-sans">Remaining Balance Due</td>
+                      <td className="py-2.5 px-3 text-right text-amber-300 font-bold text-sm">
+                        Rs. {Math.round(Number(receiptData.invoice.remainingBalance || 0)).toLocaleString()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div className="pt-6 grid grid-cols-2 gap-8 text-center text-[11px] text-slate-400">

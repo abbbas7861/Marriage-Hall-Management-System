@@ -12,6 +12,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Calculator,
+  Ban,
+  DollarSign,
+  CalendarCheck,
+  FileText,
+  Check,
+  ShieldAlert,
 } from 'lucide-react';
 import { SEED_BOOKINGS, SEED_HALLS, SEED_MENU_PACKAGES } from '../../data/seedData';
 import { bookingsApi, hallsApi, menuApi, authApi } from '../../api/client';
@@ -42,6 +48,7 @@ interface BookingItem {
   bookingType?: 'Full Hall' | 'Half Hall (Section A)' | 'Half Hall (Section B)';
   eventDate: string;
   guestCount: string;
+  personsPerTable?: number;
   seatingArrangement: string;
   includeMenuPackage?: boolean;
   menuPackage: string;
@@ -54,12 +61,20 @@ interface BookingItem {
   endTime: string;
   extraHours: number;
   ratePerHour: number;
+  hallRent?: number;
+  menuAmount?: number;
+  djAmount?: number;
+  decorAmount?: number;
+  subtotal?: number;
+  discountPercentage?: number;
+  discountAmount?: number;
   totalAmount: number;
   advancePayment: number;
   remainingBalance: number;
   assignedManager?: string;
   status: 'Pending' | 'Confirmed' | 'Cancelled';
-  paymentStatus: 'Paid' | 'Partial' | 'Unpaid';
+  paymentStatus: 'Paid' | 'Partial' | 'Unpaid' | 'Refunded' | 'Credit Held' | 'Settled';
+  cancellationRecord?: any;
 }
 
 function parseTimeToMinutes(timeStr: string): number | null {
@@ -132,13 +147,14 @@ function detectBookingCollision(
   eventDate: string,
   startTime: string,
   endTime: string,
-  excludeId: string | null
+  bookingType: 'Full Hall' | 'Half Hall (Section A)' | 'Half Hall (Section B)' = 'Full Hall',
+  excludeId: string | null = null
 ): CollisionResult {
   if (!hallName || !eventDate) {
     return { hasConflict: false };
   }
 
-  const BUFFER_MINUTES = 60; // 1-hour mandatory turnover/cleaning margin
+  const BUFFER_MINUTES = 60; // 60-min turnover/cleaning buffer between distinct non-overlapping time slots
 
   let reqStart = parseTimeToMinutes(startTime);
   let reqEnd = parseTimeToMinutes(endTime);
@@ -149,12 +165,18 @@ function detectBookingCollision(
     if (reqEnd === null) reqEnd = e;
   }
 
+  // Default duration to 4 hours if only start time is provided
+  if (reqStart !== null && reqEnd === null) {
+    reqEnd = Math.min(24 * 60 - 1, reqStart + 4 * 60);
+  }
+
   if (reqStart !== null && reqEnd !== null && reqEnd <= reqStart) {
     reqEnd += 24 * 60;
   }
 
   const candidateBookings = bookings.filter((b) => {
-    if (b.status === 'Cancelled') return false;
+    if (b.status === 'Cancelled' || b.status === 'Completed') return false;
+    const op = (b.status || '').toLowerCase();
     if (excludeId && b.id === excludeId) return false;
     if (b.eventDate !== eventDate) return false;
     if (b.hallName.trim().toLowerCase() !== hallName.trim().toLowerCase()) return false;
@@ -162,6 +184,19 @@ function detectBookingCollision(
   });
 
   for (const b of candidateBookings) {
+    const bType = b.bookingType || 'Full Hall';
+
+    // Partition compatibility rule:
+    // Section A and Section B CAN be booked for the same time on the same day!
+    // Full Hall cannot be booked if any section is booked, and vice versa.
+    const isPartitionCompatible =
+      (bookingType === 'Half Hall (Section A)' && bType === 'Half Hall (Section B)') ||
+      (bookingType === 'Half Hall (Section B)' && bType === 'Half Hall (Section A)');
+
+    if (isPartitionCompatible) {
+      continue; // No collision between separate partitioned sections!
+    }
+
     let bStart = parseTimeToMinutes(b.startTime);
     let bEnd = parseTimeToMinutes(b.endTime);
 
@@ -169,6 +204,10 @@ function detectBookingCollision(
       const [s, e] = extractStartEndMinutes(b.startTime);
       if (bStart === null) bStart = s;
       if (bEnd === null) bEnd = e;
+    }
+
+    if (bStart !== null && bEnd === null) {
+      bEnd = Math.min(24 * 60 - 1, bStart + 4 * 60);
     }
 
     if (bStart !== null && bEnd !== null && bEnd <= bStart) {
@@ -179,26 +218,16 @@ function detectBookingCollision(
       const bufferedStart = Math.max(0, bStart - BUFFER_MINUTES);
       const bufferedEnd = bEnd + BUFFER_MINUTES;
 
+      // Check whether time ranges overlap
       if (Math.max(reqStart, bufferedStart) < Math.min(reqEnd, bufferedEnd)) {
-        const bookedTimeStr = `${b.startTime || 'Standard Slot'}${b.endTime ? ` – ${b.endTime}` : ''}`;
+        const bookedTimeStr = `${b.startTime || 'Slot'}${b.endTime ? ` – ${b.endTime}` : ''}`;
         return {
           hasConflict: true,
           conflictingBooking: b,
-          message: `Hall "${hallName}" is already reserved on ${eventDate} (${bookedTimeStr}) by ${b.customerName} (${b.bookingId}). Including the mandatory 1-hour cleaning & turnover buffer, this time slot cannot be booked.`,
-        };
-      }
-    } else {
-      const bIsLunch = (b.startTime + ' ' + (b.eventType || '')).toLowerCase().includes('lunch');
-      const reqIsLunch = (startTime || '').toLowerCase().includes('lunch') || (reqStart !== null && reqStart < 17 * 60);
-
-      const bIsDinner = !bIsLunch;
-      const reqIsDinner = !reqIsLunch;
-
-      if ((bIsLunch && reqIsLunch) || (bIsDinner && reqIsDinner)) {
-        return {
-          hasConflict: true,
-          conflictingBooking: b,
-          message: `Hall "${hallName}" is already reserved for this slot on ${eventDate} by ${b.customerName} (${b.bookingId}).`,
+          message:
+            bType !== 'Full Hall' || bookingType !== 'Full Hall'
+              ? `Schedule Conflict: '${hallName}' already has an active booking for '${bType}' on ${eventDate} (${bookedTimeStr}) by ${b.customerName} (${b.bookingId}). You cannot book '${bookingType}' at this overlapping time.`
+              : `Schedule Conflict: Hall "${hallName}" is already booked on ${eventDate} (${bookedTimeStr}) by ${b.customerName} (${b.bookingId}). Time slots overlap.`,
         };
       }
     }
@@ -212,15 +241,36 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   prefillData,
   onClearPrefill,
 }) => {
-  const [bookings, setBookings] = useState<BookingItem[]>(SEED_BOOKINGS);
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingBooking, setViewingBooking] = useState<BookingItem | null>(null);
   const [receiptBooking, setReceiptBooking] = useState<BookingItem | null>(null);
 
+  // Cancellation Modal & State
+  const [cancellingBooking, setCancellingBooking] = useState<BookingItem | null>(null);
+  const [cancellationType, setCancellationType] = useState<'refund' | 'pause_and_adjust'>('refund');
+  const [cancellationReason, setCancellationReason] = useState<string>('');
+  const [deductionAmount, setDeductionAmount] = useState<string>('0');
+  const [cancellationNotes, setCancellationNotes] = useState<string>('');
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
+  const [cancellationNotice, setCancellationNotice] = useState<string | null>(null);
+
+  // Viewing settled cancellation details
+  const [viewingCancellationRecord, setViewingCancellationRecord] = useState<BookingItem | null>(null);
+
+  const openCancellationModal = (item: BookingItem) => {
+    setCancellingBooking(item);
+    setCancellationType('refund');
+    setCancellationReason('');
+    setDeductionAmount('0');
+    setCancellationNotes('');
+    setCancellationNotice(null);
+  };
+
   // Dynamic Halls and Menu Packages
   const [availableHalls, setAvailableHalls] = useState<
-    Array<{ id: string; name: string; capacity?: number }>
+    Array<{ id: string; name: string; capacity?: number; baseRent?: number }>
   >([]);
   const [availablePackages, setAvailablePackages] = useState<
     Array<{ id: string; name: string; pricePerHead?: number }>
@@ -230,50 +280,83 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     bookingsApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) {
+        if (Array.isArray(data)) {
           setBookings(
-            data.map((b: any) => ({
-              id: String(b.id),
-              bookingId: b.bookingRef || `BK-${b.id}`,
-              customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
-              phone: b.contactRef && b.contactRef !== '[--]' ? b.contactRef : '',
-              cnic: b.cnic && b.cnic !== '[--]' ? b.cnic : '',
-              eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Wedding',
-              hallName: b.hallName && b.hallName !== '[--]' ? b.hallName : '',
-              bookingType: 'Full Hall',
-              eventDate: b.date || '',
-              guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
-              seatingArrangement: b.seatingArrangement && b.seatingArrangement !== '[--]' ? b.seatingArrangement : 'Round Tables',
-              includeMenuPackage: !!b.menuPackage,
-              menuPackage: b.menuPackage && b.menuPackage !== '[--]' ? b.menuPackage : '',
-              dietaryInstructions: b.specialInstructions || '',
-              customRequests: '',
-              includeDjSound: false,
-              includeStageDecor: false,
-              startTime: b.time || '18:00',
-              endTime: '23:00',
-              extraHours: Number(b.extraHours) || 0,
-              ratePerHour: Number(b.ratePerHour) || 0,
-              totalAmount: Number(b.amount) || 0,
-              advancePayment: Number(b.advancePayment) || 0,
-              remainingBalance: Math.max(
-                0,
-                (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)
-              ),
-              assignedManager: b.assignedManager || 'Manager',
-              status:
-                b.status === 'Confirmed'
-                  ? 'Confirmed'
-                  : b.status === 'Cancelled'
-                  ? 'Cancelled'
-                  : 'Pending',
-              paymentStatus:
-                b.paymentStatus === 'Paid'
-                  ? 'Paid'
-                  : b.paymentStatus === 'Partial'
-                  ? 'Partial'
-                  : 'Unpaid',
-            }))
+            data.map((b: any) => {
+              const notesAndSeating = `${b.specialInstructions || ''} ${b.seatingArrangement || ''}`;
+              let bType: BookingItem['bookingType'] = 'Full Hall';
+              if (notesAndSeating.includes('Half Hall (Section A)') || notesAndSeating.includes('[Section A]')) {
+                bType = 'Half Hall (Section A)';
+              } else if (notesAndSeating.includes('Half Hall (Section B)') || notesAndSeating.includes('[Section B]')) {
+                bType = 'Half Hall (Section B)';
+              }
+
+              let sTime = b.time || '';
+              let eTime = '';
+              if (sTime.includes('-') || sTime.includes('–')) {
+                const parts = sTime.split(/[-–]/);
+                sTime = parts[0]?.trim() || '';
+                eTime = parts[1]?.trim() || '';
+              }
+
+              return {
+                id: String(b.id),
+                bookingId: b.bookingRef || `BK-${b.id}`,
+                customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
+                phone: b.contactRef && b.contactRef !== '[--]' ? b.contactRef : '',
+                cnic: b.cnic && b.cnic !== '[--]' ? b.cnic : '',
+                eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Wedding',
+                hallName: b.hallName && b.hallName !== '[--]' ? b.hallName : '',
+                bookingType: bType,
+                eventDate: b.date || '',
+                guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
+                personsPerTable: Number(b.personsPerTable) || 10,
+                seatingArrangement: b.seatingArrangement && b.seatingArrangement !== '[--]' ? b.seatingArrangement : 'Round Tables',
+                includeMenuPackage: !!b.menuPackage,
+                menuPackage: b.menuPackage && b.menuPackage !== '[--]' ? b.menuPackage : '',
+                dietaryInstructions: b.specialInstructions || '',
+                customRequests: '',
+                includeDjSound: Number(b.djAmount) > 0,
+                includeStageDecor: Number(b.decorAmount) > 0,
+                startTime: sTime || '18:00',
+                endTime: eTime || (sTime ? '' : '23:00'),
+                extraHours: Number(b.extraHours) || 0,
+                ratePerHour: Number(b.ratePerHour) || 0,
+                hallRent: Number(b.hallRent) || 0,
+                menuAmount: Number(b.menuAmount) || 0,
+                djAmount: Number(b.djAmount) || 0,
+                decorAmount: Number(b.decorAmount) || 0,
+                subtotal: Number(b.subtotal) || Number(b.amount) || 0,
+                discountPercentage: Number(b.discountPercentage) || 0,
+                discountAmount: Number(b.discountAmount) || 0,
+                totalAmount: Number(b.amount) || 0,
+                advancePayment: Number(b.advancePayment) || 0,
+                remainingBalance:
+                  b.status === 'Cancelled'
+                    ? 0
+                    : Math.max(0, (Number(b.amount) || 0) - (Number(b.advancePayment) || 0)),
+                assignedManager: b.assignedManager || 'Manager',
+                status:
+                  b.status === 'Confirmed'
+                    ? 'Confirmed'
+                    : b.status === 'Cancelled'
+                    ? 'Cancelled'
+                    : 'Pending',
+                paymentStatus:
+                  b.status === 'Cancelled'
+                    ? (b.paymentStatus === 'Credit Held'
+                        ? 'Credit Held'
+                        : b.paymentStatus === 'Refunded'
+                        ? 'Refunded'
+                        : 'Settled')
+                    : b.paymentStatus === 'Paid'
+                    ? 'Paid'
+                    : b.paymentStatus === 'Partial'
+                    ? 'Partial'
+                    : 'Unpaid',
+                cancellationRecord: b.cancellationRecord || null,
+              };
+            })
           );
         }
       })
@@ -288,17 +371,18 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
               id: String(h.id),
               name: h.name,
               capacity: h.capacity,
+              baseRent: Number(h.baseRent ?? h.base_rent) || 0,
             }))
           );
         } else {
           setAvailableHalls(
-            SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity }))
+            SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity, baseRent: h.baseRent || 0 }))
           );
         }
       })
       .catch(() => {
         setAvailableHalls(
-          SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity }))
+          SEED_HALLS.map((h) => ({ id: h.id, name: h.name, capacity: h.capacity, baseRent: h.baseRent || 0 }))
         );
       });
 
@@ -380,6 +464,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   >('Full Hall');
   const [eventDate, setEventDate] = useState('');
   const [guestCount, setGuestCount] = useState('');
+  const [personsPerTable, setPersonsPerTable] = useState('10');
   const [seatingArrangement, setSeatingArrangement] = useState('');
   const [includeMenuPackage, setIncludeMenuPackage] = useState(true);
   const [menuPackage, setMenuPackage] = useState('');
@@ -392,6 +477,11 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   const [endTime, setEndTime] = useState('');
   const [extraHours, setExtraHours] = useState('');
   const [ratePerHour, setRatePerHour] = useState('');
+  const [hallRent, setHallRent] = useState('');
+  const [menuAmount, setMenuAmount] = useState('');
+  const [djAmount, setDjAmount] = useState('');
+  const [decorAmount, setDecorAmount] = useState('');
+  const [discountPercentage, setDiscountPercentage] = useState('0');
   const [totalAmount, setTotalAmount] = useState('');
   const [advancePayment, setAdvancePayment] = useState('');
   const [assignedManager, setAssignedManager] = useState('Manager');
@@ -430,7 +520,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     }
   };
 
-  // Live collision detection against existing bookings and 1-hour turnover margin
+  // Live collision detection against existing bookings and turnover margin
   useEffect(() => {
     if (!hallName || !eventDate) {
       setCollisionWarning(null);
@@ -443,13 +533,14 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       eventDate,
       startTime || '18:00',
       endTime || '23:00',
+      bookingType,
       editingId
     );
 
     if (collision.hasConflict) {
       setCollisionWarning(
         collision.message ||
-          `Schedule Conflict: Hall "${hallName}" is already reserved for this schedule with 1-hour margin buffer.`
+          `Schedule Conflict: Hall "${hallName}" is already reserved for this schedule.`
       );
     } else {
       setCollisionWarning(null);
@@ -460,6 +551,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
           date: eventDate,
           startTime: startTime || '18:00',
           endTime: endTime || '23:00',
+          bookingType,
           excludeId: editingId || undefined,
         })
         .then((res) => {
@@ -473,7 +565,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
         })
         .catch(() => {});
     }
-  }, [hallName, eventDate, startTime, endTime, editingId, bookings]);
+  }, [hallName, eventDate, startTime, endTime, bookingType, editingId, bookings]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -485,6 +577,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setBookingType('Full Hall');
     setEventDate('');
     setGuestCount('');
+    setPersonsPerTable('10');
     setSeatingArrangement('');
     setIncludeMenuPackage(true);
     setMenuPackage('');
@@ -497,6 +590,11 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setEndTime('');
     setExtraHours('');
     setRatePerHour('');
+    setHallRent('');
+    setMenuAmount('');
+    setDjAmount('');
+    setDecorAmount('');
+    setDiscountPercentage('0');
     setTotalAmount('');
     setAdvancePayment('');
     setAssignedManager('Manager');
@@ -528,6 +626,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setBookingType(item.bookingType ?? 'Full Hall');
     setEventDate(item.eventDate === '[--]' ? '' : item.eventDate);
     setGuestCount(item.guestCount === '[--]' ? '' : item.guestCount);
+    setPersonsPerTable(item.personsPerTable ? String(item.personsPerTable) : '10');
     setSeatingArrangement(item.seatingArrangement === '[--]' ? '' : item.seatingArrangement);
     setIncludeMenuPackage(item.includeMenuPackage ?? true);
     setMenuPackage(item.menuPackage === '[--]' ? '' : item.menuPackage);
@@ -551,6 +650,11 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setEndTime(item.endTime === '[--]' ? '' : item.endTime);
     setExtraHours(item.extraHours ? String(item.extraHours) : '');
     setRatePerHour(item.ratePerHour ? String(item.ratePerHour) : '');
+    setHallRent(item.hallRent ? String(item.hallRent) : '');
+    setMenuAmount(item.menuAmount ? String(item.menuAmount) : '');
+    setDjAmount(item.djAmount ? String(item.djAmount) : (item.includeDjSound ? '25000' : ''));
+    setDecorAmount(item.decorAmount ? String(item.decorAmount) : (item.includeStageDecor ? '50000' : ''));
+    setDiscountPercentage(item.discountPercentage ? String(item.discountPercentage) : '0');
     setTotalAmount(item.totalAmount ? String(item.totalAmount) : '');
     setAdvancePayment(item.advancePayment ? String(item.advancePayment) : '');
     setAssignedManager(item.assignedManager || 'Manager');
@@ -559,26 +663,65 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setViewMode('form');
   };
 
-  const parsedTotal = Number(totalAmount) || 0;
-  const parsedAdvance = Number(advancePayment) || 0;
-  const parsedExtraHours = Number(extraHours) || 0;
-  const parsedRatePerHour = Number(ratePerHour) || 0;
-  const extraCharges = parsedExtraHours * parsedRatePerHour;
-  const grandTotal = parsedTotal + extraCharges;
-  const remainingBalance = Math.max(0, grandTotal - parsedAdvance);
-
-  // Live Food Cost Calculation
+  // Live Itemized Calculations
   const parsedGuests = Number(guestCount) || 0;
   const parsedRatePerHead = Number(menuRatePerHead) || 0;
   const calculatedFoodCost =
     includeMenuPackage && parsedGuests > 0 && parsedRatePerHead > 0
       ? parsedGuests * parsedRatePerHead
       : 0;
+  const autoMenuAmount = calculatedFoodCost;
+  const effectiveMenuAmount =
+    menuAmount !== '' ? Number(menuAmount) || 0 : autoMenuAmount;
+
+  const autoHallRent = (() => {
+    const matched = availableHalls.find((h) => h.name === hallName);
+    return matched?.baseRent || 0;
+  })();
+  const effectiveHallRent =
+    hallRent !== '' ? Number(hallRent) || 0 : autoHallRent;
+
+  const effectiveDjAmount = includeDjSound
+    ? (djAmount !== '' ? Number(djAmount) || 0 : 25000)
+    : 0;
+
+  const effectiveDecorAmount = includeStageDecor
+    ? (decorAmount !== '' ? Number(decorAmount) || 0 : 50000)
+    : 0;
+
+  const parsedExtraHours = Number(extraHours) || 0;
+  const parsedRatePerHour = Number(ratePerHour) || 0;
+  const extraCharges = parsedExtraHours * parsedRatePerHour;
+
+  // 1. Total Amount (Gross Subtotal)
+  const itemizedSubtotal =
+    effectiveMenuAmount +
+    effectiveHallRent +
+    effectiveDjAmount +
+    effectiveDecorAmount +
+    extraCharges;
+
+  const subtotal = itemizedSubtotal > 0 ? itemizedSubtotal : (Number(totalAmount) || 0);
+
+  // 2. Discount Area
+  const parsedDiscountPct = Math.min(100, Math.max(0, Number(discountPercentage) || 0));
+  const calculatedDiscountAmount = Math.round((subtotal * parsedDiscountPct) / 100);
+
+  // 3. Final Amount Area
+  const calculatedFinalAmount = Math.max(0, subtotal - calculatedDiscountAmount);
+  const grandTotal = calculatedFinalAmount;
+  const finalAmount = calculatedFinalAmount;
+
+  // 4. Advance Area
+  const parsedAdvance = Number(advancePayment) || 0;
+
+  // 5. Remaining Balance
+  const remainingBalance = Math.max(0, calculatedFinalAmount - parsedAdvance);
 
   const hasAmountInput =
-    totalAmount.trim() !== '' ||
+    subtotal > 0 ||
     advancePayment.trim() !== '' ||
-    (extraHours.trim() !== '' && ratePerHour.trim() !== '');
+    totalAmount.trim() !== '';
 
   const persistBooking = (): BookingItem | null => {
     if (!fullName.trim()) {
@@ -602,12 +745,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       chosenDate,
       startTime || '18:00',
       endTime || '23:00',
+      bookingType,
       editingId
     );
     if (collisionCheck.hasConflict) {
       const msg =
         collisionCheck.message ||
-        `Cannot save: Hall "${chosenHall}" is already booked on ${chosenDate} for the selected time or 1-hour margin buffer.`;
+        `Cannot save: Hall "${chosenHall}" is already booked on ${chosenDate} for this time slot.`;
       setCollisionWarning(msg);
       setFormError(msg);
       return null;
@@ -638,7 +782,11 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       time: effectiveTime,
       slot: effectiveSlot,
       guestCount: Number(guestCount) || 100,
-      seatingArrangement: seatingArrangement.trim(),
+      personsPerTable: Number(personsPerTable) || 10,
+      seatingArrangement:
+        bookingType !== 'Full Hall'
+          ? `${seatingArrangement.trim()} [${bookingType}]`.trim()
+          : seatingArrangement.trim(),
       menuPackage: includeMenuPackage
         ? menuPackage
           ? menuRatePerHead
@@ -648,15 +796,24 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
           ? `Custom Menu (Rs. ${menuRatePerHead}/head)`
           : 'Package Selected'
         : '',
-      specialInstructions:
+      specialInstructions: (
+        (bookingType !== 'Full Hall' ? `[${bookingType}] ` : '') +
         dietaryInstructions.trim() +
-        (customRequests ? ` | ${customRequests.trim()}` : ''),
-      amount: grandTotal,
+        (customRequests ? ` | ${customRequests.trim()}` : '')
+      ).trim(),
+      amount: calculatedFinalAmount,
       advancePayment: parsedAdvance,
+      hallRent: effectiveHallRent,
+      menuAmount: effectiveMenuAmount,
+      djAmount: effectiveDjAmount,
+      decorAmount: effectiveDecorAmount,
+      subtotal: subtotal,
+      discountPercentage: parsedDiscountPct,
+      discountAmount: calculatedDiscountAmount,
       extraHours: parsedExtraHours,
       ratePerHour: parsedRatePerHour,
       assignedManager: assignedManager || 'Manager',
-      status: 'Pending',
+      status: parsedAdvance > 0 ? 'Confirmed' : 'Pending',
       paymentStatus: derivedPaymentStatus,
     };
 
@@ -679,6 +836,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             bookingType,
             eventDate: chosenDate,
             guestCount: guestCount || '100',
+            personsPerTable: Number(personsPerTable) || 10,
             seatingArrangement: seatingArrangement.trim(),
             includeMenuPackage,
             menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
@@ -690,6 +848,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             endTime: endTime || '23:00',
             extraHours: parsedExtraHours,
             ratePerHour: parsedRatePerHour,
+            hallRent: effectiveHallRent,
+            menuAmount: effectiveMenuAmount,
+            djAmount: effectiveDjAmount,
+            decorAmount: effectiveDecorAmount,
+            subtotal: subtotal,
+            discountPercentage: parsedDiscountPct,
+            discountAmount: calculatedDiscountAmount,
             totalAmount: grandTotal,
             advancePayment: parsedAdvance,
             remainingBalance,
@@ -711,6 +876,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
           bookingType,
           eventDate: chosenDate,
           guestCount: guestCount || '100',
+          personsPerTable: Number(personsPerTable) || 10,
           seatingArrangement: seatingArrangement.trim(),
           includeMenuPackage,
           menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
@@ -722,6 +888,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
           endTime: endTime || '23:00',
           extraHours: parsedExtraHours,
           ratePerHour: parsedRatePerHour,
+          hallRent: effectiveHallRent,
+          menuAmount: effectiveMenuAmount,
+          djAmount: effectiveDjAmount,
+          decorAmount: effectiveDecorAmount,
+          subtotal: subtotal,
+          discountPercentage: parsedDiscountPct,
+          discountAmount: calculatedDiscountAmount,
           totalAmount: grandTotal,
           advancePayment: parsedAdvance,
           remainingBalance,
@@ -744,6 +917,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       bookingType,
       eventDate: chosenDate,
       guestCount: guestCount || '100',
+      personsPerTable: Number(personsPerTable) || 10,
       seatingArrangement: seatingArrangement.trim(),
       includeMenuPackage,
       menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
@@ -755,11 +929,18 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       endTime: endTime || '23:00',
       extraHours: parsedExtraHours,
       ratePerHour: parsedRatePerHour,
+      hallRent: effectiveHallRent,
+      menuAmount: effectiveMenuAmount,
+      djAmount: effectiveDjAmount,
+      decorAmount: effectiveDecorAmount,
+      subtotal: subtotal,
+      discountPercentage: parsedDiscountPct,
+      discountAmount: calculatedDiscountAmount,
       totalAmount: grandTotal,
       advancePayment: parsedAdvance,
       remainingBalance,
       assignedManager: assignedManager || 'Manager',
-      status: 'Pending',
+      status: parsedAdvance > 0 ? 'Confirmed' : 'Pending',
       paymentStatus: derivedPaymentStatus,
     };
     setBookings((prev) => [newBooking, ...prev]);
@@ -808,6 +989,95 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     if (viewingBooking?.id === id) setViewingBooking(null);
   };
 
+  const handleConfirmCancellation = async () => {
+    if (!cancellingBooking) return;
+    const reason = cancellationReason.trim();
+    if (!reason) {
+      alert('Please enter an emergency cancellation reason.');
+      return;
+    }
+    const deduction = Math.max(0, parseFloat(deductionAmount) || 0);
+    if (deduction > cancellingBooking.advancePayment) {
+      alert(
+        `Amount used / deduction (Rs. ${deduction.toLocaleString()}) cannot exceed the collected advance payment (Rs. ${cancellingBooking.advancePayment.toLocaleString()}).`
+      );
+      return;
+    }
+
+    setIsCancelling(true);
+    try {
+      const res = await bookingsApi.cancel(cancellingBooking.id, {
+        cancellation_type: cancellationType,
+        reason,
+        deduction_amount: deduction,
+        notes: cancellationNotes.trim(),
+      });
+
+      const netAmount = Math.max(0, cancellingBooking.advancePayment - deduction);
+      const cancellationData = res?.cancellation || {
+        cancellation_type: cancellationType,
+        type_label:
+          cancellationType === 'pause_and_adjust'
+            ? 'Paused for Future Adjustment'
+            : 'Client Refund Processed',
+        reason,
+        advance_paid: cancellingBooking.advancePayment,
+        deduction_amount: deduction,
+        net_amount: netAmount,
+        refund_amount: cancellationType === 'refund' ? netAmount : 0,
+        retained_credit: cancellationType === 'pause_and_adjust' ? netAmount : 0,
+        freed_date: cancellingBooking.eventDate,
+        freed_hall: cancellingBooking.hallName,
+      };
+
+      // Update state - retain original booked amount and paid advance for audit integrity
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === cancellingBooking.id
+            ? {
+                ...b,
+                status: 'Cancelled',
+                totalAmount: Number(res?.booking?.amount) || b.totalAmount,
+                advancePayment: Number(res?.booking?.advancePayment) || b.advancePayment,
+                remainingBalance: 0,
+                paymentStatus: cancellationType === 'pause_and_adjust' ? 'Credit Held' : 'Refunded',
+                cancellationRecord: cancellationData,
+              }
+            : b
+        )
+      );
+
+      // Notify window for real-time calendar and dashboard availability release
+      window.dispatchEvent(
+        new CustomEvent('booking_cancelled', {
+          detail: {
+            bookingId: cancellingBooking.id,
+            freedDate: cancellingBooking.eventDate,
+            freedHall: cancellingBooking.hallName,
+          },
+        })
+      );
+
+      setCancellationNotice(
+        res?.message ||
+          `Booking ${cancellingBooking.bookingId} cancelled. Hall '${cancellingBooking.hallName}' on ${cancellingBooking.eventDate} is now open for new bookings.`
+      );
+
+      setTimeout(() => {
+        setCancellationNotice(null);
+        setCancellingBooking(null);
+        setCancellationReason('');
+        setDeductionAmount('0');
+        setCancellationNotes('');
+      }, 2500);
+    } catch (err: any) {
+      console.error('Cancellation error:', err);
+      alert(err?.message || 'Failed to cancel booking. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const filteredBookings = bookings.filter((b) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -840,6 +1110,9 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   const getPaymentClass = (status: BookingItem['paymentStatus']) => {
     if (status === 'Paid') return 'bg-teal-50 text-teal-800 border-teal-200';
     if (status === 'Partial') return 'bg-amber-50 text-amber-800 border-amber-200';
+    if (status === 'Refunded') return 'bg-purple-50 text-purple-800 border-purple-200';
+    if (status === 'Credit Held') return 'bg-sky-50 text-sky-800 border-sky-200';
+    if (status === 'Settled') return 'bg-emerald-50 text-emerald-800 border-emerald-200';
     return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
@@ -998,7 +1271,14 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                 <select
                   id="booking-hall"
                   value={hallName}
-                  onChange={(e) => setHallName(e.target.value)}
+                  onChange={(e) => {
+                    const chosen = e.target.value;
+                    setHallName(chosen);
+                    const matched = availableHalls.find((h) => h.name === chosen);
+                    if (matched && matched.baseRent) {
+                      setHallRent(String(matched.baseRent));
+                    }
+                  }}
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
                 >
                   <option value="">Select Hall</option>
@@ -1077,7 +1357,27 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
+                <label
+                  htmlFor="booking-persons-per-table"
+                  className="block text-xs font-medium text-gray-700 mb-1.5"
+                >
+                  Persons per Table
+                </label>
+                <select
+                  id="booking-persons-per-table"
+                  value={personsPerTable}
+                  onChange={(e) => setPersonsPerTable(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 cursor-pointer"
+                >
+                  <option value="6">6 Persons per Table</option>
+                  <option value="8">8 Persons per Table</option>
+                  <option value="10">10 Persons per Table</option>
+                  <option value="12">12 Persons per Table</option>
+                </select>
+              </div>
+
+              <div>
                 <label
                   htmlFor="booking-seating"
                   className="block text-xs font-medium text-gray-700 mb-1.5"
@@ -1093,6 +1393,24 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                   className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
+
+              {/* Live Exact Table Count Requirement Banner */}
+              {guestCount && Number(guestCount) > 0 && (
+                <div className="md:col-span-2 rounded-lg border border-teal-200 bg-teal-50/70 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-600" />
+                    <span className="text-xs font-semibold text-teal-900">
+                      Exact Tables Required:
+                    </span>
+                    <span className="text-xs font-bold text-teal-800 font-mono">
+                      {Math.ceil(Number(guestCount) / (Number(personsPerTable) || 10))} Tables
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-teal-700 font-medium">
+                    {guestCount} guests @ {personsPerTable} persons/table
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Additional Services Sub-section */}
@@ -1106,7 +1424,15 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     <input
                       type="checkbox"
                       checked={includeDjSound}
-                      onChange={(e) => setIncludeDjSound(e.target.checked)}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setIncludeDjSound(isChecked);
+                        if (isChecked && (!djAmount || djAmount === '0')) {
+                          setDjAmount('25000');
+                        } else if (!isChecked) {
+                          setDjAmount('0');
+                        }
+                      }}
                       className="h-4 w-4 rounded border-gray-300 text-teal-700 focus:ring-teal-700/20 cursor-pointer"
                     />
                     <span className="text-sm font-medium text-gray-800">
@@ -1120,7 +1446,15 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     <input
                       type="checkbox"
                       checked={includeStageDecor}
-                      onChange={(e) => setIncludeStageDecor(e.target.checked)}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setIncludeStageDecor(isChecked);
+                        if (isChecked && (!decorAmount || decorAmount === '0')) {
+                          setDecorAmount('50000');
+                        } else if (!isChecked) {
+                          setDecorAmount('0');
+                        }
+                      }}
                       className="h-4 w-4 rounded border-gray-300 text-teal-700 focus:ring-teal-700/20 cursor-pointer"
                     />
                     <span className="text-sm font-medium text-gray-800">
@@ -1423,92 +1757,249 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             </div>
           </section>
 
-          {/* Section 5: Payment Summary */}
-          <section className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 pb-4 border-b border-gray-100">
-              5. Payment Summary
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+          {/* Section 5: Payment Summary & Itemized Breakdown */}
+          <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div>
-                <label
-                  htmlFor="booking-total-amount"
-                  className="block text-xs font-medium text-gray-700 mb-1.5"
-                >
-                  Total Booking Amount
-                </label>
-                <input
-                  id="booking-total-amount"
-                  type="number"
-                  min="0"
-                  value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
-                  placeholder="e.g. 350000"
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 font-mono tabular-nums"
-                />
+                <h2 className="text-sm font-semibold text-gray-900 font-['Plus_Jakarta_Sans']">
+                  5. Payment &amp; Pricing Breakdown
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Itemized pricing components: hall rent, menu, DJ, decor, total subtotal, discount, final amount, and advance.
+                </p>
+              </div>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200">
+                Live Auto-Calculating
+              </span>
+            </div>
+
+            {/* 4 Line Items: Menu, Hall Rent, DJ, Decor */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 1. Menu Total Amount */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="booking-menu-amount" className="block text-xs font-semibold text-gray-700">
+                    Menu Total Amount
+                  </label>
+                  <span className="text-[10px] text-teal-700 font-medium">Catering</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
+                  <input
+                    id="booking-menu-amount"
+                    type="number"
+                    min="0"
+                    value={menuAmount !== '' ? menuAmount : (autoMenuAmount > 0 ? String(autoMenuAmount) : '')}
+                    onChange={(e) => setMenuAmount(e.target.value)}
+                    placeholder={autoMenuAmount ? String(autoMenuAmount) : '0'}
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 font-mono">
+                  {parsedGuests > 0 && parsedRatePerHead > 0
+                    ? `${parsedGuests} guests × Rs. ${parsedRatePerHead.toLocaleString()}`
+                    : 'Auto-calculates from guests & package'}
+                </p>
               </div>
 
-              <div>
-                <label
-                  htmlFor="booking-advance"
-                  className="block text-xs font-medium text-gray-700 mb-1.5"
-                >
-                  Advance Payment
-                </label>
-                <input
-                  id="booking-advance"
-                  type="number"
-                  min="0"
-                  value={advancePayment}
-                  onChange={(e) => setAdvancePayment(e.target.value)}
-                  placeholder="e.g. 100000"
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 font-mono tabular-nums"
-                />
+              {/* 2. Hall Rent */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="booking-hall-rent" className="block text-xs font-semibold text-gray-700">
+                    Hall Rent
+                  </label>
+                  <span className="text-[10px] text-teal-700 font-medium">Venue Base</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
+                  <input
+                    id="booking-hall-rent"
+                    type="number"
+                    min="0"
+                    value={hallRent}
+                    onChange={(e) => setHallRent(e.target.value)}
+                    placeholder={autoHallRent ? String(autoHallRent) : '0'}
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500">
+                  {hallName ? `Base rental for ${hallName}` : 'Select hall to auto-fill'}
+                </p>
               </div>
 
-              <div className="md:col-span-2">
-                <label
-                  htmlFor="booking-remaining"
-                  className="block text-xs font-medium text-gray-700 mb-1.5"
-                >
-                  Remaining Balance (Read-only)
-                </label>
-                <input
-                  id="booking-remaining"
-                  type="text"
-                  readOnly
-                  value={
-                    hasAmountInput
-                      ? `Rs. ${remainingBalance.toLocaleString('en-PK')}`
-                      : 'Rs. 0'
-                  }
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-semibold text-gray-900 font-mono tabular-nums cursor-default focus:outline-none"
-                />
-              </div>
-
-              {/* Cost Subtotal Breakdown */}
-              <div className="md:col-span-2 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs">
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-500">
-                    Calculated Food Subtotal:{' '}
-                    <strong className="text-teal-900 font-mono">
-                      Rs. {calculatedFoodCost.toLocaleString('en-PK')}
-                    </strong>
+              {/* 3. DJ Amount */}
+              <div className={`p-4 rounded-xl border transition-colors space-y-1.5 ${
+                includeDjSound ? 'border-teal-200 bg-teal-50/40' : 'border-gray-200 bg-gray-50/60 opacity-80'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="booking-dj-amount" className="block text-xs font-semibold text-gray-700">
+                    DJ &amp; Sound Amount
+                  </label>
+                  <span className={`text-[10px] font-medium ${includeDjSound ? 'text-teal-700' : 'text-gray-400'}`}>
+                    {includeDjSound ? 'Included' : 'Optional'}
                   </span>
-                  {extraCharges > 0 && (
-                    <span className="text-gray-500">
-                      Extra Hours ({parsedExtraHours}h &times; Rs. {parsedRatePerHour}):{' '}
-                      <strong className="text-gray-900 font-mono">
-                        Rs. {extraCharges.toLocaleString('en-PK')}
-                      </strong>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
+                  <input
+                    id="booking-dj-amount"
+                    type="number"
+                    min="0"
+                    disabled={!includeDjSound}
+                    value={includeDjSound ? (djAmount || '25000') : '0'}
+                    onChange={(e) => setDjAmount(e.target.value)}
+                    placeholder="25000"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 disabled:bg-gray-100 disabled:text-gray-400"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500">
+                  {includeDjSound ? 'Standard DJ & sound system setup' : 'Toggle DJ in Section 2 to enable'}
+                </p>
+              </div>
+
+              {/* 4. Decor Stage Amount */}
+              <div className={`p-4 rounded-xl border transition-colors space-y-1.5 ${
+                includeStageDecor ? 'border-teal-200 bg-teal-50/40' : 'border-gray-200 bg-gray-50/60 opacity-80'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="booking-decor-amount" className="block text-xs font-semibold text-gray-700">
+                    Decor Stage Amount
+                  </label>
+                  <span className={`text-[10px] font-medium ${includeStageDecor ? 'text-teal-700' : 'text-gray-400'}`}>
+                    {includeStageDecor ? 'Included' : 'Optional'}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
+                  <input
+                    id="booking-decor-amount"
+                    type="number"
+                    min="0"
+                    disabled={!includeStageDecor}
+                    value={includeStageDecor ? (decorAmount || '50000') : '0'}
+                    onChange={(e) => setDecorAmount(e.target.value)}
+                    placeholder="50000"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 disabled:bg-gray-100 disabled:text-gray-400"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500">
+                  {includeStageDecor ? 'Stage florals & lighting decor' : 'Toggle Stage Decor in Section 2 to enable'}
+                </p>
+              </div>
+            </div>
+
+            {/* Extra Hours / Overtime (if any) */}
+            {extraCharges > 0 && (
+              <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                <span>Extra Hours Overtime ({parsedExtraHours}h &times; Rs. {parsedRatePerHour.toLocaleString('en-PK')}/h):</span>
+                <strong className="font-mono text-sm">+ Rs. {extraCharges.toLocaleString('en-PK')}</strong>
+              </div>
+            )}
+
+            {/* Row: Total Amount Area + Beside it Discount Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+              {/* Total Amount Area */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-slate-50 space-y-1">
+                <span className="text-xs font-semibold text-gray-700 block uppercase tracking-wider">
+                  Total Amount (Gross Subtotal)
+                </span>
+                <div className="text-2xl font-bold font-mono text-gray-900">
+                  Rs. {subtotal.toLocaleString('en-PK')}
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Sum of Menu + Hall Rent + DJ + Decor {extraCharges > 0 ? '+ Overtime' : ''}
+                </p>
+              </div>
+
+              {/* Beside it: Discount Area with Percentage Input */}
+              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="booking-discount-pct" className="block text-xs font-semibold text-purple-900 uppercase tracking-wider">
+                    Discount Area (%)
+                  </label>
+                  {calculatedDiscountAmount > 0 && (
+                    <span className="text-xs font-bold font-mono text-purple-800">
+                      - Rs. {calculatedDiscountAmount.toLocaleString('en-PK')}
                     </span>
                   )}
                 </div>
-                <span className="text-gray-500">
-                  Total Payable:{' '}
-                  <strong className="text-teal-700 font-mono font-bold text-sm">
-                    Rs. {grandTotal.toLocaleString('en-PK')}
-                  </strong>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      id="booking-discount-pct"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={discountPercentage}
+                      onChange={(e) => setDiscountPercentage(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-3 pr-8 py-2 rounded-lg border border-purple-200 bg-white text-sm font-mono font-bold text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-700/20 focus:border-purple-700"
+                    />
+                    <span className="absolute right-3 top-2 text-sm text-purple-600 font-bold">%</span>
+                  </div>
+                  {/* Quick percentage pills */}
+                  {[0, 5, 10, 15].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setDiscountPercentage(String(pct))}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        Number(discountPercentage) === pct
+                          ? 'bg-purple-700 text-white shadow-2xs'
+                          : 'bg-white border border-purple-200 text-purple-700 hover:bg-purple-100'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-purple-700">
+                  {calculatedDiscountAmount > 0
+                    ? `Discount of ${parsedDiscountPct}% cuts Rs. ${calculatedDiscountAmount.toLocaleString('en-PK')} from subtotal`
+                    : 'Staff can add discount percentage here'}
+                </p>
+              </div>
+            </div>
+
+            {/* Row: Final Amount Area + Advance Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Final Amount Area */}
+              <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/70 space-y-1">
+                <span className="text-xs font-semibold text-teal-800 block uppercase tracking-wider">
+                  Final Amount (Net Total Payable)
                 </span>
+                <div className="text-3xl font-bold font-mono text-teal-900">
+                  Rs. {finalAmount.toLocaleString('en-PK')}
+                </div>
+                <p className="text-[11px] text-teal-700 font-medium">
+                  Payable contract amount after {parsedDiscountPct > 0 ? `${parsedDiscountPct}% discount` : 'no discount'}
+                </p>
+              </div>
+
+              {/* Advance Area & Remaining Balance */}
+              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                <label htmlFor="booking-advance-payment" className="block text-xs font-semibold text-gray-800 uppercase tracking-wider">
+                  Advance Payment (Rs.)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
+                  <input
+                    id="booking-advance-payment"
+                    type="number"
+                    min="0"
+                    value={advancePayment}
+                    onChange={(e) => setAdvancePayment(e.target.value)}
+                    placeholder="e.g. 150000"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-base font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-200">
+                  <span className="text-gray-600 font-medium">Remaining Balance Due:</span>
+                  <span className={`font-mono font-bold ${remainingBalance > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                    Rs. {remainingBalance.toLocaleString('en-PK')}
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -1528,7 +2019,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={() => {
@@ -1540,28 +2031,28 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
               Cancel
             </button>
             <button
-              type="button"
+              type="submit"
               disabled={!!collisionWarning}
-              onClick={handleSaveAndPrintReceipt}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+              className={`px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                 collisionWarning
                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'border-teal-700 bg-white hover:bg-teal-50 text-teal-700 cursor-pointer'
               }`}
             >
-              <Printer className="w-4 h-4" />
-              <span>Save &amp; Print Receipt</span>
+              Save Booking Only
             </button>
             <button
-              type="submit"
+              type="button"
               disabled={!!collisionWarning}
-              className={`px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors ${
+              onClick={handleSaveAndPrintReceipt}
+              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm transition-all ${
                 collisionWarning
                   ? 'bg-rose-400 cursor-not-allowed opacity-90'
-                  : 'bg-teal-700 hover:bg-teal-800 cursor-pointer'
+                  : 'bg-teal-700 hover:bg-teal-800 hover:shadow-md cursor-pointer'
               }`}
             >
-              {collisionWarning ? 'Blocked: Schedule Conflict' : 'Save Booking'}
+              <Printer className="w-4 h-4" />
+              <span>Confirm Booking &amp; Generate Slip</span>
             </button>
           </div>
         </form>
@@ -1753,22 +2244,51 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                       </select>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border ${getStatusClass(
-                          booking.status
-                        )}`}
-                      >
-                        {booking.status}
-                      </span>
+                      <div className="space-y-0.5">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border ${getStatusClass(
+                            booking.status
+                          )}`}
+                        >
+                          {booking.status}
+                        </span>
+                        {booking.status === 'Cancelled' && (
+                          <div className="text-[10px] text-gray-500 font-mono">
+                            Booked: Rs. {(booking.cancellationRecord?.booked_amount || booking.totalAmount).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border ${getPaymentClass(
-                          booking.paymentStatus
-                        )}`}
-                      >
-                        {booking.paymentStatus}
-                      </span>
+                      {booking.status === 'Cancelled' ? (
+                        <div className="space-y-0.5">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border ${getPaymentClass(
+                              booking.paymentStatus
+                            )}`}
+                          >
+                            {booking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
+                              ? 'Credit Held'
+                              : 'Refund Settled'}
+                          </span>
+                          <div className="text-[10px] text-teal-700 font-mono">
+                            Paid: Rs. {(booking.cancellationRecord?.advance_paid ?? booking.advancePayment).toLocaleString()} | Used: Rs. {(booking.cancellationRecord?.deduction_amount ?? 0).toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-purple-700 font-mono font-medium">
+                            {booking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
+                              ? `Credit: Rs. ${(booking.cancellationRecord?.retained_credit ?? 0).toLocaleString()}`
+                              : `Refund: Rs. ${(booking.cancellationRecord?.refund_amount ?? 0).toLocaleString()}`} · Pending: Rs. 0
+                          </div>
+                        </div>
+                      ) : (
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium border ${getPaymentClass(
+                            booking.paymentStatus
+                          )}`}
+                        >
+                          {booking.paymentStatus}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5">
@@ -1797,6 +2317,27 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
+                        {booking.status !== 'Cancelled' ? (
+                          <button
+                            type="button"
+                            onClick={() => openCancellationModal(booking)}
+                            aria-label="Emergency cancellation"
+                            title="Emergency Cancel (Refund or Pause & Adjust)"
+                            className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer"
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setViewingCancellationRecord(booking)}
+                            aria-label="View cancellation settlement"
+                            title="View Cancellation & Settlement Record"
+                            className="p-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDeleteBooking(booking.id)}
@@ -1887,25 +2428,411 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                   Rs. {viewingBooking.remainingBalance.toLocaleString('en-PK')}
                 </p>
               </div>
+
+              {/* If booking is cancelled, show cancellation settlement details */}
+              {viewingBooking.status === 'Cancelled' && (
+                <div className="col-span-2 mt-2 p-4 rounded-xl border border-rose-200 bg-rose-50/80 text-rose-950 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-rose-800">
+                      <Ban className="w-4 h-4 text-rose-600" />
+                      <span>
+                        {viewingBooking.cancellationRecord?.type_label || 'Booking Cancelled (Emergency Settlement)'}
+                      </span>
+                    </div>
+                    {viewingBooking.cancellationRecord?.cancelled_at && (
+                      <span className="text-[10px] text-rose-600">
+                        {viewingBooking.cancellationRecord.cancelled_at}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-rose-800">
+                    Reason: <strong>{viewingBooking.cancellationRecord?.reason || 'Emergency cancellation'}</strong>
+                    {viewingBooking.cancellationRecord?.cancelled_by && ` (Approved by ${viewingBooking.cancellationRecord.cancelled_by})`}
+                  </p>
+                  <div className="pt-2 border-t border-rose-200 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    <div className="p-2 rounded-lg bg-white/80 border border-rose-100">
+                      <span className="text-[10px] text-gray-500 block">Booked Amount</span>
+                      <strong className="font-mono text-gray-900">
+                        Rs. {(viewingBooking.cancellationRecord?.booked_amount || viewingBooking.totalAmount).toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/80 border border-rose-100">
+                      <span className="text-[10px] text-gray-500 block">Advance Paid</span>
+                      <strong className="font-mono text-teal-800">
+                        Rs. {(viewingBooking.cancellationRecord?.advance_paid ?? viewingBooking.advancePayment).toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/80 border border-rose-100">
+                      <span className="text-[10px] text-gray-500 block">Amount Used (Cut)</span>
+                      <strong className="font-mono text-rose-700">
+                        Rs. {(viewingBooking.cancellationRecord?.deduction_amount ?? 0).toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/80 border border-rose-100">
+                      <span className="text-[10px] text-gray-500 block">Pending Balance</span>
+                      <strong className="font-mono text-emerald-700">
+                        Rs. 0 (Closed)
+                      </strong>
+                    </div>
+                    <div className="col-span-2 p-2 rounded-lg bg-purple-50 border border-purple-200">
+                      <span className="text-[10px] text-purple-700 block font-semibold">
+                        {viewingBooking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
+                          ? 'Retained Credit for Rescheduled Event'
+                          : 'Refund Disbursed to Client'}
+                      </span>
+                      <strong className="font-mono text-purple-900 text-sm">
+                        Rs. {(viewingBooking.cancellationRecord?.net_amount ?? 0).toLocaleString()}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-2">
+              <div>
+                {viewingBooking.status !== 'Cancelled' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = viewingBooking;
+                      setViewingBooking(null);
+                      openCancellationModal(target);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Ban className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Emergency Cancel Booking</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = viewingBooking;
+                    setViewingBooking(null);
+                    setReceiptBooking(current);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-teal-700 bg-white hover:bg-teal-50 text-teal-700 text-xs font-medium cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Receipt</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingBooking(null)}
+                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Cancellation Modal with Two Options */}
+      {cancellingBooking && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-[2px] animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-xl bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-rose-600 to-red-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <ShieldAlert className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Emergency Booking Cancellation</h3>
+                  <p className="text-xs text-rose-100 mt-0.5 font-mono">
+                    {cancellingBooking.bookingId} — {cancellingBooking.customerName} ({cancellingBooking.hallName})
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  const current = viewingBooking;
-                  setViewingBooking(null);
-                  setReceiptBooking(current);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-teal-700 bg-white hover:bg-teal-50 text-teal-700 text-xs font-medium cursor-pointer"
+                onClick={() => setCancellingBooking(null)}
+                className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Receipt</span>
+                <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5">
+              {cancellationNotice ? (
+                <div className="py-8 px-4 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-base">Booking Successfully Cancelled</h4>
+                  <p className="text-xs text-slate-600 max-w-md mx-auto">{cancellationNotice}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Two Condition Options */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                      Choose Cancellation Condition <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Option 1: Refund */}
+                      <button
+                        type="button"
+                        onClick={() => setCancellationType('refund')}
+                        className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          cancellationType === 'refund'
+                            ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className={`w-4 h-4 ${cancellationType === 'refund' ? 'text-emerald-700' : 'text-slate-400'}`} />
+                            <span className="font-bold text-sm text-slate-900">Refund Client</span>
+                          </div>
+                          {cancellationType === 'refund' && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Cut incurred expenses used for prep and refund the remaining advance to the client.
+                        </p>
+                      </button>
+
+                      {/* Option 2: Pause and Adjust */}
+                      <button
+                        type="button"
+                        onClick={() => setCancellationType('pause_and_adjust')}
+                        className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          cancellationType === 'pause_and_adjust'
+                            ? 'border-teal-700 bg-teal-50/50 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <CalendarCheck className={`w-4 h-4 ${cancellationType === 'pause_and_adjust' ? 'text-teal-700' : 'text-slate-400'}`} />
+                            <span className="font-bold text-sm text-slate-900">Pause &amp; Adjust to Future</span>
+                          </div>
+                          {cancellationType === 'pause_and_adjust' && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Close booking, cut used amount, and retain remaining balance as client credit for rescheduled event.
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reason Input */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Emergency / Cancellation Reason <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={cancellationReason}
+                      onChange={(e) => setCancellationReason(e.target.value)}
+                      placeholder="e.g. Family Medical Emergency / Bereavement / Event Relocation"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15"
+                    />
+                  </div>
+
+                  {/* Financial Settlement Calculator */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
+                      <span className="text-slate-500">Collected Advance Payment:</span>
+                      <span className="font-mono font-bold text-slate-900 text-sm">
+                        Rs. {cancellingBooking.advancePayment.toLocaleString('en-PK')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700">
+                          Amount Used / Incurred Costs:
+                        </label>
+                        <p className="text-[11px] text-slate-500">
+                          Prep expenses or non-refundable fee to cut
+                        </p>
+                      </div>
+                      <div className="relative w-36">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
+                          Rs.
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={cancellingBooking.advancePayment}
+                          value={deductionAmount}
+                          onChange={(e) => setDeductionAmount(e.target.value)}
+                          className="w-full pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-right text-sm font-mono font-bold text-slate-900 focus:outline-none focus:border-rose-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Calculated Net Result */}
+                    {(() => {
+                      const deduction = Math.max(0, parseFloat(deductionAmount) || 0);
+                      const net = Math.max(0, cancellingBooking.advancePayment - deduction);
+                      return (
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-800">
+                            {cancellationType === 'refund'
+                              ? 'Net Amount to Refund Client:'
+                              : 'Net Amount Retained for Future Event:'}
+                          </span>
+                          <span
+                            className={`font-mono font-bold text-base ${
+                              cancellationType === 'refund' ? 'text-emerald-700' : 'text-teal-800'
+                            }`}
+                          >
+                            Rs. {net.toLocaleString('en-PK')}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Hall & Date Release Notice */}
+                  <div className="rounded-xl border border-teal-200 bg-teal-50/70 p-3.5 flex items-start gap-2.5 text-xs text-teal-900">
+                    <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Immediate Hall &amp; Date Availability Release</p>
+                      <p className="text-teal-800 mt-0.5">
+                        Closing this booking will immediately free up{' '}
+                        <strong className="underline">{cancellingBooking.hallName}</strong> on{' '}
+                        <strong className="underline">{cancellingBooking.eventDate}</strong> so it is open for other clients to reserve on the calendar.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {!cancellationNotice && (
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCancellingBooking(null)}
+                  disabled={isCancelling}
+                  className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCancellation}
+                  disabled={isCancelling}
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white text-xs font-bold inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                >
+                  <Ban className="w-4 h-4" />
+                  <span>
+                    {isCancelling
+                      ? 'Cancelling & Freeing Date...'
+                      : cancellationType === 'refund'
+                      ? 'Confirm Cancellation & Refund'
+                      : 'Confirm Cancellation & Retain Balance'}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Settlement Details Modal */}
+      {viewingCancellationRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-[2px] animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 bg-slate-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-base">Cancellation Settlement Summary</h3>
+              </div>
               <button
                 type="button"
-                onClick={() => setViewingBooking(null)}
-                className="px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium cursor-pointer"
+                onClick={() => setViewingCancellationRecord(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-1">
+                <p className="font-bold text-sm">
+                  {viewingCancellationRecord.cancellationRecord?.type_label || 'Booking Cancelled'}
+                </p>
+                <p>
+                  Reason: <span className="font-semibold">{viewingCancellationRecord.cancellationRecord?.reason || 'Emergency'}</span>
+                </p>
+                {viewingCancellationRecord.cancellationRecord?.cancelled_at && (
+                  <p className="text-[11px] text-amber-800">
+                    Cancelled on {viewingCancellationRecord.cancellationRecord.cancelled_at} by {viewingCancellationRecord.cancellationRecord.cancelled_by || 'Manager'}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50">
+                <div>
+                  <span className="text-slate-500">Booked Contract Amount</span>
+                  <p className="font-bold font-mono text-sm mt-0.5 text-slate-900">
+                    Rs. {Number(viewingCancellationRecord.cancellationRecord?.booked_amount || viewingCancellationRecord.totalAmount).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Advance Paid</span>
+                  <p className="font-bold font-mono text-sm mt-0.5 text-teal-800">
+                    Rs. {Number(viewingCancellationRecord.cancellationRecord?.advance_paid || viewingCancellationRecord.advancePayment).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Amount Used (Incurred Cut)</span>
+                  <p className="font-bold font-mono text-sm text-rose-700 mt-0.5">
+                    Rs. {Number(viewingCancellationRecord.cancellationRecord?.deduction_amount || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Pending Balance</span>
+                  <p className="font-bold font-mono text-sm text-emerald-700 mt-0.5">
+                    Rs. 0 (Voided / Settled)
+                  </p>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-slate-200 flex items-center justify-between">
+                  <span className="font-bold text-slate-900">
+                    {viewingCancellationRecord.cancellationRecord?.cancellation_type === 'pause_and_adjust'
+                      ? 'Credit Retained for Future Event'
+                      : 'Amount Refunded to Client'}
+                  </span>
+                  <span className="font-bold font-mono text-base text-purple-700">
+                    Rs. {Number(viewingCancellationRecord.cancellationRecord?.net_amount || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg border border-teal-200 bg-teal-50 text-teal-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0" />
+                <span>
+                  Date <strong>{viewingCancellationRecord.eventDate}</strong> ({viewingCancellationRecord.hallName}) was released and reopened for other bookings.
+                </span>
+              </div>
+            </div>
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingCancellationRecord(null)}
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Close
               </button>
@@ -2050,9 +2977,9 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-gray-500">Guest Count</p>
+                      <p className="text-[11px] text-gray-500">Guest Count &amp; Tables</p>
                       <p className="font-mono text-gray-900 mt-0.5">
-                        {receiptBooking.guestCount || '100'}
+                        {receiptBooking.guestCount || '100'} Guests ({Math.ceil((Number(receiptBooking.guestCount) || 100) / (Number(receiptBooking.personsPerTable) || 10))} Tables)
                       </p>
                     </div>
                     <div>
@@ -2070,51 +2997,151 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     Financial Breakdown
                   </h3>
                   <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Hall Rent</span>
-                      <span className="font-mono text-gray-900">
-                        Rs. {(receiptBooking.totalAmount ? Math.round(receiptBooking.totalAmount * 0.4) : 0).toLocaleString('en-PK')}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Menu Package</span>
-                      <span className="font-medium text-gray-900">{menuDisplay}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-gray-600">
-                        Extra Services (DJ/Decor/Extra Time)
-                      </span>
-                      <span className="font-mono text-gray-900 text-right">
-                        {extraServicesLabel}
-                      </span>
-                    </div>
+                    {receiptBooking.status === 'Cancelled' ? (
+                      <div className="pt-2.5 mt-2.5 border-t border-rose-200 p-3 rounded-lg bg-rose-50/80 text-rose-950 space-y-2">
+                        <div className="font-bold text-xs text-rose-800 uppercase tracking-wide">
+                          Cancellation &amp; Financial Settlement
+                        </div>
+                        <div className="flex items-center justify-between text-gray-800">
+                          <span>Original Booked Amount</span>
+                          <span className="font-mono tabular-nums font-semibold">
+                            Rs. {(receiptBooking.cancellationRecord?.booked_amount || receiptBooking.totalAmount).toLocaleString('en-PK')}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-teal-800">
+                          <span>Advance Paid</span>
+                          <span className="font-mono tabular-nums font-semibold">
+                            Rs. {(receiptBooking.cancellationRecord?.advance_paid ?? receiptBooking.advancePayment).toLocaleString('en-PK')}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-rose-700">
+                          <span>Amount Used (Deductions)</span>
+                          <span className="font-mono tabular-nums font-semibold">
+                            Rs. {(receiptBooking.cancellationRecord?.deduction_amount ?? 0).toLocaleString('en-PK')}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-emerald-800">
+                          <span>Pending Balance</span>
+                          <span className="font-mono tabular-nums font-semibold">
+                            Rs. 0 (Closed / Voided)
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-rose-200 font-bold text-purple-900 text-sm">
+                          <span>
+                            {receiptBooking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
+                              ? 'Retained Credit Voucher'
+                              : 'Refund Disbursed to Client'}
+                          </span>
+                          <span className="font-mono tabular-nums">
+                            Rs. {(receiptBooking.cancellationRecord?.net_amount ?? 0).toLocaleString('en-PK')}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 pt-1">
+                        {/* What It Is For - Itemized Table */}
+                        <table className="w-full text-left border-collapse border border-gray-200 text-xs">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-700">
+                              <th className="py-2 px-3 font-semibold uppercase text-[10px]">Service Item</th>
+                              <th className="py-2 px-3 font-semibold uppercase text-[10px]">Scope</th>
+                              <th className="py-2 px-3 text-right font-semibold uppercase text-[10px]">Amount (PKR)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            <tr>
+                              <td className="py-2 px-3 font-medium text-gray-900">Hall Rental Venue</td>
+                              <td className="py-2 px-3 text-gray-600">{receiptBooking.hallName} Base</td>
+                              <td className="py-2 px-3 text-right font-mono font-semibold text-gray-900">
+                                Rs. {(receiptBooking.hallRent || 0).toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 font-medium text-gray-900">Food &amp; Catering Menu</td>
+                              <td className="py-2 px-3 text-gray-600">
+                                {receiptBooking.menuPackage || 'Catering'} ({receiptBooking.guestCount} guests)
+                              </td>
+                              <td className="py-2 px-3 text-right font-mono font-semibold text-gray-900">
+                                Rs. {(receiptBooking.menuAmount || 0).toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                            {(receiptBooking.includeDjSound || (receiptBooking.djAmount && receiptBooking.djAmount > 0)) && (
+                              <tr>
+                                <td className="py-2 px-3 font-medium text-gray-900">DJ &amp; Sound System</td>
+                                <td className="py-2 px-3 text-gray-600">Audio setup &amp; DJ arrangement</td>
+                                <td className="py-2 px-3 text-right font-mono font-semibold text-gray-900">
+                                  Rs. {(receiptBooking.djAmount || 25000).toLocaleString('en-PK')}
+                                </td>
+                              </tr>
+                            )}
+                            {(receiptBooking.includeStageDecor || (receiptBooking.decorAmount && receiptBooking.decorAmount > 0)) && (
+                              <tr>
+                                <td className="py-2 px-3 font-medium text-gray-900">Stage &amp; Floral Decor</td>
+                                <td className="py-2 px-3 text-gray-600">Floral stage styling &amp; ambient lights</td>
+                                <td className="py-2 px-3 text-right font-mono font-semibold text-gray-900">
+                                  Rs. {(receiptBooking.decorAmount || 50000).toLocaleString('en-PK')}
+                                </td>
+                              </tr>
+                            )}
+                            {receiptBooking.extraHours > 0 && (
+                              <tr>
+                                <td className="py-2 px-3 font-medium text-gray-900">Extra Hours Overtime</td>
+                                <td className="py-2 px-3 text-gray-600">
+                                  {receiptBooking.extraHours}h @ Rs. {(receiptBooking.ratePerHour || 0).toLocaleString('en-PK')}/h
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono font-semibold text-gray-900">
+                                  Rs. {((receiptBooking.extraHours || 0) * (receiptBooking.ratePerHour || 0)).toLocaleString('en-PK')}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
 
-                    <div className="pt-2.5 mt-2.5 border-t border-gray-100 space-y-1.5">
-                      <div className="flex items-center justify-between font-semibold text-gray-900">
-                        <span>Total Amount</span>
-                        <span className="font-mono tabular-nums">
-                          {receiptBooking.totalAmount > 0
-                            ? `Rs. ${receiptBooking.totalAmount.toLocaleString('en-PK')}`
-                            : 'Rs. 0'}
-                        </span>
+                        {/* Payment & Settlement Table */}
+                        <table className="w-full text-left border-collapse border border-gray-200 text-xs">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-700">
+                              <th className="py-2 px-3 font-semibold uppercase text-[10px]">Payment Summary</th>
+                              <th className="py-2 px-3 text-right font-semibold uppercase text-[10px]">Amount (PKR)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            <tr>
+                              <td className="py-2 px-3 text-gray-600">Gross Subtotal</td>
+                              <td className="py-2 px-3 text-right font-mono text-gray-900 font-medium">
+                                Rs. {(receiptBooking.subtotal || receiptBooking.totalAmount).toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                            {receiptBooking.discountPercentage && receiptBooking.discountPercentage > 0 ? (
+                              <tr className="text-purple-700 font-medium">
+                                <td className="py-2 px-3">Special Discount ({receiptBooking.discountPercentage}%)</td>
+                                <td className="py-2 px-3 text-right font-mono font-bold">
+                                  - Rs. {(receiptBooking.discountAmount || 0).toLocaleString('en-PK')}
+                                </td>
+                              </tr>
+                            ) : null}
+                            <tr className="font-bold bg-teal-50/50">
+                              <td className="py-2.5 px-3 text-teal-900">Final Net Contract Payable</td>
+                              <td className="py-2.5 px-3 text-right font-mono text-teal-900 text-sm">
+                                Rs. {receiptBooking.totalAmount.toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                            <tr className="bg-emerald-50/70 font-semibold">
+                              <td className="py-2.5 px-3 text-emerald-800">Advance Payment Received</td>
+                              <td className="py-2.5 px-3 text-right font-mono text-emerald-700 text-sm font-bold">
+                                Rs. {receiptBooking.advancePayment.toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                            <tr className="border-t-2 border-gray-300 font-bold">
+                              <td className="py-2.5 px-3 text-gray-900">Remaining Balance Due</td>
+                              <td className={`py-2.5 px-3 text-right font-mono text-sm ${receiptBooking.remainingBalance > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                Rs. {receiptBooking.remainingBalance.toLocaleString('en-PK')}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                      <div className="flex items-center justify-between text-gray-700">
-                        <span>Advance Paid</span>
-                        <span className="font-mono tabular-nums">
-                          {receiptBooking.advancePayment > 0
-                            ? `Rs. ${receiptBooking.advancePayment.toLocaleString('en-PK')}`
-                            : 'Rs. 0'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pt-1.5 border-t border-dashed border-gray-200 font-bold text-gray-900 text-sm">
-                        <span>Balance Due</span>
-                        <span className="font-mono tabular-nums">
-                          {receiptBooking.totalAmount > 0 || receiptBooking.remainingBalance > 0
-                            ? `Rs. ${receiptBooking.remainingBalance.toLocaleString('en-PK')}`
-                            : 'Rs. 0'}
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 

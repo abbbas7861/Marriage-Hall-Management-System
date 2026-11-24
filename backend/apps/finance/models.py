@@ -5,6 +5,12 @@ class InvoiceRecord(models.Model):
         ('Paid', 'Paid'),
         ('Partial', 'Partial'),
         ('Unpaid', 'Unpaid'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Active', 'Active'),
+        ('Cancelled', 'Cancelled'),
     ]
 
     invoice_id = models.CharField(max_length=50, unique=True, db_index=True)
@@ -14,6 +20,9 @@ class InvoiceRecord(models.Model):
     paid_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     remaining_balance = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='Unpaid')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
+    notes = models.TextField(blank=True, default='')
+    cancellation_record = models.JSONField(default=dict, blank=True)
     date = models.DateField(db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

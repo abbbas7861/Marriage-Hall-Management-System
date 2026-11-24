@@ -13,13 +13,14 @@ class InvoiceRecordSerializer(serializers.ModelSerializer):
     paidAmount = serializers.FloatField(source='paid_amount', required=False, default=0)
     remainingBalance = serializers.FloatField(source='remaining_balance', required=False)
     paymentStatus = serializers.CharField(source='payment_status', required=False, default='Unpaid')
+    cancellationRecord = serializers.JSONField(source='cancellation_record', required=False, default=dict)
 
     class Meta:
         model = InvoiceRecord
         fields = [
             'id', 'invoiceId', 'bookingId', 'customerName',
             'totalAmount', 'paidAmount', 'remainingBalance',
-            'paymentStatus', 'date'
+            'paymentStatus', 'status', 'notes', 'cancellationRecord', 'date'
         ]
 
     def create(self, validated_data):

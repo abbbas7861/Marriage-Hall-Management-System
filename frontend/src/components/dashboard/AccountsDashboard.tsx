@@ -42,14 +42,14 @@ export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
     invoicesApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) setInvoices(data);
+        if (Array.isArray(data)) setInvoices(data);
       })
       .catch(() => {});
 
     expensesApi
       .list()
       .then((data) => {
-        if (data && data.length > 0) setExpenses(data);
+        if (Array.isArray(data)) setExpenses(data);
       })
       .catch(() => {});
 

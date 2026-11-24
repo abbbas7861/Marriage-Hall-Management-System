@@ -117,28 +117,62 @@ export const MasterCalendarPage: React.FC<MasterCalendarPageProps> = ({
       })
       .catch(() => setAvailableHalls(SEED_HALLS.map((h) => h.name)));
 
-    bookingsApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setBookings(
-            data.map((b: any) => ({
-              id: String(b.id),
-              date: b.date || '',
-              hall: b.hallName || 'Royal Grand Hall',
-              slot:
-                b.slot && b.slot.toLowerCase().includes('lunch')
-                  ? 'Lunch/Afternoon'
-                  : 'Dinner/Evening',
-              bookingType: 'Full Hall',
-              customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
-              eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Barat',
-              guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
-            }))
-          );
-        }
-      })
-      .catch((err) => console.warn('Master calendar bookings API error:', err));
+    const fetchCalendarBookings = () => {
+      bookingsApi
+        .list()
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setBookings(
+              data
+                .filter((b: any) => {
+                  if (b.status === 'Cancelled' || b.status === 'Rejected' || b.status === 'Completed') return false;
+                  const op = (b.operationalStatus || b.operational_status || '').toLowerCase();
+                  if (op.includes('concluded') || op.includes('completed') || op.includes('closed')) return false;
+                  return true;
+                })
+                .map((b: any) => ({
+                  id: String(b.id),
+                  date: b.date || '',
+                  hall: b.hallName || 'Royal Grand Hall',
+                  slot:
+                    b.slot && b.slot.toLowerCase().includes('lunch')
+                      ? 'Lunch/Afternoon'
+                      : 'Dinner/Evening',
+                  bookingType: 'Full Hall',
+                  customerName: b.customerName && b.customerName !== '[--]' ? b.customerName : '',
+                  eventType: b.eventType && b.eventType !== '[--]' ? b.eventType : 'Barat',
+                  guestCount: b.guestCount && b.guestCount !== '[--]' ? String(b.guestCount) : '',
+                }))
+            );
+          }
+        })
+        .catch((err) => console.warn('Master calendar bookings API error:', err));
+    };
+
+    fetchCalendarBookings();
+
+    const handleBookingCancelled = (e: any) => {
+      if (e.detail?.bookingId) {
+        setBookings((prev) => prev.filter((b) => b.id !== String(e.detail.bookingId)));
+      } else {
+        fetchCalendarBookings();
+      }
+    };
+    const handleEventConcluded = (e: any) => {
+      if (e.detail?.bookingId) {
+        setBookings((prev) => prev.filter((b) => b.id !== String(e.detail.bookingId)));
+      } else {
+        fetchCalendarBookings();
+      }
+    };
+    window.addEventListener('booking_cancelled', handleBookingCancelled);
+    window.addEventListener('event_concluded', handleEventConcluded);
+    window.addEventListener('booking_updated', fetchCalendarBookings);
+    return () => {
+      window.removeEventListener('booking_cancelled', handleBookingCancelled);
+      window.removeEventListener('event_concluded', handleEventConcluded);
+      window.removeEventListener('booking_updated', fetchCalendarBookings);
+    };
   }, []);
 
   const bookableHalls = useMemo(() => {

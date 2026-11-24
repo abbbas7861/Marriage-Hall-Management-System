@@ -10,8 +10,12 @@ import {
   Users,
   X,
   XCircle,
+  FileText,
+  Printer,
+  ArrowDownRight,
+  ArrowUpRight,
 } from 'lucide-react';
-import { bookingsApi, expensesApi, fundRequestsApi, FundRequestItem } from '../../api/client';
+import { bookingsApi, expensesApi, fundRequestsApi, invoicesApi, FundRequestItem } from '../../api/client';
 import { Booking } from '../../types';
 
 export type TrackerExpenseCategory =
@@ -55,6 +59,7 @@ const STATUS_BADGE_STYLES: Record<string, string> = {
 
 export const EventProfitabilityTrackerPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [selectedEventRef, setSelectedEventRef] = useState<string>('All Events');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -72,16 +77,21 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
   const [modalAmount, setModalAmount] = useState('');
   const [modalDate, setModalDate] = useState(new Date().toISOString().slice(0, 10));
 
+  // Cashflow & P&L Statement Modal
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [fetchedBookings, fetchedExpenses, fetchedFundReqs] = await Promise.all([
+      const [fetchedBookings, fetchedExpenses, fetchedFundReqs, fetchedInvoices] = await Promise.all([
         bookingsApi.list().catch(() => []),
         expensesApi.list().catch(() => []),
         fundRequestsApi.list({ status: 'Pending' }).catch(() => []),
+        invoicesApi.list().catch(() => []),
       ]);
 
       setBookings(fetchedBookings || []);
+      setInvoices(fetchedInvoices || []);
 
       if (fetchedExpenses && fetchedExpenses.length > 0) {
         setExpenses(
@@ -140,10 +150,23 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
 
   const kpiMetrics = useMemo(() => {
     let totalRevenue = 0;
+    let collectedRevenue = 0;
+    let pendingReceivables = 0;
+
     if (selectedEventRef === 'All Events') {
-      totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      bookings.forEach((b: any) => {
+        const inv = invoices.find((i: any) => (i.bookingId || i.bookingRef) === b.bookingRef);
+        const bTotal = Number(inv?.totalAmount ?? b.amount ?? b.subtotal ?? 0);
+        const bPaid = Number(inv?.paidAmount ?? b.advancePayment ?? 0);
+        totalRevenue += bTotal;
+        collectedRevenue += bPaid;
+      });
+      pendingReceivables = Math.max(0, totalRevenue - collectedRevenue);
     } else if (selectedBooking) {
-      totalRevenue = Number(selectedBooking.amount) || 0;
+      const inv = invoices.find((i: any) => (i.bookingId || i.bookingRef) === selectedBooking.bookingRef);
+      totalRevenue = Number(inv?.totalAmount ?? selectedBooking.amount ?? (selectedBooking as any).subtotal ?? 0);
+      collectedRevenue = Number(inv?.paidAmount ?? selectedBooking.advancePayment ?? 0);
+      pendingReceivables = Math.max(0, totalRevenue - collectedRevenue);
     }
 
     // Outside Waiters expense specifically for this event
@@ -157,7 +180,12 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0';
 
     return {
+      totalRevenue,
+      collectedRevenue,
+      pendingReceivables,
       revenueLabel: `Rs. ${totalRevenue.toLocaleString()}`,
+      collectedLabel: `Rs. ${collectedRevenue.toLocaleString()}`,
+      pendingLabel: `Rs. ${pendingReceivables.toLocaleString()}`,
       outsideWaitersLabel: `Rs. ${outsideWaitersTotal.toLocaleString()}`,
       outsideWaitersCount: filteredExpenses.filter((e) => e.category === 'Outside Waiters').length,
       finalTotalExpensesLabel: `Rs. ${finalTotalExpenses.toLocaleString()}`,
@@ -165,7 +193,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
       netProfitNumeric: netProfit,
       profitMargin,
     };
-  }, [bookings, selectedBooking, filteredExpenses, selectedEventRef]);
+  }, [bookings, selectedBooking, invoices, filteredExpenses, selectedEventRef]);
 
   const handleApproveRequest = async (req: FundRequestItem) => {
     try {
@@ -237,14 +265,24 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAddExpense}
-          className="inline-flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Add Event Expense / Waiters
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsStatementModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-teal-700 bg-teal-50 hover:bg-teal-100 text-teal-800 px-4 py-2.5 text-sm font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <FileText className="w-4 h-4 text-teal-700" />
+            Full Cashflow &amp; P&amp;L Statement
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenAddExpense}
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Add Event Expense / Waiters
+          </button>
+        </div>
       </div>
 
       {/* Top Filter Bar */}
@@ -305,7 +343,17 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           <p className="mt-3 text-2xl font-bold font-mono tabular-nums text-slate-900">
             {kpiMetrics.revenueLabel}
           </p>
-          <span className="text-[11px] text-slate-400 mt-1 block">Contract package value</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+            <span className="text-emerald-700 font-bold" title="Collected advance & installments">
+              Paid: {kpiMetrics.collectedLabel}
+            </span>
+            <span
+              className={`font-bold ${kpiMetrics.pendingReceivables > 0 ? 'text-amber-800' : 'text-slate-400'}`}
+              title="Pending balance uncollected"
+            >
+              Due: {kpiMetrics.pendingLabel}
+            </span>
+          </div>
         </div>
 
         {/* Card 2: Outside Waiters Expense (Requested Feature) */}
@@ -699,6 +747,265 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Full Event Cashflow & P&L Statement Modal */}
+      {isStatementModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-6 text-white flex items-start justify-between">
+              <div>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-teal-300 bg-teal-900/60 px-2.5 py-0.5 rounded-full border border-teal-500/30">
+                  <Receipt className="w-3.5 h-3.5" /> Event Financial Statement &amp; Settlement
+                </span>
+                <h3 className="text-xl font-bold mt-2 font-['Plus_Jakarta_Sans']">
+                  Royal Palace Banquets &middot; Cashflow &amp; P&amp;L Analysis
+                </h3>
+                <p className="text-xs text-teal-200/80 mt-0.5">
+                  {selectedEventRef === 'All Events'
+                    ? 'Cumulative Financial Cash In/Out and Profit & Loss across all events'
+                    : `Financial Statement for Event ${selectedEventRef} (${selectedBooking?.customerName || 'Client'} - ${selectedBooking?.hallName})`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStatementModalOpen(false)}
+                className="text-white/70 hover:text-white p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Statement Body */}
+            <div className="p-6 space-y-6 text-sm max-h-[75vh] overflow-y-auto">
+              {/* Event Metadata */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Scope / Event</span>
+                  <span className="font-bold text-slate-800">{selectedEventRef}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Operational Status</span>
+                  <span className="font-bold text-teal-800">
+                    {selectedBooking?.operationalStatus || (selectedEventRef === 'All Events' ? 'All Operations' : 'Active')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Contract Revenue</span>
+                  <span className="font-mono font-bold text-slate-900">{kpiMetrics.revenueLabel}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Statement Date</span>
+                  <span className="font-medium text-slate-700">{new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              {/* SECTION 1: CASHFLOW (CASH IN vs CASH OUT) */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <ArrowDownRight className="w-4 h-4 text-emerald-600" />
+                    PART 1: CASHFLOW STATEMENT (Actual Cash Inflows vs Outflows)
+                  </h4>
+                  <span className="text-xs text-slate-500 font-mono">Cash Basis Accounting</span>
+                </div>
+
+                <div className="p-4 space-y-4">
+                  {/* Cash Inflows */}
+                  <div>
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1.5">
+                      <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" /> Cash Inflows (Collections Received)
+                    </h5>
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-emerald-50/60 text-emerald-900 border-y border-emerald-100">
+                        <tr>
+                          <th className="py-2 px-3">Inflow Category</th>
+                          <th className="py-2 px-3">Description</th>
+                          <th className="py-2 px-3 text-right font-mono">Amount (PKR)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-800">
+                        <tr>
+                          <td className="py-2 px-3 font-medium">Customer Advances &amp; Balance Collections</td>
+                          <td className="py-2 px-3 text-slate-500">Collected at booking &amp; counter invoices</td>
+                          <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
+                            Rs. {kpiMetrics.collectedRevenue.toLocaleString()}
+                          </td>
+                        </tr>
+                        {kpiMetrics.pendingReceivables > 0 && (
+                          <tr className="bg-amber-50/40 text-amber-900">
+                            <td className="py-2 px-3 font-medium">&bull; Pending Customer Receivables (Uncollected)</td>
+                            <td className="py-2 px-3 text-amber-700">Pending final settlement invoice</td>
+                            <td className="py-2 px-3 text-right font-mono font-semibold text-amber-700">
+                              (Rs. {kpiMetrics.pendingReceivables.toLocaleString()})
+                            </td>
+                          </tr>
+                        )}
+                        <tr className="bg-emerald-50/40 font-bold">
+                          <td colSpan={2} className="py-2 px-3 text-emerald-900">Total Actual Cash Inflow:</td>
+                          <td className="py-2 px-3 text-right font-mono text-emerald-800">
+                            Rs. {kpiMetrics.collectedRevenue.toLocaleString()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Cash Outflows */}
+                  <div>
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-2 flex items-center gap-1.5">
+                      <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" /> Cash Outflows (Direct Event Disbursements)
+                    </h5>
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-rose-50/60 text-rose-900 border-y border-rose-100">
+                        <tr>
+                          <th className="py-2 px-3">Category</th>
+                          <th className="py-2 px-3">Vendor / Recipient</th>
+                          <th className="py-2 px-3 text-right font-mono">Amount (PKR)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-800">
+                        {filteredExpenses.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="py-3 px-3 text-center text-slate-400">
+                              No cash disbursements logged for this event.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredExpenses.map((exp) => (
+                            <tr key={exp.id}>
+                              <td className="py-2 px-3 font-medium">{exp.category} - {exp.description}</td>
+                              <td className="py-2 px-3 text-slate-500">{exp.paidTo || 'Operational Cash'}</td>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-rose-600">
+                                Rs. {exp.amount.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                        <tr className="bg-rose-50/40 font-bold">
+                          <td colSpan={2} className="py-2 px-3 text-rose-900">Total Cash Outflow:</td>
+                          <td className="py-2 px-3 text-right font-mono text-rose-800">
+                            Rs. {filteredExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Net Cashflow Summary Box */}
+                  <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 flex items-center justify-between font-mono text-xs">
+                    <span className="font-bold text-slate-700 uppercase">
+                      Net Operational Cashflow (Cash In - Cash Out):
+                    </span>
+                    <span
+                      className={`text-sm font-bold ${
+                        kpiMetrics.collectedRevenue - filteredExpenses.reduce((s, e) => s + e.amount, 0) >= 0
+                          ? 'text-emerald-700'
+                          : 'text-rose-600'
+                      }`}
+                    >
+                      Rs. {(kpiMetrics.collectedRevenue - filteredExpenses.reduce((s, e) => s + e.amount, 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: PROFIT & LOSS STATEMENT (ACCRUAL BASIS) */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-teal-700" />
+                    PART 2: EVENT PROFIT &amp; LOSS (P&amp;L) STATEMENT
+                  </h4>
+                  <span className="text-xs text-slate-500 font-mono">Recognized Revenue vs Incurred Costs</span>
+                </div>
+
+                <div className="p-4">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
+                      <tr>
+                        <th className="py-2 px-3">Accounting Item</th>
+                        <th className="py-2 px-3 text-right font-mono">Subtotal (PKR)</th>
+                        <th className="py-2 px-3 text-right font-mono">Total (PKR)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-800">
+                      {/* Revenue */}
+                      <tr className="bg-slate-50/70 font-semibold text-slate-900">
+                        <td className="py-2 px-3">A. GROSS RECOGNIZED EVENT REVENUE</td>
+                        <td className="py-2 px-3 text-right font-mono"></td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-teal-800">
+                          Rs. {kpiMetrics.totalRevenue.toLocaleString()}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-6 text-slate-600">Base Venue Rent, Catering, Stage &amp; Extras</td>
+                        <td className="py-1.5 px-3 text-right font-mono text-slate-700">Rs. {kpiMetrics.totalRevenue.toLocaleString()}</td>
+                        <td></td>
+                      </tr>
+
+                      {/* Direct Costs */}
+                      <tr className="bg-slate-50/70 font-semibold text-slate-900">
+                        <td className="py-2 px-3">B. DIRECT OPERATING &amp; EVENT COSTS</td>
+                        <td className="py-2 px-3 text-right font-mono"></td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-rose-600">
+                          (Rs. {filteredExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString()})
+                        </td>
+                      </tr>
+                      {['Food', 'Outside Waiters', 'Decor', 'Operational Funds', 'Staff', 'Damage', 'Other'].map((cat) => {
+                        const sum = filteredExpenses.filter((e) => e.category === cat).reduce((s, e) => s + e.amount, 0);
+                        if (sum <= 0) return null;
+                        return (
+                          <tr key={cat}>
+                            <td className="py-1.5 px-6 text-slate-600">{cat} Incurred Cost</td>
+                            <td className="py-1.5 px-3 text-right font-mono text-slate-700">Rs. {sum.toLocaleString()}</td>
+                            <td></td>
+                          </tr>
+                        );
+                      })}
+
+                      {/* Gross Profit / Net Profit */}
+                      <tr className="bg-teal-50 border-t-2 border-slate-300 font-bold text-sm">
+                        <td className="py-2.5 px-3 text-teal-950">
+                          NET EVENT PROFIT / CONTRIBUTION MARGIN:
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-teal-700">
+                          {kpiMetrics.profitMargin}% Margin
+                        </td>
+                        <td className={`py-2.5 px-3 text-right font-mono text-base ${kpiMetrics.netProfitNumeric >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          Rs. {kpiMetrics.netProfitNumeric.toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-500" /> Print Financial Statement
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsStatementModalOpen(false)}
+                className="rounded-lg bg-teal-800 hover:bg-teal-900 px-4 py-2 text-xs font-bold text-white transition-colors cursor-pointer"
+              >
+                Close Statement
+              </button>
+            </div>
           </div>
         </div>
       )}

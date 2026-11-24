@@ -110,7 +110,13 @@ def get_dashboard_data():
 
     # 3. Month-to-date Revenue (MTD)
     mtd_invoices = InvoiceRecord.objects.filter(date__gte=first_day_of_month, date__lte=today)
-    mtd_revenue = float(mtd_invoices.aggregate(s=Sum('paid_amount'))['s'] or 0)
+    active_mtd = mtd_invoices.filter(status='Active')
+    cancelled_mtd = mtd_invoices.filter(status='Cancelled')
+    mtd_revenue = float(active_mtd.aggregate(s=Sum('paid_amount'))['s'] or 0)
+    for cinv in cancelled_mtd:
+        crec = cinv.cancellation_record or {}
+        mtd_revenue += float(crec.get('amount_used') or crec.get('deduction_amount') or 0.0)
+
     if mtd_revenue == 0:
         mtd_bookings = Booking.objects.filter(date__gte=first_day_of_month, date__lte=today, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
         mtd_revenue = float(mtd_bookings.aggregate(s=Sum('advance_payment'))['s'] or 0)
@@ -119,8 +125,8 @@ def get_dashboard_data():
     year_bookings = Booking.objects.filter(date__year=current_year, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
     total_year_revenue = float(year_bookings.aggregate(s=Sum('amount'))['s'] or 0)
 
-    # 4. Pending Payments (Accounts Receivable from Unpaid/Partial Invoices)
-    pending_invoices = InvoiceRecord.objects.filter(payment_status__in=['Unpaid', 'Partial'])
+    # 4. Pending Payments (Accounts Receivable from Unpaid/Partial Active Invoices)
+    pending_invoices = InvoiceRecord.objects.filter(status='Active', payment_status__in=['Unpaid', 'Partial'])
     pending_payments_amount = float(pending_invoices.aggregate(total=Sum('remaining_balance'))['total'] or 0)
     pending_count = pending_invoices.count()
 
@@ -218,10 +224,16 @@ class ReportsSummaryView(APIView):
         start_date = request.query_params.get('startDate')
         end_date = request.query_params.get('endDate')
         hall_filter = request.query_params.get('hall')
+        booking_filter = request.query_params.get('bookingRef') or request.query_params.get('booking_id')
 
         bookings_qs = Booking.objects.all()
         invoices_qs = InvoiceRecord.objects.all()
         expenses_qs = ExpenseRecord.objects.all()
+
+        if booking_filter and booking_filter not in ['All', 'All Events']:
+            bookings_qs = bookings_qs.filter(booking_ref__iexact=booking_filter)
+            invoices_qs = invoices_qs.filter(booking_id__iexact=booking_filter)
+            expenses_qs = expenses_qs.filter(booking_ref__iexact=booking_filter)
 
         if start_date:
             bookings_qs = bookings_qs.filter(date__gte=start_date)
@@ -237,7 +249,20 @@ class ReportsSummaryView(APIView):
             bookings_qs = bookings_qs.filter(hall_name__icontains=hall_filter)
 
         total_bookings = bookings_qs.count()
-        gross_revenue = float(invoices_qs.aggregate(s=Sum('total_amount'))['s'] or 0)
+
+        def compute_invoices_revenue(inv_set):
+            act_sum = float(inv_set.filter(status='Active').aggregate(s=Sum('total_amount'))['s'] or 0)
+            canc_invoices = inv_set.filter(status='Cancelled')
+            canc_sum = 0.0
+            for cinv in canc_invoices:
+                crec = cinv.cancellation_record or {}
+                canc_sum += float(crec.get('amount_used') or crec.get('deduction_amount') or 0.0)
+            # Fallback if invoices have not been marked with status explicitly
+            if act_sum == 0 and canc_sum == 0 and inv_set.exists():
+                act_sum = float(inv_set.aggregate(s=Sum('total_amount'))['s'] or 0)
+            return act_sum + canc_sum
+
+        gross_revenue = compute_invoices_revenue(invoices_qs)
         total_expenses = float(expenses_qs.aggregate(s=Sum('amount'))['s'] or 0)
         net_profit = gross_revenue - total_expenses
 
@@ -247,7 +272,7 @@ class ReportsSummaryView(APIView):
         rev_exp_data = []
         for m_idx, m_name in enumerate(months, 1):
             m_bookings = bookings_qs.filter(date__month=m_idx).count()
-            m_rev = float(invoices_qs.filter(date__month=m_idx).aggregate(s=Sum('total_amount'))['s'] or 0)
+            m_rev = compute_invoices_revenue(invoices_qs.filter(date__month=m_idx))
             m_exp = float(expenses_qs.filter(date__month=m_idx).aggregate(s=Sum('amount'))['s'] or 0)
             if m_bookings > 0 or m_rev > 0 or m_exp > 0:
                 rec = {

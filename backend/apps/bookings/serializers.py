@@ -18,6 +18,8 @@ class BookingSerializer(serializers.ModelSerializer):
     amount = serializers.FloatField(required=False, default=0)
     advancePayment = serializers.FloatField(source='advance_payment', required=False, default=0)
     guestCount = serializers.IntegerField(source='guest_count', required=False, allow_null=True)
+    personsPerTable = serializers.IntegerField(source='persons_per_table', required=False, default=10)
+    vipTables = serializers.ListField(source='vip_tables', required=False, default=list)
     seatingArrangement = serializers.CharField(source='seating_arrangement', required=False, allow_blank=True, default='')
     menuPackage = serializers.CharField(source='menu_package', required=False, allow_blank=True, default='')
     specialInstructions = serializers.CharField(source='special_instructions', required=False, allow_blank=True, default='')
@@ -25,10 +27,18 @@ class BookingSerializer(serializers.ModelSerializer):
     ratePerHour = serializers.FloatField(source='rate_per_hour', required=False, default=0)
     operationalStatus = serializers.CharField(source='operational_status', required=False, default='Setup in Progress')
     assignedManager = serializers.CharField(source='assigned_manager', required=False, allow_blank=True, default='Manager')
+    hallRent = serializers.FloatField(source='hall_rent', required=False, default=0)
+    menuAmount = serializers.FloatField(source='menu_amount', required=False, default=0)
+    djAmount = serializers.FloatField(source='dj_amount', required=False, default=0)
+    decorAmount = serializers.FloatField(source='decor_amount', required=False, default=0)
+    subtotal = serializers.FloatField(required=False, default=0)
+    discountPercentage = serializers.FloatField(source='discount_percentage', required=False, default=0)
+    discountAmount = serializers.FloatField(source='discount_amount', required=False, default=0)
     securityDeposit = serializers.FloatField(source='security_deposit', required=False, default=50000)
     customMenuItems = serializers.ListField(source='custom_menu_items', child=serializers.CharField(), required=False, default=list)
     extraServices = serializers.ListField(source='extra_services', child=serializers.DictField(), required=False, default=list)
     damagesRecord = serializers.ListField(source='damages_record', child=serializers.DictField(), required=False, default=list)
+    cancellationRecord = serializers.JSONField(source='cancellation_record', required=False, default=dict)
     cnic = serializers.CharField(required=False, allow_blank=True, default='')
     address = serializers.CharField(required=False, allow_blank=True, default='')
 
@@ -37,10 +47,12 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'bookingRef', 'customerName', 'contactRef', 'cnic', 'address', 'eventType',
             'hallName', 'date', 'time', 'slot', 'status', 'paymentStatus',
-            'amount', 'advancePayment', 'guestCount', 'seatingArrangement',
+            'amount', 'advancePayment', 'hallRent', 'menuAmount', 'djAmount', 'decorAmount',
+            'subtotal', 'discountPercentage', 'discountAmount',
+            'guestCount', 'personsPerTable', 'vipTables', 'seatingArrangement',
             'menuPackage', 'customMenuItems', 'extraServices', 'damagesRecord',
             'specialInstructions', 'extraHours', 'ratePerHour',
-            'operationalStatus', 'assignedManager', 'securityDeposit'
+            'operationalStatus', 'assignedManager', 'securityDeposit', 'cancellationRecord'
         ]
 
     def validate(self, attrs):
@@ -59,12 +71,23 @@ class BookingSerializer(serializers.ModelSerializer):
         date_str = str(date_val) if date_val else None
         status_val = attrs.get('status') or (self.instance.status if self.instance else 'Confirmed')
 
+        # Determine booking type (partition vs full hall)
+        special_inst = attrs.get('special_instructions') or (self.instance.special_instructions if self.instance else '')
+        seating_arr = attrs.get('seating_arrangement') or (self.instance.seating_arrangement if self.instance else '')
+        notes_str = f"{special_inst} {seating_arr}"
+        btype = 'Full Hall'
+        if 'Half Hall (Section A)' in notes_str or '[Section A]' in notes_str:
+            btype = 'Half Hall (Section A)'
+        elif 'Half Hall (Section B)' in notes_str or '[Section B]' in notes_str:
+            btype = 'Half Hall (Section B)'
+
         if status_val not in ['Cancelled', 'Rejected'] and hall_name and date_str:
             is_avail, error_msg, details = check_hall_availability(
                 hall_name=hall_name,
                 date_str=date_str,
                 time_str=time_val,
                 slot_str=slot_val,
+                booking_type=btype,
                 exclude_booking_id=self.instance.id if self.instance else None
             )
             if not is_avail:

@@ -41,8 +41,27 @@ export interface Booking {
   status: 'Confirmed' | 'Pending' | 'Cancelled' | 'Under Review' | 'Deposit Paid' | 'Completed';
   paymentStatus?: 'Paid' | 'Partial' | 'Unpaid' | 'Pending';
   amount?: number;
+  advancePayment?: number;
   guestCount?: number;
+  personsPerTable?: number;
+  vipTables?: number[];
+  seatingArrangement?: string;
   assignedManager?: string;
+  cancellationRecord?: {
+    cancellation_type: 'refund' | 'pause_and_adjust';
+    type_label: string;
+    reason: string;
+    advance_paid: number;
+    deduction_amount: number;
+    net_amount: number;
+    refund_amount: number;
+    retained_credit: number;
+    notes?: string;
+    cancelled_by?: string;
+    cancelled_at?: string;
+    freed_date?: string;
+    freed_hall?: string;
+  };
 }
 
 export interface Hall {
@@ -73,6 +92,7 @@ export interface Customer {
   totalBookings: number;
   lifetimeValue: number;
   outstandingBalance?: number;
+  creditBalance?: number;
   status: 'Active' | 'Inactive';
   tier?: 'VIP' | 'Corporate' | 'Standard';
   lastActive?: string;

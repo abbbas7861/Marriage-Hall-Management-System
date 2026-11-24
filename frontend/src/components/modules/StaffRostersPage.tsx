@@ -72,10 +72,16 @@ export const StaffRostersPage: React.FC = () => {
       .list()
       .then((data) => {
         if (data && data.length > 0) {
-          const mapped = data.map((b: any) => `${b.customerName || b.bookingRef} (${b.hallName})`);
+          const activeOnly = data.filter((b: any) => {
+            if (b.status === 'Cancelled' || b.status === 'Rejected' || b.status === 'Completed') return false;
+            const op = (b.operationalStatus || b.operational_status || '').toLowerCase();
+            if (op.includes('concluded') || op.includes('completed') || op.includes('closed')) return false;
+            return true;
+          });
+          const mapped = activeOnly.map((b: any) => `${b.customerName || b.bookingRef} (${b.hallName})`);
           setActiveEvents(mapped);
         } else {
-          setActiveEvents(SEED_ASSIGNED_EVENTS.map((e) => `${e.customerName} (${e.hallName})`));
+          setActiveEvents([]);
         }
       })
       .catch(() => {});

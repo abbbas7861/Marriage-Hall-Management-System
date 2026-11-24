@@ -70,7 +70,13 @@ export const KitchenRequisitionsPage: React.FC = () => {
       .list()
       .then((data) => {
         if (data && data.length > 0) {
-          const mapped = data.map((b: any) => ({
+          const activeOnly = data.filter((b: any) => {
+            if (b.status === 'Cancelled' || b.status === 'Rejected' || b.status === 'Completed') return false;
+            const op = (b.operationalStatus || b.operational_status || '').toLowerCase();
+            if (op.includes('concluded') || op.includes('completed') || op.includes('closed')) return false;
+            return true;
+          });
+          const mapped = activeOnly.map((b: any) => ({
             id: String(b.id),
             bookingRef: b.bookingRef || `BK-${b.id}`,
             hallName: b.hallName || 'Main Hall',
@@ -82,18 +88,12 @@ export const KitchenRequisitionsPage: React.FC = () => {
           if (mapped.length > 0) {
             setSelectedEventId(mapped[0].id);
             loadEventRequisitions(mapped[0].bookingRef);
+          } else {
+            setSelectedEventId('');
           }
         } else {
-          const fallback = SEED_ASSIGNED_EVENTS.map((e) => ({
-            id: e.id,
-            bookingRef: e.id,
-            hallName: e.hallName,
-            customerName: e.customerName,
-            label: `${e.customerName} (${e.hallName} — ${e.eventDate})`,
-            guestCount: e.totalGuests,
-          }));
-          setUpcomingEvents(fallback);
-          setSelectedEventId(fallback[0]?.id ?? '');
+          setUpcomingEvents([]);
+          setSelectedEventId('');
         }
       })
       .catch(() => {});

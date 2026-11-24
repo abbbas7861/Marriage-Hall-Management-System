@@ -8,6 +8,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     totalBookings = serializers.IntegerField(source='total_bookings', required=False, default=0)
     lifetimeValue = serializers.FloatField(source='lifetime_value', required=False, default=0)
     outstandingBalance = serializers.FloatField(source='outstanding_balance', required=False, default=0)
+    creditBalance = serializers.FloatField(source='credit_balance', required=False, default=0)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
@@ -15,7 +16,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customerId', 'name', 'email', 'phone', 'cnic',
             'address', 'notes', 'totalBookings', 'lifetimeValue',
-            'outstandingBalance', 'status', 'tier', 'createdAt'
+            'outstandingBalance', 'creditBalance', 'status', 'tier', 'createdAt'
         ]
 
     def create(self, validated_data):

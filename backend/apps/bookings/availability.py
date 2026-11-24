@@ -108,10 +108,15 @@ def check_hall_availability(
     end_time_str=None,
     slot_str=None,
     time_str=None,
+    booking_type=None,
     exclude_booking_id=None
 ):
     """
-    Strict collision and 1-hour turnover buffer validation.
+    Strict collision, partition rules, and turnover buffer validation.
+    Rules:
+    1. If a Full Hall is booked, neither Full Hall nor any partition (Section A / Section B) can be booked at the same time.
+    2. If a Partition (Section A) is booked, Section B CAN be booked for the same time, but Full Hall CANNOT.
+    3. The same hall/section CAN be booked on the same day if times do not overlap (allowing distinct time slots with 30-min cleaning buffer).
     Returns:
         (is_available: bool, error_message: str, details_dict: dict)
     """
@@ -141,9 +146,16 @@ def check_hall_availability(
         # Try extracting from time_str or slot_str
         s_m, e_m = extract_start_end_minutes(time_str or slot_str)
         if s_m is not None and e_m is not None:
-            req_start_m, req_end_m = s_m, e_m
+            if req_start_m is None:
+                req_start_m = s_m
+            if req_end_m is None:
+                req_end_m = e_m
 
-    # If still None and slot_str is morning/evening
+    # If only start_time is given, default standard event duration (4 hours)
+    if req_start_m is not None and req_end_m is None:
+        req_end_m = min(24 * 60 - 1, req_start_m + 4 * 60)
+
+    # If slot_str fallback (e.g. Lunch or Dinner)
     if (req_start_m is None or req_end_m is None) and slot_str:
         s_m, e_m = extract_start_end_minutes(slot_str)
         if s_m is not None and e_m is not None:
@@ -152,34 +164,66 @@ def check_hall_availability(
     if req_start_m is not None and req_end_m is not None and req_end_m <= req_start_m:
         req_end_m += 24 * 60
 
+    req_btype = (booking_type or 'Full Hall').strip()
+
     # Find existing active bookings for this hall and date
+    # Concluded / Completed / Cancelled bookings release the hall so the calendar is open for new bookings!
     bookings_qs = Booking.objects.filter(
         hall_name__iexact=hall_name,
         date=date_str
-    ).exclude(status__in=['Cancelled', 'Rejected'])
+    ).exclude(
+        status__in=['Cancelled', 'Rejected', 'Completed']
+    ).exclude(
+        operational_status__in=['Event Concluded', 'Concluded', 'Completed', 'Closed']
+    )
 
     if exclude_booking_id:
         bookings_qs = bookings_qs.exclude(id=exclude_booking_id)
 
+    TURNOVER_BUFFER = 60  # 60-minute cleaning and turnover buffer between distinct bookings
+
     for b in bookings_qs:
+        # Extract existing booking partition type from special_instructions or seating_arrangement
+        b_type = 'Full Hall'
+        notes_and_seating = f"{b.special_instructions} {b.seating_arrangement}"
+        if 'Half Hall (Section A)' in notes_and_seating or '[Section A]' in notes_and_seating:
+            b_type = 'Half Hall (Section A)'
+        elif 'Half Hall (Section B)' in notes_and_seating or '[Section B]' in notes_and_seating:
+            b_type = 'Half Hall (Section B)'
+
+        # Check partition compatibility:
+        # Section A and Section B are compatible with each other!
+        # Full Hall conflicts with EVERYTHING (Full Hall, Section A, Section B).
+        is_partition_compatible = (
+            (req_btype == 'Half Hall (Section A)' and b_type == 'Half Hall (Section B)') or
+            (req_btype == 'Half Hall (Section B)' and b_type == 'Half Hall (Section A)')
+        )
+
+        if is_partition_compatible:
+            # Compatible partitioned sections can run simultaneously!
+            continue
+
         b_start_m, b_end_m = extract_start_end_minutes(b.time or b.slot)
 
         if req_start_m is not None and req_end_m is not None and b_start_m is not None and b_end_m is not None:
-            # Enforce 1-hour pre-cleaning and 1-hour post-cleaning buffer
-            reserved_buffer_start = max(0, b_start_m - CLEANING_BUFFER_MINUTES)
-            reserved_buffer_end = min(24 * 60, b_end_m + CLEANING_BUFFER_MINUTES)
+            # Overlap check with turnover buffer
+            buffered_start = max(0, b_start_m - TURNOVER_BUFFER)
+            buffered_end = b_end_m + TURNOVER_BUFFER
 
-            # Check overlap between [req_start_m, req_end_m] and [reserved_buffer_start, reserved_buffer_end]
-            if max(req_start_m, reserved_buffer_start) < min(req_end_m, reserved_buffer_end):
+            if max(req_start_m, buffered_start) < min(req_end_m, buffered_end):
                 req_str = f"{format_minutes_to_12h(req_start_m)} – {format_minutes_to_12h(req_end_m)}"
                 booked_str = f"{format_minutes_to_12h(b_start_m)} – {format_minutes_to_12h(b_end_m)}"
-                buffer_str = f"{format_minutes_to_12h(reserved_buffer_start)} – {format_minutes_to_12h(reserved_buffer_end)}"
 
-                error_msg = (
-                    f"Conflict: '{hall_name}' is already booked on {date_str} from {booked_str} "
-                    f"by {b.customer_name} ({b.booking_ref}). Including the mandatory 1-hour cleaning/turnover "
-                    f"buffer ({buffer_str}), your selected time ({req_str}) cannot be booked."
-                )
+                if b_type != 'Full Hall' or req_btype != 'Full Hall':
+                    error_msg = (
+                        f"Conflict: '{hall_name}' has an active booking for {b_type} on {date_str} ({booked_str}) "
+                        f"by {b.customer_name} ({b.booking_ref}). A '{req_btype}' cannot be booked at the same overlapping time."
+                    )
+                else:
+                    error_msg = (
+                        f"Conflict: '{hall_name}' is already booked on {date_str} from {booked_str} "
+                        f"by {b.customer_name} ({b.booking_ref}). Time overlaps with selected time ({req_str})."
+                    )
 
                 return False, error_msg, {
                     'conflictType': 'BookingCollision',
@@ -190,13 +234,13 @@ def check_hall_availability(
                         'ref': b.booking_ref,
                         'customer': b.customer_name,
                         'bookedTime': booked_str,
-                        'bufferWindow': buffer_str,
-                        'cleaningBufferMinutes': CLEANING_BUFFER_MINUTES,
+                        'bookingType': b_type,
                     },
                     'requestedTime': req_str,
+                    'requestedBookingType': req_btype,
                 }
         else:
-            # Fallback slot comparison if exact minutes could not be resolved
+            # Slot-based fallback only when exact times are missing
             b_slot = (b.slot or b.time or '').lower()
             req_slot = (slot_str or time_str or '').lower()
             is_b_lunch = any(k in b_slot for k in ['morning', 'lunch', 'afternoon'])

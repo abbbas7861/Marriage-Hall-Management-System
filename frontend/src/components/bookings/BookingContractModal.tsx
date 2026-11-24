@@ -152,7 +152,7 @@ export const BookingContractModal: React.FC<BookingContractModalProps> = ({
                 <div>
                   <strong className="text-slate-700">Expected Attendance:</strong>{' '}
                   <span className="font-bold text-slate-900 font-mono">
-                    {booking.guestCount || 350} Guests
+                    {booking.guestCount || 350} Guests ({Math.ceil((Number(booking.guestCount) || 350) / (Number(booking.personsPerTable) || 10))} Banquet Tables)
                   </span>
                 </div>
               </div>

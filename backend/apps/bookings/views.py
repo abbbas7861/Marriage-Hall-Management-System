@@ -8,7 +8,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Booking, ExtraTimeRequest
 from .serializers import BookingSerializer, ExtraTimeRequestSerializer
 from apps.venues.models import BlockedDate
-from apps.finance.models import InvoiceRecord
+from apps.finance.models import InvoiceRecord, PaymentTransaction
+from apps.customers.models import Customer
 from apps.core.models import AuditLogEntry
 import random
 
@@ -228,6 +229,294 @@ class BookingViewSet(viewsets.ModelViewSet):
             'damage': damage_entry
         })
 
+    @action(detail=True, methods=['post'], url_path='close-event')
+    def close_event(self, request, pk=None):
+        booking = self.get_object()
+        extra_services_input = request.data.get('extraServices') or request.data.get('extra_services') or []
+        damages_input = request.data.get('damages') or []
+        closing_notes = request.data.get('notes', '').strip()
+
+        user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Manager'
+
+        total_extras_added = 0.0
+        services_list = list(booking.extra_services or [])
+        for item in extra_services_input:
+            srv_title = item.get('title', '').strip()
+            srv_price = float(item.get('price', 0))
+            if srv_title and srv_price > 0:
+                entry = {
+                    'id': f"SRV-{random.randint(10000, 99999)}",
+                    'title': srv_title,
+                    'price': srv_price,
+                    'category': item.get('category', 'Extra Service'),
+                    'notes': item.get('notes', ''),
+                    'added_by': user_name,
+                    'timestamp': timezone.now().strftime('%Y-%m-%d %I:%M %p')
+                }
+                services_list.append(entry)
+                total_extras_added += srv_price
+
+        total_invoice_damages_added = 0.0
+        damages_list = list(booking.damages_record or [])
+        for dmg in damages_input:
+            dmg_item = dmg.get('item', '').strip()
+            dmg_amount = float(dmg.get('amount', 0))
+            deduction_type = dmg.get('deductionType') or dmg.get('deduction_type') or 'invoice'
+            if dmg_item and dmg_amount > 0:
+                entry = {
+                    'id': f"DMG-{random.randint(10000, 99999)}",
+                    'item': dmg_item,
+                    'amount': dmg_amount,
+                    'deduction_type': deduction_type,
+                    'notes': dmg.get('notes', ''),
+                    'recorded_by': user_name,
+                    'timestamp': timezone.now().strftime('%Y-%m-%d %I:%M %p')
+                }
+                damages_list.append(entry)
+                if deduction_type == 'invoice':
+                    total_invoice_damages_added += dmg_amount
+                else:
+                    from apps.finance.models import SecurityDepositSettlement
+                    settlement, _ = SecurityDepositSettlement.objects.get_or_create(
+                        booking_ref=booking.booking_ref,
+                        defaults={
+                            'settlement_ref': f"SETTLE-{booking.booking_ref.replace('BK-', '')}",
+                            'customer_name': booking.customer_name,
+                            'hall_name': booking.hall_name,
+                            'event_date': booking.date,
+                            'deposit_held': booking.security_deposit or 50000,
+                            'damage_deductions': dmg_amount,
+                            'damage_notes': f"{dmg_item}: Rs. {dmg_amount:,.0f}",
+                            'net_refund_amount': max(0.0, float(booking.security_deposit or 50000) - dmg_amount)
+                        }
+                    )
+                    if not _:
+                        settlement.damage_deductions = float(settlement.damage_deductions) + dmg_amount
+                        settlement.damage_notes = f"{settlement.damage_notes}\n{dmg_item}: Rs. {dmg_amount:,.0f}".strip()
+                        settlement.net_refund_amount = max(0.0, float(settlement.deposit_held) - float(settlement.damage_deductions))
+                        settlement.save()
+
+        # Update booking
+        booking.extra_services = services_list
+        booking.damages_record = damages_list
+        added_to_contract = total_extras_added + total_invoice_damages_added
+        booking.amount = float(booking.amount or 0) + added_to_contract
+        booking.operational_status = 'Event Concluded'
+        booking.status = 'Completed'
+        if closing_notes:
+            booking.special_instructions = f"{booking.special_instructions}\n[Closing Note]: {closing_notes}".strip()
+
+        # Check payment status
+        paid_so_far = float(booking.advance_payment or 0)
+        remaining = max(0.0, float(booking.amount) - paid_so_far)
+        if remaining <= 0:
+            booking.payment_status = 'Paid'
+        elif paid_so_far > 0:
+            booking.payment_status = 'Partial'
+        else:
+            booking.payment_status = 'Unpaid'
+
+        booking.save()
+
+        # Sync InvoiceRecord
+        inv = InvoiceRecord.objects.filter(booking_id=booking.booking_ref).first()
+        if inv:
+            inv.total_amount = float(booking.amount)
+            inv.paid_amount = paid_so_far
+            inv.remaining_balance = remaining
+            inv.payment_status = booking.payment_status
+            inv.save()
+        else:
+            inv = InvoiceRecord.objects.create(
+                invoice_id=f"INV-{booking.booking_ref.replace('BK-', '')}",
+                booking_id=booking.booking_ref,
+                customer_name=booking.customer_name,
+                total_amount=booking.amount,
+                paid_amount=paid_so_far,
+                remaining_balance=remaining,
+                payment_status=booking.payment_status,
+                date=booking.date,
+            )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=user_name,
+            user_role="Manager",
+            action="Event Concluded",
+            module="Event Operations",
+            details=f"Concluded event {booking.booking_ref}. Added Rs. {added_to_contract:,.0f} extras/damages. Total: Rs. {booking.amount:,.0f}, Balance: Rs. {remaining:,.0f}",
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+
+        return Response({
+            'message': f"Event {booking.booking_ref} successfully concluded.",
+            'booking': BookingSerializer(booking).data,
+            'invoice': {
+                'invoiceId': inv.invoice_id,
+                'bookingRef': booking.booking_ref,
+                'customerName': booking.customer_name,
+                'date': str(booking.date),
+                'hallName': booking.hall_name,
+                'guestCount': booking.guest_count,
+                'totalAmount': float(booking.amount),
+                'paidAmount': paid_so_far,
+                'remainingBalance': remaining,
+                'paymentStatus': booking.payment_status,
+                'extraServices': services_list,
+                'damagesRecord': damages_list,
+            }
+        })
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        booking = self.get_object()
+        if booking.status == 'Cancelled':
+            return Response({'error': 'This booking is already cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        c_type = request.data.get('cancellation_type') or request.data.get('cancellationType') or 'refund'
+        if c_type not in ['refund', 'pause_and_adjust']:
+            return Response(
+                {'error': "cancellation_type must be either 'refund' or 'pause_and_adjust'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        reason = request.data.get('reason', '').strip() or 'Emergency cancellation'
+        original_booked_amount = float(booking.amount or 0)
+        advance_paid = float(booking.advance_payment or 0)
+        raw_deduction = float(request.data.get('deduction_amount', 0))
+        deduction = min(advance_paid, max(0.0, raw_deduction))
+        net_amount = max(0.0, advance_paid - deduction)
+        notes = request.data.get('notes', '').strip()
+
+        user_name = request.user.get_full_name() or request.user.username if (request.user and request.user.is_authenticated) else 'Manager'
+
+        old_date = str(booking.date)
+        old_hall = booking.hall_name
+
+        cancellation_entry = {
+            'cancellation_type': c_type,
+            'type_label': 'Paused & Retained for Future Event' if c_type == 'pause_and_adjust' else 'Client Refund Processed',
+            'reason': reason,
+            'booked_amount': original_booked_amount,
+            'original_booked_amount': original_booked_amount,
+            'paid_amount': advance_paid,
+            'advance_paid': advance_paid,
+            'amount_used': deduction,
+            'deduction_amount': deduction,
+            'pending_balance': 0.0,
+            'remaining_balance': 0.0,
+            'net_amount': net_amount,
+            'refund_amount': net_amount if c_type == 'refund' else 0.0,
+            'retained_credit': net_amount if c_type == 'pause_and_adjust' else 0.0,
+            'notes': notes,
+            'cancelled_by': user_name,
+            'cancelled_at': timezone.now().strftime('%Y-%m-%d %I:%M %p'),
+            'freed_date': old_date,
+            'freed_hall': old_hall,
+        }
+
+        # Keep original booked amount and paid advance intact for complete audit trail
+        # Set status to Cancelled and balance to settled
+        booking.status = 'Cancelled'
+        booking.operational_status = 'Event Concluded'
+        booking.status = 'Completed'
+        booking.payment_status = 'Refunded' if c_type == 'refund' else 'Credit Held'
+        booking.cancellation_record = cancellation_entry
+        booking.save()
+
+        # Handle Option 1: Refund
+        if c_type == 'refund':
+            if net_amount > 0:
+                try:
+                    PaymentTransaction.objects.create(
+                        txn_ref=f"REF-{random.randint(10000, 99999)}",
+                        booking_ref=booking.booking_ref,
+                        category="Booking Cancellation Refund",
+                        channel="Bank/Cash Refund",
+                        billing_status="Settled",
+                        amount=net_amount,
+                        timestamp=timezone.now().strftime('%Y-%m-%d %I:%M %p')
+                    )
+                except Exception:
+                    pass
+        # Handle Option 2: Pause and Adjust for Future Event
+        else:
+            if net_amount > 0:
+                customer = Customer.objects.filter(name__iexact=booking.customer_name).first()
+                if not customer and booking.contact_ref:
+                    customer = Customer.objects.filter(phone=booking.contact_ref).first()
+                if customer:
+                    customer.credit_balance = float(customer.credit_balance) + net_amount
+                    note_line = f"[Retained Credit {timezone.now().strftime('%Y-%m-%d')}]: Rs. {net_amount:,.0f} from cancelled {booking.booking_ref} ({reason})"
+                    customer.notes = f"{customer.notes}\n{note_line}".strip()
+                    customer.save()
+
+                try:
+                    PaymentTransaction.objects.create(
+                        txn_ref=f"ADJ-{random.randint(10000, 99999)}",
+                        booking_ref=booking.booking_ref,
+                        category="Retained Credit Adjustment",
+                        channel="Customer Credit",
+                        billing_status="Settled",
+                        amount=net_amount,
+                        timestamp=timezone.now().strftime('%Y-%m-%d %I:%M %p')
+                    )
+                except Exception:
+                    pass
+
+        # Close/Update InvoiceRecord with full financial preservation
+        inv = InvoiceRecord.objects.filter(booking_id=booking.booking_ref).first()
+        if not inv:
+            inv = InvoiceRecord.objects.create(
+                invoice_id=f"INV-{random.randint(10000, 99999)}",
+                booking_id=booking.booking_ref,
+                customer_name=booking.customer_name,
+                total_amount=original_booked_amount,
+                paid_amount=advance_paid,
+                remaining_balance=0.0,
+                payment_status='Cancelled',
+                status='Cancelled',
+                date=booking.date,
+            )
+        else:
+            inv.remaining_balance = 0.0
+            inv.payment_status = 'Cancelled'
+            inv.status = 'Cancelled'
+
+        inv.notes = (
+            f"Cancelled ({cancellation_entry['type_label']}). Reason: {reason}. "
+            f"Booked: Rs. {original_booked_amount:,.0f}, Paid: Rs. {advance_paid:,.0f}, "
+            f"Amount Used: Rs. {deduction:,.0f}, Pending Balance: Rs. 0.0, "
+            f"{'Refunded' if c_type == 'refund' else 'Credit Held'}: Rs. {net_amount:,.0f}."
+        )
+        inv.cancellation_record = cancellation_entry
+        inv.save()
+
+        # Audit Log
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=user_name,
+            user_role="Manager",
+            action="Cancelled Booking",
+            module="Bookings",
+            details=(
+                f"Cancelled {booking.booking_ref} ({cancellation_entry['type_label']}): "
+                f"Booked Rs. {original_booked_amount:,.0f}, Paid Rs. {advance_paid:,.0f}, "
+                f"Used Rs. {deduction:,.0f}, Net Rs. {net_amount:,.0f}, Pending Rs. 0. Date {old_date} freed."
+            ),
+            ip_address=request.META.get('REMOTE_ADDR', '127.0.0.1')
+        )
+
+        return Response({
+            'message': (
+                f"Booking {booking.booking_ref} closed & cancelled. Date {old_date} ({old_hall}) is now open for other bookings. "
+                f"Booked: Rs. {original_booked_amount:,.0f}, Paid: Rs. {advance_paid:,.0f}, Used: Rs. {deduction:,.0f}, "
+                f"Pending Balance: Rs. 0, {cancellation_entry['type_label']}: Rs. {net_amount:,.0f}."
+            ),
+            'booking': BookingSerializer(booking).data,
+            'cancellation': cancellation_entry
+        }, status=status.HTTP_200_OK)
+
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
@@ -261,6 +550,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         slot = params.get('slot')
         start_time_str = params.get('startTime') or params.get('start_time')
         end_time_str = params.get('endTime') or params.get('end_time')
+        booking_type = params.get('bookingType') or params.get('booking_type') or 'Full Hall'
         exclude_id = params.get('excludeId') or params.get('exclude_id')
 
         if not hall_name or not date_str:
@@ -273,6 +563,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             start_time_str=start_time_str,
             end_time_str=end_time_str,
             slot_str=slot,
+            booking_type=booking_type,
             exclude_booking_id=exclude_id
         )
 

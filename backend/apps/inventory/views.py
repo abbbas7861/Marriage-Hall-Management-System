@@ -115,13 +115,36 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
             item.available_quantity = max(0, item.total_quantity - item.in_use_quantity)
             item.save()
 
+        # Automatically record as an Event Kitchen Expense in Accounts portal
+        from apps.finance.models import ExpenseRecord
+        cost = float(req.estimated_cost or 0)
+        if cost <= 0 and req.item and getattr(req.item, 'unit_price', None):
+            cost = float(req.item.unit_price) * float(req.requested_quantity)
+
+        # Create or update corresponding expense record for event tracking & accounting
+        expense_ref = f"EXP-KIT-{req.requisition_ref.replace('REQ-', '')}"
+        existing_exp = ExpenseRecord.objects.filter(expense_ref=expense_ref).first()
+        if not existing_exp and cost > 0:
+            ExpenseRecord.objects.create(
+                expense_ref=expense_ref,
+                booking_ref=req.event_ref or '',
+                description=f"Kitchen Requisition: {req.item_name} ({req.requested_quantity} {req.unit or 'units'})",
+                category="Food",
+                vendor="Kitchen Inventory & Pantry",
+                amount=cost,
+                approved_by="Manager",
+                date=timezone.now().date(),
+                payment_method="Internal Transfer",
+                status="Paid"
+            )
+
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name="Manager",
             user_role="Manager",
             action="Approved",
             module="Inventory",
-            details=f"Approved requisition {req.requisition_ref} for {req.item_name} ({req.event_ref})",
+            details=f"Approved requisition {req.requisition_ref} for {req.item_name} ({req.event_ref}) - Rs. {cost:,.0f} booked to event kitchen expenses",
             ip_address="127.0.0.1"
         )
 
@@ -140,6 +163,28 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
             item.in_use_quantity += req.requested_quantity
             item.available_quantity = max(0, item.total_quantity - item.in_use_quantity)
             item.save()
+
+        # Automatically record as an Event Kitchen Expense in Accounts portal
+        from apps.finance.models import ExpenseRecord
+        cost = float(req.estimated_cost or 0)
+        if cost <= 0 and req.item and getattr(req.item, 'unit_price', None):
+            cost = float(req.item.unit_price) * float(req.requested_quantity)
+
+        expense_ref = f"EXP-KIT-{req.requisition_ref.replace('REQ-', '')}"
+        existing_exp = ExpenseRecord.objects.filter(expense_ref=expense_ref).first()
+        if not existing_exp and cost > 0:
+            ExpenseRecord.objects.create(
+                expense_ref=expense_ref,
+                booking_ref=req.event_ref or '',
+                description=f"Kitchen Requisition: {req.item_name} ({req.requested_quantity} {req.unit or 'units'})",
+                category="Food",
+                vendor="Kitchen Inventory & Pantry",
+                amount=cost,
+                approved_by="Manager",
+                date=timezone.now().date(),
+                payment_method="Internal Transfer",
+                status="Paid"
+            )
 
         return Response(AssetRequisitionSerializer(req).data)
 

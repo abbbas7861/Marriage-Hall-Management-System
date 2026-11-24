@@ -22,6 +22,7 @@ class Customer(models.Model):
     total_bookings = models.PositiveIntegerField(default=0)
     lifetime_value = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     outstanding_balance = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    credit_balance = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='Standard')
     created_at = models.DateTimeField(auto_now_add=True)
