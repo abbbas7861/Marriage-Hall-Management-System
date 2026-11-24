@@ -183,6 +183,41 @@ class AssetRequisitionViewSet(viewsets.ModelViewSet):
 
         return Response(AssetRequisitionSerializer(req).data)
 
+    @action(detail=True, methods=['post'], url_path='confirm-stock-in')
+    def confirm_stock_in(self, request, pk=None):
+        req = self.get_object()
+        req.status = 'Issued'
+        if not req.issued_quantity:
+            req.issued_quantity = req.requested_quantity
+        req.save()
+
+        # Automatically increment or sync stock in PantryStockItem if matching name exists
+        pantry_item = PantryStockItem.objects.filter(name__iexact=req.item_name).first()
+        if pantry_item:
+            pantry_item.current_stock = float(pantry_item.current_stock) + float(req.requested_quantity)
+            pantry_item.save()
+        elif req.item:
+            req.item.total_quantity += req.requested_quantity
+            req.item.available_quantity += req.requested_quantity
+            req.item.save()
+
+        staff_name = request.data.get('staffName') or 'Kitchen Chef'
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=staff_name,
+            user_role="Kitchen Staff",
+            action="Updated",
+            module="InventoryRequisition",
+            details=f"Confirmed Stock-In for {req.item_name} ({req.requested_quantity} {req.unit}). Stock added to pantry/inventory for {req.event_ref or 'Kitchen'}.",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({
+            'status': 'success',
+            'message': f"Stock-In confirmed: {req.requested_quantity} {req.unit} of {req.item_name} added to stock.",
+            'requisition': AssetRequisitionSerializer(req).data
+        })
+
     @action(detail=True, methods=['post'], url_path='approve-issue')
     def approve_issue(self, request, pk=None):
         req = self.get_object()
@@ -256,16 +291,93 @@ class PantryStockItemViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'current_stock', 'category']
     ordering = ['name']
 
+    def perform_create(self, serializer):
+        item = serializer.save()
+        # Check if manual purchase cost was provided
+        total_cost = self.request.data.get('totalCost') or self.request.data.get('total_cost')
+        event_ref = self.request.data.get('eventRef') or self.request.data.get('bookingRef') or self.request.data.get('event_ref') or ''
+        
+        # If total_cost is not explicitly passed, check unitPrice * currentStock
+        cost_val = 0.0
+        if total_cost is not None:
+            try:
+                cost_val = float(total_cost)
+            except (ValueError, TypeError):
+                cost_val = 0.0
+        elif float(item.unit_price or 0) > 0 and float(item.current_stock or 0) > 0:
+            cost_val = float(item.unit_price) * float(item.current_stock)
+
+        if cost_val > 0:
+            from apps.finance.models import ExpenseRecord
+            expense_ref = f"EXP-KIT-STK-{item.id}-{random.randint(100, 999)}"
+            # If no event is selected, record as general kitchen expense
+            desc = f"Kitchen Stock In: {item.name} ({item.current_stock} {item.unit})"
+            if event_ref:
+                desc += f" for Event {event_ref}"
+            else:
+                desc += " (General Future Stock)"
+
+            ExpenseRecord.objects.create(
+                expense_ref=expense_ref,
+                booking_ref=event_ref,
+                description=desc,
+                category="Food",
+                vendor=item.preferred_supplier or "Kitchen Supplier",
+                amount=cost_val,
+                approved_by="Chef / Kitchen",
+                date=timezone.now().date(),
+                payment_method="Cash",
+                status="Paid"
+            )
+
+            AuditLogEntry.objects.create(
+                log_id=f"LOG-{random.randint(1000, 9999)}",
+                user_name="Kitchen Staff",
+                user_role="Kitchen Staff",
+                action="Created",
+                module="PantryInventory",
+                details=f"Added inventory item {item.name} with Rs. {cost_val:,.0f} logged to Accounts ({'Event ' + event_ref if event_ref else 'General Kitchen Expense'})",
+                ip_address="127.0.0.1"
+            )
+
     @action(detail=True, methods=['post'])
     def adjust_stock(self, request, pk=None):
         item = self.get_object()
         delta = float(request.data.get('adjustment', 0))
         reason = request.data.get('reason', 'Manual Adjustment')
         staff = request.data.get('staffName', 'Kitchen Staff')
+        event_ref = request.data.get('eventRef') or request.data.get('bookingRef') or request.data.get('event_ref') or ''
+        cost_val = float(request.data.get('cost', 0) or request.data.get('totalCost', 0))
 
         new_stock = max(0.0, float(item.current_stock) + delta)
         item.current_stock = new_stock
         item.save()
+
+        # If positive adjustment (stock added) and cost is provided, log to Accounts expense
+        if delta > 0:
+            if cost_val <= 0 and float(item.unit_price or 0) > 0:
+                cost_val = float(item.unit_price) * delta
+            if cost_val > 0:
+                from apps.finance.models import ExpenseRecord
+                expense_ref = f"EXP-KIT-ADJ-{item.id}-{random.randint(100, 999)}"
+                desc = f"Kitchen Stock In: {item.name} (+{delta} {item.unit})"
+                if event_ref:
+                    desc += f" for Event {event_ref}"
+                else:
+                    desc += " (General Future Stock)"
+
+                ExpenseRecord.objects.create(
+                    expense_ref=expense_ref,
+                    booking_ref=event_ref,
+                    description=desc,
+                    category="Food",
+                    vendor=item.preferred_supplier or "Kitchen Supplier",
+                    amount=cost_val,
+                    approved_by=staff,
+                    date=timezone.now().date(),
+                    payment_method="Cash",
+                    status="Paid"
+                )
 
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
@@ -341,6 +453,32 @@ class PantryPurchaseOrderViewSet(viewsets.ModelViewSet):
         item = order.item
         item.current_stock = float(item.current_stock) + float(order.quantity)
         item.save()
+
+        # Record expense in Accounts if total_cost > 0 and not already recorded
+        total_cost = float(order.total_cost or 0)
+        event_ref = request.data.get('eventRef') or request.data.get('bookingRef') or ''
+        if total_cost > 0:
+            from apps.finance.models import ExpenseRecord
+            exp_ref = f"EXP-PO-{order.order_ref.replace('PO-', '')}"
+            if not ExpenseRecord.objects.filter(expense_ref=exp_ref).exists():
+                desc = f"Kitchen Stock Received: {order.item_name} ({order.quantity} {order.unit})"
+                if event_ref:
+                    desc += f" for Event {event_ref}"
+                else:
+                    desc += " (General Kitchen Stock)"
+
+                ExpenseRecord.objects.create(
+                    expense_ref=exp_ref,
+                    booking_ref=event_ref,
+                    description=desc,
+                    category="Food",
+                    vendor=order.supplier_name or "Kitchen Supplier",
+                    amount=total_cost,
+                    approved_by=request.data.get('receivedBy', 'Pantry Manager'),
+                    date=timezone.now().date(),
+                    payment_method="Cash",
+                    status="Paid"
+                )
 
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",

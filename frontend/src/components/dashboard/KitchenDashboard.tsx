@@ -7,12 +7,8 @@ import {
   Clock,
   RefreshCw,
 } from 'lucide-react';
-import {
-  SEED_KDS_REQUESTS,
-  SEED_PANTRY_INGREDIENTS,
-} from '../../data/seedData';
 import { formatTo12Hour } from '../../utils/timeFormat';
-import { inventoryApi } from '../../api/client';
+import { pantryApi, kdsApi, PantryStockItem, KitchenOrderTicketItem } from '../../api/client';
 
 interface PendingKdsItem {
   id: string;
@@ -35,24 +31,28 @@ interface KitchenDashboardProps {
 export const KitchenDashboard: React.FC<KitchenDashboardProps> = ({
   onNavigate,
 }) => {
-  const [ingredients, setIngredients] = useState<any[]>(SEED_PANTRY_INGREDIENTS);
+  const [ingredients, setIngredients] = useState<PantryStockItem[]>([]);
+  const [tickets, setTickets] = useState<KitchenOrderTicketItem[]>([]);
 
   useEffect(() => {
-    inventoryApi
-      .list()
-      .then((data) => {
-        if (data && data.length > 0) setIngredients(data);
-      })
-      .catch(() => {});
+    Promise.all([
+      pantryApi.listItems().catch(() => []),
+      kdsApi.list().catch(() => []),
+    ]).then(([pantryData, kdsData]) => {
+      setIngredients(pantryData || []);
+      setTickets(kdsData || []);
+    });
   }, []);
 
-  const pendingRequests: PendingKdsItem[] = SEED_KDS_REQUESTS.map((r) => ({
-    id: r.id,
-    tableNo: r.location,
-    item: `${r.itemName} (×${r.quantity})`,
-    time: r.requestedAt,
-    status: r.status === 'new' ? 'New' : r.status === 'preparing' ? 'Preparing' : 'Ready',
-  }));
+  const pendingRequests: PendingKdsItem[] = tickets
+    .filter((t) => t.status !== 'Completed' && t.status !== 'Cancelled')
+    .map((r) => ({
+      id: r.id,
+      tableNo: r.hallName || r.station,
+      item: `${r.dishName} (×${r.quantity})`,
+      time: r.createdAt ? new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now',
+      status: r.status === 'Refill Requested' ? 'New' : r.status === 'In Preparation' ? 'Preparing' : 'Ready',
+    }));
 
   const lowStockItems: LowStockIngredient[] = ingredients
     .filter(

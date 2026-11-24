@@ -651,7 +651,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
           <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
                   <DollarSign className="w-5 h-5" />
                 </div>
                 <div>
@@ -662,7 +662,7 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
 
               <div className="text-right">
                 <span className="text-xs text-slate-400 block">Other Deductions</span>
-                <span className="text-base font-bold text-purple-400">
+                <span className="text-base font-bold text-teal-400">
                   Rs. {otherDeductions.toLocaleString()}
                 </span>
               </div>
@@ -1019,10 +1019,10 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
 
                     {otherDeductions > 0 && (
                       <tr>
-                        <td className="py-2.5 px-4 font-semibold text-purple-700">Miscellaneous Surcharges</td>
+                        <td className="py-2.5 px-4 font-semibold text-slate-700">Miscellaneous Surcharges</td>
                         <td className="py-2.5 px-4 text-slate-600">{otherNotes || 'Auxiliary Services'}</td>
                         <td className="py-2.5 px-4 text-right font-mono text-slate-400">-</td>
-                        <td className="py-2.5 px-4 text-right font-mono font-semibold text-purple-700">
+                        <td className="py-2.5 px-4 text-right font-mono font-semibold text-slate-800">
                           {otherDeductions.toLocaleString()}
                         </td>
                       </tr>

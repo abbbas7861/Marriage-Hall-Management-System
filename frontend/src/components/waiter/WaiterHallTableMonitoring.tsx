@@ -156,7 +156,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-violet-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-violet-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-violet-200" />
+          <Sparkles className="w-5 h-5 text-teal-200" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
@@ -363,7 +363,7 @@ export const WaiterHallTableMonitoring: React.FC<WaiterHallTableMonitoringProps>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b border-slate-800">
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-violet-400" />
+              <Layers className="w-4 h-4 text-teal-400" />
               <span>Interactive Hall Table Floor Plan (Tap any table to cycle status)</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">

@@ -199,7 +199,7 @@ export const PORTAL_CONFIGS: Record<PortalType, PortalConfig> = {
     shortName: 'Waiters',
     icon: Smartphone,
     themeColor: 'from-violet-500 to-violet-700',
-    accentBg: 'bg-violet-500/10 text-violet-400 border-violet-500/30',
+    accentBg: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
     description: 'Mobile/Tablet Service Dispatcher & Refill Orders',
     defaultModule: 'waiter-kiosk',
     navGroups: [

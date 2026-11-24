@@ -73,6 +73,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
   ],
   Accounts: [
     { id: 'dashboard', label: 'Accounts Dashboard', icon: LayoutDashboard },
+    { id: 'bookings', label: 'Bookings & Refunds', icon: CalendarDays },
     { id: 'event-tracker', label: 'Event Tracker', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'expenses', label: 'Expenses', icon: Wallet },

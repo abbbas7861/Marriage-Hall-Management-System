@@ -480,7 +480,7 @@ export const AdminExecutiveOverview: React.FC<AdminExecutiveOverviewProps> = ({
             { id: 'admin-bookings', label: 'Bookings Master', icon: CalendarDays, desc: 'Contracts & PDF', color: 'text-sky-500 dark:text-sky-400' },
             { id: 'admin-users', label: 'Users & Rights', icon: Users, desc: 'Salaries & RBAC', color: 'text-amber-500 dark:text-amber-400' },
             { id: 'admin-closings', label: 'Period Closings', icon: Clock, desc: 'Day / Month Lock', color: 'text-rose-500 dark:text-rose-400' },
-            { id: 'admin-fbr', label: 'FBR Invoicing', icon: Receipt, desc: 'Digital Tax QR', color: 'text-violet-500 dark:text-violet-400' },
+            { id: 'admin-fbr', label: 'FBR Invoicing', icon: Receipt, desc: 'Digital Tax QR', color: 'text-teal-500 dark:text-teal-400' },
             { id: 'finance-overview', label: 'General Ledger', icon: Scale, desc: 'A/R, A/P & P&L', color: 'text-teal-500 dark:text-teal-400' },
           ].map((item) => {
             const Icon = item.icon;

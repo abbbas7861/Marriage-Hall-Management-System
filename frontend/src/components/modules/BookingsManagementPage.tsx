@@ -23,6 +23,7 @@ import {
 import { SEED_BOOKINGS, SEED_HALLS, SEED_MENU_PACKAGES } from '../../data/seedData';
 import { bookingsApi, hallsApi, menuApi, authApi } from '../../api/client';
 import { formatTo12Hour } from '../../utils/timeFormat';
+import { formatPhoneNumber, formatCNIC, isValidPhoneNumber } from '../../utils/formatters';
 
 export interface BookingsManagementPageProps {
   onNavigateToCalendar?: () => void;
@@ -1111,7 +1112,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   const getPaymentClass = (status: BookingItem['paymentStatus']) => {
     if (status === 'Paid') return 'bg-teal-50 text-teal-800 border-teal-200';
     if (status === 'Partial') return 'bg-amber-50 text-amber-800 border-amber-200';
-    if (status === 'Refunded') return 'bg-purple-50 text-purple-800 border-purple-200';
+    if (status === 'Refunded') return 'bg-slate-100 text-slate-700 border-slate-300';
     if (status === 'Credit Held') return 'bg-sky-50 text-sky-800 border-sky-200';
     if (status === 'Settled') return 'bg-emerald-50 text-emerald-800 border-emerald-200';
     return 'bg-gray-100 text-gray-700 border-gray-200';
@@ -1183,15 +1184,16 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                   htmlFor="booking-phone"
                   className="block text-xs font-medium text-gray-700 mb-1.5"
                 >
-                  Phone
+                  Phone (Must start with 03, max 11 digits)
                 </label>
                 <input
                   id="booking-phone"
                   type="tel"
+                  maxLength={11}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 0300-1234567"
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                  placeholder="03XXXXXXXXX"
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-mono text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
 
@@ -1200,15 +1202,16 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                   htmlFor="booking-cnic"
                   className="block text-xs font-medium text-gray-700 mb-1.5"
                 >
-                  CNIC
+                  CNIC (13 digits, auto dashes)
                 </label>
                 <input
                   id="booking-cnic"
                   type="text"
+                  maxLength={15}
                   value={cnic}
-                  onChange={(e) => setCnic(e.target.value)}
-                  placeholder="e.g. 35202-1234567-1"
-                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  onChange={(e) => setCnic(formatCNIC(e.target.value))}
+                  placeholder="XXXXX-XXXXXXX-X"
+                  className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-mono text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                 />
               </div>
 
@@ -1913,13 +1916,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
               </div>
 
               {/* Beside it: Discount Area with Percentage Input */}
-              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/60 space-y-2">
+              <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/60 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="booking-discount-pct" className="block text-xs font-semibold text-purple-900 uppercase tracking-wider">
+                  <label htmlFor="booking-discount-pct" className="block text-xs font-semibold text-teal-900 uppercase tracking-wider">
                     Discount Area (%)
                   </label>
                   {calculatedDiscountAmount > 0 && (
-                    <span className="text-xs font-bold font-mono text-purple-800">
+                    <span className="text-xs font-bold font-mono text-teal-800">
                       - Rs. {calculatedDiscountAmount.toLocaleString('en-PK')}
                     </span>
                   )}
@@ -1935,9 +1938,9 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                       value={discountPercentage}
                       onChange={(e) => setDiscountPercentage(e.target.value)}
                       placeholder="0"
-                      className="w-full pl-3 pr-8 py-2 rounded-lg border border-purple-200 bg-white text-sm font-mono font-bold text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-700/20 focus:border-purple-700"
+                      className="w-full pl-3 pr-8 py-2 rounded-lg border border-teal-200 bg-white text-sm font-mono font-bold text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                     />
-                    <span className="absolute right-3 top-2 text-sm text-purple-600 font-bold">%</span>
+                    <span className="absolute right-3 top-2 text-sm text-teal-600 font-bold">%</span>
                   </div>
                   {/* Quick percentage pills */}
                   {[0, 5, 10, 15].map((pct) => (
@@ -1947,15 +1950,15 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                       onClick={() => setDiscountPercentage(String(pct))}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                         Number(discountPercentage) === pct
-                          ? 'bg-purple-700 text-white shadow-2xs'
-                          : 'bg-white border border-purple-200 text-purple-700 hover:bg-purple-100'
+                          ? 'bg-teal-700 text-white shadow-2xs'
+                          : 'bg-white border border-teal-200 text-teal-700 hover:bg-teal-100'
                       }`}
                     >
                       {pct}%
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-purple-700">
+                <p className="text-[11px] text-teal-700">
                   {calculatedDiscountAmount > 0
                     ? `Discount of ${parsedDiscountPct}% cuts Rs. ${calculatedDiscountAmount.toLocaleString('en-PK')} from subtotal`
                     : 'Staff can add discount percentage here'}
@@ -2275,7 +2278,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                           <div className="text-[10px] text-teal-700 font-mono">
                             Paid: Rs. {(booking.cancellationRecord?.advance_paid ?? booking.advancePayment).toLocaleString()} | Used: Rs. {(booking.cancellationRecord?.deduction_amount ?? 0).toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-purple-700 font-mono font-medium">
+                          <div className="text-[10px] text-slate-700 font-mono font-medium">
                             {booking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
                               ? `Credit: Rs. ${(booking.cancellationRecord?.retained_credit ?? 0).toLocaleString()}`
                               : `Refund: Rs. ${(booking.cancellationRecord?.refund_amount ?? 0).toLocaleString()}`} · Pending: Rs. 0
@@ -2475,13 +2478,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                         Rs. 0 (Closed)
                       </strong>
                     </div>
-                    <div className="col-span-2 p-2 rounded-lg bg-purple-50 border border-purple-200">
-                      <span className="text-[10px] text-purple-700 block font-semibold">
+                    <div className="col-span-2 p-2 rounded-lg bg-teal-50 border border-teal-200">
+                      <span className="text-[10px] text-teal-700 block font-semibold">
                         {viewingBooking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
                           ? 'Retained Credit for Rescheduled Event'
                           : 'Refund Disbursed to Client'}
                       </span>
-                      <strong className="font-mono text-purple-900 text-sm">
+                      <strong className="font-mono text-teal-900 text-sm">
                         Rs. {(viewingBooking.cancellationRecord?.net_amount ?? 0).toLocaleString()}
                       </strong>
                     </div>
@@ -2816,7 +2819,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                       ? 'Credit Retained for Future Event'
                       : 'Amount Refunded to Client'}
                   </span>
-                  <span className="font-bold font-mono text-base text-purple-700">
+                  <span className="font-bold font-mono text-base text-teal-800">
                     Rs. {Number(viewingCancellationRecord.cancellationRecord?.net_amount || 0).toLocaleString()}
                   </span>
                 </div>
@@ -3049,13 +3052,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                             Rs. 0 (Closed / Voided)
                           </span>
                         </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-rose-200 font-bold text-purple-900 text-sm">
+                        <div className="flex items-center justify-between pt-2 border-t border-rose-200 font-bold text-slate-900 text-sm">
                           <span>
                             {receiptBooking.cancellationRecord?.cancellation_type === 'pause_and_adjust'
                               ? 'Retained Credit Voucher'
                               : 'Refund Disbursed to Client'}
                           </span>
-                          <span className="font-mono tabular-nums">
+                          <span className="font-mono tabular-nums text-teal-800">
                             Rs. {(receiptBooking.cancellationRecord?.net_amount ?? 0).toLocaleString('en-PK')}
                           </span>
                         </div>
@@ -3136,7 +3139,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                               </td>
                             </tr>
                             {receiptBooking.discountPercentage && receiptBooking.discountPercentage > 0 ? (
-                              <tr className="text-purple-700 font-medium">
+                              <tr className="text-teal-700 font-medium">
                                 <td className="py-2 px-3">Special Discount ({receiptBooking.discountPercentage}%)</td>
                                 <td className="py-2 px-3 text-right font-mono font-bold">
                                   - Rs. {(receiptBooking.discountAmount || 0).toLocaleString('en-PK')}

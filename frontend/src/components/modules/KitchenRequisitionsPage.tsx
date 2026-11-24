@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
 import { bookingsApi, requisitionsApi, AssetRequisitionItem } from '../../api/client';
+import { isEventActiveOrUpcoming } from '../../utils/formatters';
 
 interface UpcomingEventOption {
   id: string;
@@ -37,6 +38,24 @@ export const KitchenRequisitionsPage: React.FC = () => {
   const [submittedRequisitions, setSubmittedRequisitions] = useState<AssetRequisitionItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [stockingId, setStockingId] = useState<string | null>(null);
+
+  const handleConfirmStockIn = async (requisitionId: string | number) => {
+    try {
+      setStockingId(String(requisitionId));
+      await requisitionsApi.confirmStockIn(requisitionId);
+      if (selectedEvent?.bookingRef) {
+        await loadEventRequisitions(selectedEvent.bookingRef);
+      }
+      alert('Stock-In confirmed! Items added to stock inventory.');
+    } catch (err) {
+      console.error('Failed to confirm stock-in:', err);
+      alert('Error confirming stock-in. Please try again.');
+    } finally {
+      setStockingId(null);
+    }
+  };
 
   const [rows, setRows] = useState<IngredientRequirementRow[]>([
     {
@@ -70,12 +89,7 @@ export const KitchenRequisitionsPage: React.FC = () => {
       .list()
       .then((data) => {
         if (data && data.length > 0) {
-          const activeOnly = data.filter((b: any) => {
-            if (b.status === 'Cancelled' || b.status === 'Rejected' || b.status === 'Completed') return false;
-            const op = (b.operationalStatus || b.operational_status || '').toLowerCase();
-            if (op.includes('concluded') || op.includes('completed') || op.includes('closed')) return false;
-            return true;
-          });
+          const activeOnly = data.filter(isEventActiveOrUpcoming);
           const mapped = activeOnly.map((b: any) => ({
             id: String(b.id),
             bookingRef: b.bookingRef || `BK-${b.id}`,
@@ -451,7 +465,8 @@ export const KitchenRequisitionsPage: React.FC = () => {
                   <th className="py-3 px-5">Qty Requested</th>
                   <th className="py-3 px-5">Qty Issued</th>
                   <th className="py-3 px-5">Estimated Cost</th>
-                  <th className="py-3 px-5 text-right">Manager Status</th>
+                  <th className="py-3 px-5 text-center">Stock In Status</th>
+                  <th className="py-3 px-5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -472,18 +487,37 @@ export const KitchenRequisitionsPage: React.FC = () => {
                     <td className="py-3 px-5 font-mono text-teal-800">
                       Rs. {Number(req.estimatedCost || 0).toLocaleString()}
                     </td>
-                    <td className="py-3 px-5 text-right">
+                    <td className="py-3 px-5 text-center">
                       <span
                         className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold ${
-                          req.status === 'Approved' || req.status === 'Issued'
+                          req.status === 'Issued'
+                            ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                            : req.status === 'Approved'
                             ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                             : req.status === 'Shortage'
-                              ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200'
                         }`}
                       >
-                        {req.status === 'Approved' ? 'Approved by Manager' : req.status === 'Issued' ? 'Issued' : 'Pending Manager Review'}
+                        {req.status === 'Issued' ? 'Stock In Confirmed' : req.status === 'Approved' ? 'Approved by Manager' : req.status === 'Shortage' ? 'Shortage Reported' : 'Pending Manager Review'}
                       </span>
+                    </td>
+                    <td className="py-3 px-5 text-right">
+                      {req.status === 'Approved' ? (
+                        <button
+                          type="button"
+                          disabled={stockingId === String(req.id)}
+                          onClick={() => handleConfirmStockIn(req.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{stockingId === String(req.id) ? 'Stocking In...' : 'Confirm Stock In'}</span>
+                        </button>
+                      ) : req.status === 'Issued' ? (
+                        <span className="text-xs text-slate-400 font-medium">Stocked in Pantry</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Awaiting Manager</span>
+                      )}
                     </td>
                   </tr>
                 ))}

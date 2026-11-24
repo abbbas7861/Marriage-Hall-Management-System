@@ -24,6 +24,7 @@ import {
 import { VendorPartner } from '../../types';
 import { workforceApi } from '../../api/client';
 import { CreatableCategoryInput } from '../common/CreatableCategoryInput';
+import { formatPhoneNumber } from '../../utils/formatters';
 
 interface VendorMasterDirectoryProps {
   onNavigateToTab?: (tabId: string) => void;
@@ -519,13 +520,14 @@ export const VendorMasterDirectory: React.FC<VendorMasterDirectoryProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Phone Number</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Phone Number (03XXXXXXXXX)</label>
                   <input
-                    type="text"
+                    type="tel"
+                    maxLength={11}
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    placeholder="e.g. +92 300 1234567"
-                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: formatPhoneNumber(e.target.value) })}
+                    placeholder="03XXXXXXXXX"
+                    className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs sm:text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
                   />
                 </div>
               </div>

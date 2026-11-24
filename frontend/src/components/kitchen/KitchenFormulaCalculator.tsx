@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Booking } from '../../types';
+import { isEventActiveOrUpcoming } from '../../utils/formatters';
 import {
   bookingsApi,
   pantryApi,
@@ -150,11 +151,12 @@ export const KitchenFormulaCalculator: React.FC = () => {
         bookingsApi.list(),
         pantryApi.listItems(),
       ]);
-      setBookings(fetchedBookings);
+      const activeBookings = (fetchedBookings || []).filter(isEventActiveOrUpcoming);
+      setBookings(activeBookings);
 
-      if (fetchedBookings.length > 0) {
-        setSelectedBookingRef(fetchedBookings[0].bookingRef);
-        setGuestCount(fetchedBookings[0].guestCount || 500);
+      if (activeBookings.length > 0) {
+        setSelectedBookingRef(activeBookings[0].bookingRef);
+        setGuestCount(activeBookings[0].guestCount || 500);
       }
 
       // Map presets to live pantry items

@@ -121,8 +121,8 @@ def get_dashboard_data():
         mtd_bookings = Booking.objects.filter(date__gte=first_day_of_month, date__lte=today, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
         mtd_revenue = float(mtd_bookings.aggregate(s=Sum('advance_payment'))['s'] or 0)
 
-    # Total Year Revenue
-    year_bookings = Booking.objects.filter(date__year=current_year, status__in=['Confirmed', 'Completed', 'Deposit Paid'])
+    # Total Year Revenue (excluding cancelled bookings)
+    year_bookings = Booking.objects.filter(date__year=current_year).exclude(status__in=['Cancelled', 'Rejected'])
     total_year_revenue = float(year_bookings.aggregate(s=Sum('amount'))['s'] or 0)
 
     # 4. Pending Payments (Accounts Receivable from Unpaid/Partial Active Invoices)
@@ -144,7 +144,7 @@ def get_dashboard_data():
     ]
     revenue_points = []
     for q_name, q_months in quarters:
-        q_bookings = Booking.objects.filter(date__year=current_year, date__month__in=q_months)
+        q_bookings = Booking.objects.filter(date__year=current_year, date__month__in=q_months).exclude(status__in=['Cancelled', 'Rejected'])
         rev = float(q_bookings.aggregate(s=Sum('amount'))['s'] or 0)
         hall_rev = round(rev * 0.65, 2)
         ancillary = round(rev * 0.35, 2)
@@ -226,7 +226,7 @@ class ReportsSummaryView(APIView):
         hall_filter = request.query_params.get('hall')
         booking_filter = request.query_params.get('bookingRef') or request.query_params.get('booking_id')
 
-        bookings_qs = Booking.objects.all()
+        bookings_qs = Booking.objects.all().exclude(status__in=['Cancelled', 'Rejected'])
         invoices_qs = InvoiceRecord.objects.all()
         expenses_qs = ExpenseRecord.objects.all()
 

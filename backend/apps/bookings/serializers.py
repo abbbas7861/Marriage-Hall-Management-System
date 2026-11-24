@@ -4,6 +4,27 @@ from apps.finance.models import InvoiceRecord, PaymentTransaction
 from apps.customers.models import Customer
 from apps.core.models import AuditLogEntry
 import random
+import re
+
+def clean_and_validate_pak_phone(phone_str):
+    if not phone_str:
+        return ''
+    digits = re.sub(r'\D', '', phone_str)
+    if digits.startswith('92'):
+        digits = '0' + digits[2:]
+    elif digits.startswith('3'):
+        digits = '0' + digits
+    return digits[:11]
+
+def clean_and_format_cnic(cnic_str):
+    if not cnic_str:
+        return ''
+    digits = re.sub(r'\D', '', cnic_str)[:13]
+    if len(digits) == 13:
+        return f"{digits[:5]}-{digits[5:12]}-{digits[12]}"
+    elif len(digits) > 5:
+        return f"{digits[:5]}-{digits[5:]}"
+    return digits
 
 class BookingSerializer(serializers.ModelSerializer):
     bookingRef = serializers.CharField(source='booking_ref', required=False)
@@ -117,11 +138,17 @@ class BookingSerializer(serializers.ModelSerializer):
             else:
                 validated_data['payment_status'] = 'Unpaid'
 
+        raw_contact = validated_data.get('contact_ref', '')
+        if raw_contact and (raw_contact.startswith('03') or raw_contact.startswith('3')):
+            validated_data['contact_ref'] = clean_and_validate_pak_phone(raw_contact)
+        if validated_data.get('cnic'):
+            validated_data['cnic'] = clean_and_format_cnic(validated_data['cnic'])
+
         booking = super().create(validated_data)
 
         # Sync/Create Customer in CRM
         cust_name = booking.customer_name
-        phone = booking.contact_ref or ''
+        phone = validated_data.get('contact_ref') or booking.contact_ref or ''
         cnic = validated_data.get('cnic', '')
         addr = validated_data.get('address', '')
 

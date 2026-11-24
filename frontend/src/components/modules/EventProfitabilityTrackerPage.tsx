@@ -45,7 +45,7 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
   'Outside Waiters': 'bg-indigo-50 text-indigo-800 border-indigo-200 font-semibold',
   'Operational Funds': 'bg-cyan-50 text-cyan-800 border-cyan-200',
   Food: 'bg-teal-50 text-teal-800 border-teal-200',
-  Decor: 'bg-purple-50 text-purple-800 border-purple-200',
+  Decor: 'bg-teal-50 text-teal-800 border-teal-200',
   Damage: 'bg-rose-50 text-rose-700 border-rose-200',
   Staff: 'bg-blue-50 text-blue-800 border-blue-200',
   Other: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -152,21 +152,52 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
     let totalRevenue = 0;
     let collectedRevenue = 0;
     let pendingReceivables = 0;
+    let grossCashInflow = 0;
+    let totalRefundsPaid = 0;
+
+    const computeEventRevenue = (b: any, inv: any) => {
+      const isCancelled = b?.status === 'Cancelled' || inv?.status === 'Cancelled' || inv?.paymentStatus === 'Cancelled' || b?.paymentStatus === 'Refunded';
+      const cancRecord = b?.cancellationRecord || inv?.cancellationRecord || {};
+      const originalAdvance = Number(cancRecord.advance_paid ?? cancRecord.paid_amount ?? b?.advancePayment ?? inv?.paidAmount ?? 0);
+      const refunded = Number(cancRecord.refund_amount ?? cancRecord.net_amount ?? (isCancelled ? originalAdvance : 0));
+      const retainedAmount = Number(cancRecord.deduction_amount ?? cancRecord.amount_used ?? 0);
+
+      if (isCancelled) {
+        grossCashInflow += originalAdvance;
+        totalRefundsPaid += refunded;
+        // P&L recognized revenue is strictly what the hall kept/earned
+        return {
+          total: retainedAmount,
+          paid: retainedAmount,
+          pending: 0,
+        };
+      }
+
+      const bTotal = Number(inv?.totalAmount ?? b?.amount ?? b?.subtotal ?? 0);
+      const bPaid = Number(inv?.paidAmount ?? b?.advancePayment ?? 0);
+      grossCashInflow += bPaid;
+
+      return {
+        total: bTotal,
+        paid: bPaid,
+        pending: Math.max(0, bTotal - bPaid),
+      };
+    };
 
     if (selectedEventRef === 'All Events') {
       bookings.forEach((b: any) => {
         const inv = invoices.find((i: any) => (i.bookingId || i.bookingRef) === b.bookingRef);
-        const bTotal = Number(inv?.totalAmount ?? b.amount ?? b.subtotal ?? 0);
-        const bPaid = Number(inv?.paidAmount ?? b.advancePayment ?? 0);
-        totalRevenue += bTotal;
-        collectedRevenue += bPaid;
+        const { total, paid, pending } = computeEventRevenue(b, inv);
+        totalRevenue += total;
+        collectedRevenue += paid;
+        pendingReceivables += pending;
       });
-      pendingReceivables = Math.max(0, totalRevenue - collectedRevenue);
     } else if (selectedBooking) {
       const inv = invoices.find((i: any) => (i.bookingId || i.bookingRef) === selectedBooking.bookingRef);
-      totalRevenue = Number(inv?.totalAmount ?? selectedBooking.amount ?? (selectedBooking as any).subtotal ?? 0);
-      collectedRevenue = Number(inv?.paidAmount ?? selectedBooking.advancePayment ?? 0);
-      pendingReceivables = Math.max(0, totalRevenue - collectedRevenue);
+      const { total, paid, pending } = computeEventRevenue(selectedBooking, inv);
+      totalRevenue = total;
+      collectedRevenue = paid;
+      pendingReceivables = pending;
     }
 
     // Outside Waiters expense specifically for this event
@@ -177,12 +208,18 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
     // Final total expenses (including outside waiters + other expenses)
     const finalTotalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
     const netProfit = totalRevenue - finalTotalExpenses;
-    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0';
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : (netProfit < 0 ? '-100.0' : '0.0');
+
+    // Net Cashflow accounting for gross inflow minus refunds minus operational expenses
+    const netCashFlow = grossCashInflow - totalRefundsPaid - finalTotalExpenses;
 
     return {
       totalRevenue,
       collectedRevenue,
       pendingReceivables,
+      grossCashInflow,
+      totalRefundsPaid,
+      netCashFlow,
       revenueLabel: `Rs. ${totalRevenue.toLocaleString()}`,
       collectedLabel: `Rs. ${collectedRevenue.toLocaleString()}`,
       pendingLabel: `Rs. ${pendingReceivables.toLocaleString()}`,
@@ -821,7 +858,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   {/* Cash Inflows */}
                   <div>
                     <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2 flex items-center gap-1.5">
-                      <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" /> Cash Inflows (Collections Received)
+                      <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" /> Cash Inflows (Gross Receipts Received)
                     </h5>
                     <table className="w-full text-xs text-left">
                       <thead className="bg-emerald-50/60 text-emerald-900 border-y border-emerald-100">
@@ -833,10 +870,10 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-800">
                         <tr>
-                          <td className="py-2 px-3 font-medium">Customer Advances &amp; Balance Collections</td>
-                          <td className="py-2 px-3 text-slate-500">Collected at booking &amp; counter invoices</td>
+                          <td className="py-2 px-3 font-medium">Customer Advances &amp; Booking Deposits</td>
+                          <td className="py-2 px-3 text-slate-500">Gross cash received at counter &amp; bank deposits</td>
                           <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
-                            Rs. {kpiMetrics.collectedRevenue.toLocaleString()}
+                            Rs. {kpiMetrics.grossCashInflow.toLocaleString()}
                           </td>
                         </tr>
                         {kpiMetrics.pendingReceivables > 0 && (
@@ -849,9 +886,9 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                           </tr>
                         )}
                         <tr className="bg-emerald-50/40 font-bold">
-                          <td colSpan={2} className="py-2 px-3 text-emerald-900">Total Actual Cash Inflow:</td>
+                          <td colSpan={2} className="py-2 px-3 text-emerald-900">Total Gross Cash Inflow:</td>
                           <td className="py-2 px-3 text-right font-mono text-emerald-800">
-                            Rs. {kpiMetrics.collectedRevenue.toLocaleString()}
+                            Rs. {kpiMetrics.grossCashInflow.toLocaleString()}
                           </td>
                         </tr>
                       </tbody>
@@ -861,7 +898,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   {/* Cash Outflows */}
                   <div>
                     <h5 className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-2 flex items-center gap-1.5">
-                      <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" /> Cash Outflows (Direct Event Disbursements)
+                      <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" /> Cash Outflows (Refunds Disbursed &amp; Event Expenses)
                     </h5>
                     <table className="w-full text-xs text-left">
                       <thead className="bg-rose-50/60 text-rose-900 border-y border-rose-100">
@@ -872,7 +909,17 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-800">
-                        {filteredExpenses.length === 0 ? (
+                        {/* Show Refund row if any cancellation refunds occurred */}
+                        {kpiMetrics.totalRefundsPaid > 0 && (
+                          <tr className="bg-rose-50/30">
+                            <td className="py-2 px-3 font-medium text-rose-900">Client Cancellation Refund (Cash Out)</td>
+                            <td className="py-2 px-3 text-slate-500">Refunded to client after cancellation</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold text-rose-600">
+                              Rs. {kpiMetrics.totalRefundsPaid.toLocaleString()}
+                            </td>
+                          </tr>
+                        )}
+                        {filteredExpenses.length === 0 && kpiMetrics.totalRefundsPaid === 0 ? (
                           <tr>
                             <td colSpan={3} className="py-3 px-3 text-center text-slate-400">
                               No cash disbursements logged for this event.
@@ -890,9 +937,9 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                           ))
                         )}
                         <tr className="bg-rose-50/40 font-bold">
-                          <td colSpan={2} className="py-2 px-3 text-rose-900">Total Cash Outflow:</td>
+                          <td colSpan={2} className="py-2 px-3 text-rose-900">Total Cash Outflow (Refunds + Expenses):</td>
                           <td className="py-2 px-3 text-right font-mono text-rose-800">
-                            Rs. {filteredExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString()}
+                            Rs. {(kpiMetrics.totalRefundsPaid + filteredExpenses.reduce((s, e) => s + e.amount, 0)).toLocaleString()}
                           </td>
                         </tr>
                       </tbody>
@@ -902,16 +949,16 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
                   {/* Net Cashflow Summary Box */}
                   <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 flex items-center justify-between font-mono text-xs">
                     <span className="font-bold text-slate-700 uppercase">
-                      Net Operational Cashflow (Cash In - Cash Out):
+                      Net Cashflow Balance (Gross Inflows &minus; Client Refunds &minus; Expenses):
                     </span>
                     <span
                       className={`text-sm font-bold ${
-                        kpiMetrics.collectedRevenue - filteredExpenses.reduce((s, e) => s + e.amount, 0) >= 0
+                        kpiMetrics.netCashFlow >= 0
                           ? 'text-emerald-700'
                           : 'text-rose-600'
                       }`}
                     >
-                      Rs. {(kpiMetrics.collectedRevenue - filteredExpenses.reduce((s, e) => s + e.amount, 0)).toLocaleString()}
+                      Rs. {kpiMetrics.netCashFlow.toLocaleString()}
                     </span>
                   </div>
                 </div>

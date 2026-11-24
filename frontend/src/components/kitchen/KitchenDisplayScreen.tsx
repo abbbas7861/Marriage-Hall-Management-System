@@ -7,23 +7,20 @@ import {
   Flame,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   Plus,
   Building2,
-  Sparkles,
   Send,
   RefreshCw,
   Search,
-  Filter,
   Check,
   X,
-  User,
-  Coffee,
   UtensilsCrossed,
+  Calendar,
 } from 'lucide-react';
 import { Booking } from '../../types';
 import { bookingsApi, kdsApi, KitchenOrderTicketItem } from '../../api/client';
 import { formatTo12Hour } from '../../utils/timeFormat';
+import { isEventActiveOrUpcoming } from '../../utils/formatters';
 
 // Popular banquet dish presets for quick refill creation
 const QUICK_DISH_PRESETS = [
@@ -40,6 +37,7 @@ export const KitchenDisplayScreen: React.FC = () => {
   const [tickets, setTickets] = useState<KitchenOrderTicketItem[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEventFilter, setSelectedEventFilter] = useState<string>('All');
   const [selectedHallFilter, setSelectedHallFilter] = useState<string>('All');
   const [selectedStationFilter, setSelectedStationFilter] = useState<string>('All');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
@@ -112,18 +110,21 @@ export const KitchenDisplayScreen: React.FC = () => {
       // If new tickets arrived since last fetch, chime!
       if (prevTicketCountRef.current > 0 && fetchedTickets.length > prevTicketCountRef.current) {
         playKitchenChime();
-        showToast('🔔 New urgent dish refill order received from hall!');
+        showToast('New urgent dish refill order received from hall!');
       }
       prevTicketCountRef.current = fetchedTickets.length;
 
-      setTickets(fetchedTickets);
-      setBookings(fetchedBookings);
+      // Only keep active or upcoming events on KDS
+      const activeBookings = (fetchedBookings || []).filter(isEventActiveOrUpcoming);
 
-      if (fetchedBookings.length > 0 && !ticketForm.eventRef) {
+      setTickets(fetchedTickets);
+      setBookings(activeBookings);
+
+      if (activeBookings.length > 0 && !ticketForm.eventRef) {
         setTicketForm((prev) => ({
           ...prev,
-          eventRef: fetchedBookings[0].bookingRef,
-          hallName: fetchedBookings[0].hallName,
+          eventRef: activeBookings[0].bookingRef,
+          hallName: activeBookings[0].hallName,
         }));
       }
     } catch (err) {
@@ -163,7 +164,7 @@ export const KitchenDisplayScreen: React.FC = () => {
     try {
       const updated = await kdsApi.advanceStatus(ticket.id);
       setTickets((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-      showToast(`Ticket ${ticket.ticketNumber} advanced to "${updated.status}"`);
+      showToast(`Ticket ${ticket.ticketNumber} updated to "${updated.status}"`);
       playKitchenChime();
     } catch (err) {
       console.error('Failed to advance status:', err);
@@ -200,11 +201,12 @@ export const KitchenDisplayScreen: React.FC = () => {
   // Filtered tickets
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
+      if (selectedEventFilter !== 'All' && t.eventRef !== selectedEventFilter) return false;
       if (selectedHallFilter !== 'All' && t.hallName !== selectedHallFilter) return false;
       if (selectedStationFilter !== 'All' && t.station !== selectedStationFilter) return false;
       return true;
     });
-  }, [tickets, selectedHallFilter, selectedStationFilter]);
+  }, [tickets, selectedEventFilter, selectedHallFilter, selectedStationFilter]);
 
   // Grouped status lanes
   const laneRequested = useMemo(
@@ -237,147 +239,165 @@ export const KitchenDisplayScreen: React.FC = () => {
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
-          <Sparkles className="w-5 h-5 text-emerald-200" />
+        <div className="fixed bottom-6 right-6 z-50 bg-teal-800 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-teal-700 animate-slide-up">
+          <CheckCircle2 className="w-5 h-5 text-teal-300" />
           <span className="font-medium text-sm">{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Banner / KDS Control Header */}
-      <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-5 sm:p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-amber-500/10 via-emerald-500/10 to-transparent rounded-full blur-3xl -z-10" />
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black !text-white tracking-tight flex items-center gap-3">
-              <span>Kitchen Display Screen (KDS)</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-bold uppercase tracking-wider">
-                <Flame className="w-3.5 h-3.5" />
-                LIVE QUEUE
-              </span>
+      {/* Top Banner / KDS Control Header - Clean System Light Theme */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
+              Kitchen Display System (KDS)
             </h1>
-            <p className="!text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-              High-contrast touch board receiving instant dish refill orders from floor stewards. Color-coded prep states ensure hot buffet replenishment without delay.
-            </p>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
+              <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
+              LIVE QUEUE
+            </span>
           </div>
-
-          {/* Action buttons & Audio Chime Toggle */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Audio Chime Bell */}
-            <button
-              onClick={() => {
-                setSoundEnabled(!soundEnabled);
-                if (!soundEnabled) playKitchenChime();
-              }}
-              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition shadow-sm ${
-                soundEnabled
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
-              }`}
-            >
-              {soundEnabled ? (
-                <>
-                  <Volume2 className="w-4 h-4 text-amber-400" />
-                  <span>Audio Chime: ON</span>
-                </>
-              ) : (
-                <>
-                  <VolumeX className="w-4 h-4 text-slate-400" />
-                  <span>Audio Chime: MUTED</span>
-                </>
-              )}
-            </button>
-
-            {/* Test bell */}
-            <button
-              onClick={playKitchenChime}
-              className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition"
-              title="Test Kitchen Service Chime"
-            >
-              <Bell className="w-3.5 h-3.5 text-amber-400" />
-              <span>Test Bell</span>
-            </button>
-
-            {/* Manual Refresh */}
-            <button
-              onClick={() => loadData(false)}
-              disabled={loading}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
-              title="Refresh Queue"
-            >
-              <RefreshCw className={`w-4 h-4 text-sky-400 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-
-            {/* Add New Ticket Button */}
-            <button
-              onClick={() => setIsNewTicketOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Dispatch Refill Order</span>
-            </button>
-          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            Real-time floor tickets receiving dish refills. Track cooking stages and dispatch food to banquets.
+          </p>
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-5 border-t border-slate-800 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Hall selector */}
-            <div className="flex items-center gap-1.5 !bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={selectedHallFilter}
-                onChange={(e) => setSelectedHallFilter(e.target.value)}
-                className="bg-transparent !text-white font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="All" className="bg-slate-900 text-white">All Halls / Venues</option>
-                <option value="Grand Crystal Ballroom" className="bg-slate-900 text-white">Grand Crystal Ballroom</option>
-                <option value="Royal Emerald Hall" className="bg-slate-900 text-white">Royal Emerald Hall</option>
-                <option value="Sapphire Banquet" className="bg-slate-900 text-white">Sapphire Banquet</option>
-                <option value="Imperial Courtyard Lawn" className="bg-slate-900 text-white">Imperial Courtyard Lawn</option>
-              </select>
-            </div>
+        {/* Action buttons & Audio Chime Toggle */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setSoundEnabled(!soundEnabled);
+              if (!soundEnabled) playKitchenChime();
+            }}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+              soundEnabled
+                ? 'bg-teal-50 border-teal-200 text-teal-800'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {soundEnabled ? (
+              <>
+                <Volume2 className="w-4 h-4 text-teal-700" />
+                <span>Audio Chime: ON</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-slate-400" />
+                <span>Audio Chime: OFF</span>
+              </>
+            )}
+          </button>
 
-            {/* Station selector */}
-            <div className="flex items-center gap-1.5 !bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-              <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={selectedStationFilter}
-                onChange={(e) => setSelectedStationFilter(e.target.value)}
-                className="bg-transparent !text-white font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="All" className="bg-slate-900 text-white">All Kitchen Stations</option>
-                <option value="Hot Buffet Line 1" className="bg-slate-900 text-white">Hot Buffet Line 1</option>
-                <option value="Hot Buffet Line 2" className="bg-slate-900 text-white">Hot Buffet Line 2</option>
-                <option value="Live BBQ & Karahi" className="bg-slate-900 text-white">Live BBQ & Karahi</option>
-                <option value="Tandoor & Breads" className="bg-slate-900 text-white">Tandoor & Breads</option>
-                <option value="Desserts & Beverages" className="bg-slate-900 text-white">Desserts & Beverages</option>
-                <option value="Salad & Cold Station" className="bg-slate-900 text-white">Salad & Cold Station</option>
-              </select>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={playKitchenChime}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
+            title="Test Kitchen Service Bell"
+          >
+            <Bell className="w-3.5 h-3.5 text-slate-500" />
+            <span>Test Bell</span>
+          </button>
 
-          {/* Quick counts summary */}
-          <div className="flex items-center gap-3 !text-slate-300">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <strong className="!text-white">{laneRequested.length}</strong> New Refills
-            </span>
-            <span className="text-slate-600">•</span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <strong className="!text-white">{laneInPrep.length}</strong> In Prep
-            </span>
-            <span className="text-slate-600">•</span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <strong className="text-white">{laneReady.length}</strong> Ready at Pass
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={() => loadData(false)}
+            disabled={loading}
+            className="p-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
+            title="Refresh Queue"
+          >
+            <RefreshCw className={`w-4 h-4 text-teal-700 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsNewTicketOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Call Refill Order</span>
+          </button>
         </div>
       </div>
 
-      {/* Mobile Lane Switcher Tabs (Phones & Small Screens) */}
+      {/* Filter Bar with Event, Hall & Station Selectors */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Event selector */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-teal-700" />
+            <span className="font-semibold text-slate-500">Event:</span>
+            <select
+              value={selectedEventFilter}
+              onChange={(e) => setSelectedEventFilter(e.target.value)}
+              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer max-w-[200px] truncate"
+            >
+              <option value="All">All Active Events</option>
+              {bookings.map((b) => (
+                <option key={b.bookingRef} value={b.bookingRef}>
+                  {b.bookingRef} - {b.customerName} ({b.hallName})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Hall selector */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+            <Building2 className="w-3.5 h-3.5 text-teal-700" />
+            <span className="font-semibold text-slate-500">Hall:</span>
+            <select
+              value={selectedHallFilter}
+              onChange={(e) => setSelectedHallFilter(e.target.value)}
+              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
+            >
+              <option value="All">All Halls / Venues</option>
+              <option value="Grand Crystal Ballroom">Grand Crystal Ballroom</option>
+              <option value="Royal Emerald Hall">Royal Emerald Hall</option>
+              <option value="Sapphire Banquet">Sapphire Banquet</option>
+              <option value="Imperial Courtyard Lawn">Imperial Courtyard Lawn</option>
+            </select>
+          </div>
+
+          {/* Station selector */}
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+            <UtensilsCrossed className="w-3.5 h-3.5 text-teal-700" />
+            <span className="font-semibold text-slate-500">Station:</span>
+            <select
+              value={selectedStationFilter}
+              onChange={(e) => setSelectedStationFilter(e.target.value)}
+              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
+            >
+              <option value="All">All Kitchen Stations</option>
+              <option value="Hot Buffet Line 1">Hot Buffet Line 1</option>
+              <option value="Hot Buffet Line 2">Hot Buffet Line 2</option>
+              <option value="Live BBQ & Karahi">Live BBQ & Karahi</option>
+              <option value="Tandoor & Breads">Tandoor & Breads</option>
+              <option value="Desserts & Beverages">Desserts & Beverages</option>
+              <option value="Salad & Cold Station">Salad & Cold Station</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Quick summary counts */}
+        <div className="flex items-center gap-3 text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <strong className="text-slate-900">{laneRequested.length}</strong> New Refills
+          </span>
+          <span className="text-slate-300">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-teal-600" />
+            <strong className="text-slate-900">{laneInPrep.length}</strong> In Prep
+          </span>
+          <span className="text-slate-300">•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+            <strong className="text-slate-900">{laneReady.length}</strong> Ready to Serve
+          </span>
+        </div>
+      </div>
+
+      {/* Mobile Lane Switcher */}
       <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
         {[
           { key: 'All', label: `All (${filteredTickets.length})` },
@@ -390,10 +410,10 @@ export const KitchenDisplayScreen: React.FC = () => {
             key={tab.key}
             type="button"
             onClick={() => setMobileLaneFilter(tab.key as any)}
-            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors cursor-pointer ${
               mobileLaneFilter === tab.key
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'bg-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-teal-700 text-white'
+                : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
             {tab.label}
@@ -401,27 +421,29 @@ export const KitchenDisplayScreen: React.FC = () => {
         ))}
       </div>
 
-      {/* 4-Lane High-Contrast Touch KDS Board */}
+      {/* 4-Lane Board in Clean Theme */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {/* Lane 1: 🟡 Refill Requested (New & Urgent) */}
-        <div className={`bg-slate-900/60 backdrop-blur-md rounded-2xl border border-amber-500/30 flex flex-col min-h-[580px] ${
-          mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Requested' ? 'hidden md:flex' : 'flex'
-        }`}>
-          <div className="p-3.5 bg-amber-500/10 border-b border-amber-500/20 rounded-t-2xl flex items-center justify-between">
+        {/* Lane 1: 🟡 Refill Requested */}
+        <div
+          className={`bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col min-h-[580px] overflow-hidden ${
+            mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Requested' ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div className="p-3.5 bg-amber-50/70 border-b border-amber-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              <h2 className="font-black text-amber-300 text-sm tracking-wide uppercase">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <h2 className="font-bold text-amber-900 text-xs tracking-wide uppercase">
                 1. Refill Requested
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/30">
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-mono text-xs font-bold">
               {laneRequested.length}
             </span>
           </div>
 
           <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[700px]">
             {laneRequested.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">
+              <div className="p-8 text-center text-slate-400 text-xs">
                 No pending refill calls. Floor buffets currently fully stocked.
               </div>
             ) : (
@@ -432,28 +454,27 @@ export const KitchenDisplayScreen: React.FC = () => {
                 return (
                   <div
                     key={ticket.id}
-                    className={`bg-slate-800/90 rounded-xl p-4 border transition-all shadow-md relative ${
+                    className={`bg-white rounded-xl p-4 border transition-all shadow-xs ${
                       ticket.priority === 'Critical'
-                        ? 'border-rose-500/80 shadow-rose-500/10 ring-1 ring-rose-500/30'
+                        ? 'border-rose-300 bg-rose-50/30'
                         : isOverdue
-                        ? 'border-amber-400 shadow-amber-500/10'
-                        : 'border-slate-700/80 hover:border-amber-500/50'
+                        ? 'border-amber-300 bg-amber-50/30'
+                        : 'border-slate-200 hover:border-amber-300'
                     }`}
                   >
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
-                      <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                      <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                         {ticket.ticketNumber}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {ticket.priority === 'Critical' && (
-                          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-rose-500 text-white">
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
                             CRITICAL
                           </span>
                         )}
                         <span
                           className={`text-xs font-mono font-bold flex items-center gap-1 ${
-                            isOverdue ? 'text-rose-400 font-extrabold' : 'text-slate-400'
+                            isOverdue ? 'text-rose-700' : 'text-slate-500'
                           }`}
                         >
                           <Clock className="w-3.5 h-3.5" />
@@ -462,45 +483,32 @@ export const KitchenDisplayScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Dish & Quantity */}
-                    <h3 className="text-base font-extrabold text-white leading-tight">
+                    <h3 className="text-base font-bold text-slate-900 leading-tight">
                       {ticket.dishName}
                     </h3>
-                    <p className="text-xs text-amber-200/90 font-medium mt-1">
+                    <p className="text-xs text-slate-600 font-medium mt-1">
                       Qty: {ticket.portionSize}
                     </p>
 
-                    {/* Location & Requester */}
-                    <div className="mt-3 space-y-1 text-xs text-slate-400">
+                    <div className="mt-3 space-y-1 text-xs text-slate-500">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                        <span className="text-slate-300 font-semibold truncate">{ticket.hallName}</span>
+                        <Building2 className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                        <span className="text-slate-700 font-semibold truncate">{ticket.hallName}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <UtensilsCrossed className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span className="text-slate-400">{ticket.station}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <User className="w-3 h-3 text-slate-500 shrink-0" />
-                        <span>Called by {ticket.requestedBy}</span>
+                        <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="text-slate-600">{ticket.station}</span>
                       </div>
                     </div>
 
-                    {ticket.notes && (
-                      <p className="mt-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-[11px] text-amber-300/90 italic">
-                        "{ticket.notes}"
-                      </p>
-                    )}
-
-                    {/* Touch Action Button */}
-                    <div className="mt-3.5 pt-2.5 border-t border-slate-700/80">
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => handleAdvanceStatus(ticket)}
-                        className="w-full py-2.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full py-2 px-3 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Flame className="w-4 h-4 text-slate-950" />
-                        <span>Claim & Start Cooking</span>
+                        <Flame className="w-3.5 h-3.5" />
+                        <span>Start Cooking</span>
                       </button>
                     </div>
                   </div>
@@ -510,25 +518,27 @@ export const KitchenDisplayScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Lane 2: 🟠 In Preparation (Active on Stoves/Tandoors) */}
-        <div className={`bg-slate-900/60 backdrop-blur-md rounded-2xl border border-orange-500/30 flex flex-col min-h-[580px] ${
-          mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Prep' ? 'hidden md:flex' : 'flex'
-        }`}>
-          <div className="p-3.5 bg-orange-500/10 border-b border-orange-500/20 rounded-t-2xl flex items-center justify-between">
+        {/* Lane 2: 🟠 In Preparation */}
+        <div
+          className={`bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col min-h-[580px] overflow-hidden ${
+            mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Prep' ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div className="p-3.5 bg-teal-50/70 border-b border-teal-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-400" />
-              <h2 className="font-black text-orange-300 text-sm tracking-wide uppercase">
+              <span className="w-2.5 h-2.5 rounded-full bg-teal-600" />
+              <h2 className="font-bold text-teal-900 text-xs tracking-wide uppercase">
                 2. In Preparation
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono text-xs font-bold border border-orange-500/30">
+            <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 font-mono text-xs font-bold">
               {laneInPrep.length}
             </span>
           </div>
 
           <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[700px]">
             {laneInPrep.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">
+              <div className="p-8 text-center text-slate-400 text-xs">
                 No dishes currently being cooked. Ready to take next refill.
               </div>
             ) : (
@@ -538,50 +548,43 @@ export const KitchenDisplayScreen: React.FC = () => {
                 return (
                   <div
                     key={ticket.id}
-                    className="bg-slate-800/90 rounded-xl p-4 border border-orange-500/40 transition-all shadow-md"
+                    className="bg-white rounded-xl p-4 border border-teal-200/90 shadow-xs"
                   >
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
-                      <span className="font-mono text-xs font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                      <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                         {ticket.ticketNumber}
                       </span>
-                      <span className="text-xs font-mono font-bold text-orange-300 flex items-center gap-1">
-                        <Flame className="w-3.5 h-3.5 text-orange-400" />
+                      <span className="text-xs font-mono font-bold text-teal-800 flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 text-teal-700" />
                         <span>Cooking: {elapsedMin}m</span>
                       </span>
                     </div>
 
-                    <h3 className="text-base font-extrabold text-white leading-tight">
+                    <h3 className="text-base font-bold text-slate-900 leading-tight">
                       {ticket.dishName}
                     </h3>
-                    <p className="text-xs text-orange-200/90 font-medium mt-1">
+                    <p className="text-xs text-slate-600 font-medium mt-1">
                       Qty: {ticket.portionSize}
                     </p>
 
-                    <div className="mt-3 space-y-1 text-xs text-slate-400">
+                    <div className="mt-3 space-y-1 text-xs text-slate-500">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                        <span className="text-slate-300 font-semibold truncate">{ticket.hallName}</span>
+                        <Building2 className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                        <span className="text-slate-700 font-semibold truncate">{ticket.hallName}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <UtensilsCrossed className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span className="text-slate-400">{ticket.station}</span>
+                        <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="text-slate-600">{ticket.station}</span>
                       </div>
-                      {ticket.chefAssigned && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-orange-300">
-                          <ChefHat className="w-3 h-3 text-orange-400 shrink-0" />
-                          <span>Chef: {ticket.chefAssigned}</span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Touch Action Button */}
-                    <div className="mt-3.5 pt-2.5 border-t border-slate-700/80">
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => handleAdvanceStatus(ticket)}
-                        className="w-full py-2.5 px-3 rounded-lg bg-orange-500 hover:bg-orange-400 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full py-2 px-3 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                        <CheckCircle2 className="w-4 h-4" />
                         <span>Ready at Pass Counter</span>
                       </button>
                     </div>
@@ -592,25 +595,27 @@ export const KitchenDisplayScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Lane 3: 🟢 Ready for Pickup (Plated & Waiting for Floor Runner) */}
-        <div className={`bg-slate-900/60 backdrop-blur-md rounded-2xl border border-emerald-500/30 flex flex-col min-h-[580px] ${
-          mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Ready' ? 'hidden md:flex' : 'flex'
-        }`}>
-          <div className="p-3.5 bg-emerald-500/10 border-b border-emerald-500/20 rounded-t-2xl flex items-center justify-between">
+        {/* Lane 3: 🟢 Ready for Pickup */}
+        <div
+          className={`bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col min-h-[580px] overflow-hidden ${
+            mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Ready' ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div className="p-3.5 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <h2 className="font-black text-emerald-300 text-sm tracking-wide uppercase">
-                3. Ready for Pickup
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+              <h2 className="font-bold text-emerald-900 text-xs tracking-wide uppercase">
+                3. Ready to Serve
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-xs font-bold border border-emerald-500/30">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-mono text-xs font-bold">
               {laneReady.length}
             </span>
           </div>
 
           <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[700px]">
             {laneReady.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">
+              <div className="p-8 text-center text-slate-400 text-xs">
                 No orders waiting on the pass shelf.
               </div>
             ) : (
@@ -620,44 +625,43 @@ export const KitchenDisplayScreen: React.FC = () => {
                 return (
                   <div
                     key={ticket.id}
-                    className="bg-slate-800/90 rounded-xl p-4 border border-emerald-500/40 transition-all shadow-md"
+                    className="bg-white rounded-xl p-4 border border-emerald-200/90 shadow-xs"
                   >
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
-                      <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                      <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                         {ticket.ticketNumber}
                       </span>
-                      <span className="text-xs font-mono font-bold text-emerald-300 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-xs font-mono font-bold text-emerald-800 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-emerald-700" />
                         <span>At Pass: {elapsedMin}m</span>
                       </span>
                     </div>
 
-                    <h3 className="text-base font-extrabold text-white leading-tight">
+                    <h3 className="text-base font-bold text-slate-900 leading-tight">
                       {ticket.dishName}
                     </h3>
-                    <p className="text-xs text-emerald-200/90 font-medium mt-1">
+                    <p className="text-xs text-slate-600 font-medium mt-1">
                       Qty: {ticket.portionSize}
                     </p>
 
-                    <div className="mt-3 space-y-1 text-xs text-slate-400">
+                    <div className="mt-3 space-y-1 text-xs text-slate-500">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                        <span className="text-slate-300 font-semibold truncate">{ticket.hallName}</span>
+                        <Building2 className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                        <span className="text-slate-700 font-semibold truncate">{ticket.hallName}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <UtensilsCrossed className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                        <span className="text-slate-400">{ticket.station}</span>
+                        <UtensilsCrossed className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="text-slate-600">{ticket.station}</span>
                       </div>
                     </div>
 
-                    {/* Touch Action Button */}
-                    <div className="mt-3.5 pt-2.5 border-t border-slate-700/80">
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => handleAdvanceStatus(ticket)}
-                        className="w-full py-2.5 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full py-2 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <Send className="w-4 h-4 text-slate-950" />
+                        <Send className="w-3.5 h-3.5" />
                         <span>Dispatch to Hall Buffet</span>
                       </button>
                     </div>
@@ -668,63 +672,63 @@ export const KitchenDisplayScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Lane 4: 🔵 Dispatched to Hall (Runner Handover & Completed) */}
-        <div className={`bg-slate-900/60 backdrop-blur-md rounded-2xl border border-sky-500/30 flex flex-col min-h-[580px] ${
-          mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Dispatched' ? 'hidden md:flex' : 'flex'
-        }`}>
-          <div className="p-3.5 bg-sky-500/10 border-b border-sky-500/20 rounded-t-2xl flex items-center justify-between">
+        {/* Lane 4: 🔵 Dispatched to Hall */}
+        <div
+          className={`bg-white rounded-xl border border-slate-200/90 shadow-2xs flex flex-col min-h-[580px] overflow-hidden ${
+            mobileLaneFilter !== 'All' && mobileLaneFilter !== 'Dispatched' ? 'hidden md:flex' : 'flex'
+          }`}
+        >
+          <div className="p-3.5 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Send className="w-4 h-4 text-sky-400" />
-              <h2 className="font-black text-sky-300 text-sm tracking-wide uppercase">
+              <Send className="w-4 h-4 text-blue-700" />
+              <h2 className="font-bold text-blue-900 text-xs tracking-wide uppercase">
                 4. Dispatched to Hall
               </h2>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono text-xs font-bold border border-sky-500/30">
+            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 font-mono text-xs font-bold">
               {laneDispatched.length}
             </span>
           </div>
 
           <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[700px]">
             {laneDispatched.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">
+              <div className="p-8 text-center text-slate-400 text-xs">
                 No orders currently in transit to halls.
               </div>
             ) : (
-              laneDispatched.map((ticket) => {
-                return (
-                  <div
-                    key={ticket.id}
-                    className="bg-slate-800/60 rounded-xl p-4 border border-slate-700 transition-all opacity-85 hover:opacity-100"
-                  >
-                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60">
-                      <span className="font-mono text-xs font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
-                        {ticket.ticketNumber}
-                      </span>
-                      <span className="text-xs text-sky-300 font-semibold">
-                        Runner En Route
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-bold text-slate-200 leading-tight">
-                      {ticket.dishName}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {ticket.portionSize} • {ticket.hallName}
-                    </p>
-
-                    <div className="mt-3.5 pt-2.5 border-t border-slate-700/60">
-                      <button
-                        type="button"
-                        onClick={() => handleAdvanceStatus(ticket)}
-                        className="w-full py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Archive Completed</span>
-                      </button>
-                    </div>
+              laneDispatched.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs opacity-90 hover:opacity-100"
+                >
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                    <span className="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      {ticket.ticketNumber}
+                    </span>
+                    <span className="text-xs text-blue-700 font-semibold">
+                      Runner En Route
+                    </span>
                   </div>
-                );
-              })
+
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">
+                    {ticket.dishName}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {ticket.portionSize} • {ticket.hallName}
+                  </p>
+
+                  <div className="mt-3.5 pt-2.5 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => handleAdvanceStatus(ticket)}
+                      className="w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Archive Completed</span>
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -732,35 +736,43 @@ export const KitchenDisplayScreen: React.FC = () => {
 
       {/* New Refill Dispatch Modal */}
       {isNewTicketOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative">
-            <button
-              onClick={() => setIsNewTicketOpen(false)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <ChefHat className="w-5 h-5" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-xl rounded-xl bg-white border border-slate-200 shadow-xl overflow-hidden my-8">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-700">
+                  <ChefHat className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Call Instant Dish Refill
+                  </h3>
+                  <p className="text-xs text-slate-500">Dispatches prioritized prep ticket to live kitchen display</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Call Instant Dish Refill</h3>
-                <p className="text-xs text-slate-400">Dispatches prioritized prep ticket to live kitchen display</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewTicketOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Quick Dish Presets */}
-            <div className="mb-5">
-              <span className="text-xs text-slate-400 mb-2 block font-medium">Quick Banquet Presets:</span>
+            <div className="p-5 pb-0">
+              <span className="text-xs font-semibold text-slate-600 mb-2 block">Quick Banquet Presets:</span>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_DISH_PRESETS.map((p) => (
                   <button
                     key={p.name}
                     type="button"
                     onClick={() => handleApplyPreset(p)}
-                    className="px-2.5 py-1 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                    className="px-2.5 py-1 rounded-lg text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors cursor-pointer"
                   >
                     {p.name.split(' ')[0]} {p.name.split(' ')[1]}
                   </button>
@@ -768,10 +780,10 @@ export const KitchenDisplayScreen: React.FC = () => {
               </div>
             </div>
 
-            <form onSubmit={handleCreateTicket} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleCreateTicket} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Event Reference
                   </label>
                   <select
@@ -784,7 +796,7 @@ export const KitchenDisplayScreen: React.FC = () => {
                         hallName: found?.hallName || prev.hallName,
                       }));
                     }}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none"
                   >
                     {bookings.map((b) => (
                       <option key={b.id || b.bookingRef} value={b.bookingRef}>
@@ -795,20 +807,20 @@ export const KitchenDisplayScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Banquet Hall
                   </label>
                   <input
                     type="text"
                     value={ticketForm.hallName}
                     readOnly
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2 text-slate-300 text-xs cursor-not-allowed"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600 text-xs cursor-not-allowed"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Dish / Food Item Name *
                 </label>
                 <input
@@ -817,13 +829,13 @@ export const KitchenDisplayScreen: React.FC = () => {
                   value={ticketForm.dishName}
                   onChange={(e) => setTicketForm({ ...ticketForm, dishName: e.target.value })}
                   placeholder="e.g. Mutton Dum Biryani, Roghnai Naan..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Portion Size / Container
                   </label>
                   <input
@@ -831,18 +843,18 @@ export const KitchenDisplayScreen: React.FC = () => {
                     value={ticketForm.portionSize}
                     onChange={(e) => setTicketForm({ ...ticketForm, portionSize: e.target.value })}
                     placeholder="e.g. 2 Chafing Trays, 50 Naans..."
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Kitchen Station
                   </label>
                   <select
                     value={ticketForm.station}
                     onChange={(e) => setTicketForm({ ...ticketForm, station: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none"
                   >
                     <option value="Hot Buffet Line 1">Hot Buffet Line 1</option>
                     <option value="Hot Buffet Line 2">Hot Buffet Line 2</option>
@@ -854,9 +866,9 @@ export const KitchenDisplayScreen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Ticket Urgency
                   </label>
                   <select
@@ -867,7 +879,7 @@ export const KitchenDisplayScreen: React.FC = () => {
                         priority: e.target.value as 'Normal' | 'Urgent' | 'Critical',
                       })
                     }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none"
                   >
                     <option value="Normal">Normal Refill</option>
                     <option value="Urgent">Urgent (Buffet low)</option>
@@ -876,20 +888,20 @@ export const KitchenDisplayScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Called By
                   </label>
                   <input
                     type="text"
                     value={ticketForm.requestedBy}
                     onChange={(e) => setTicketForm({ ...ticketForm, requestedBy: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Special Kitchen Note (Optional)
                 </label>
                 <textarea
@@ -897,21 +909,21 @@ export const KitchenDisplayScreen: React.FC = () => {
                   value={ticketForm.notes}
                   onChange={(e) => setTicketForm({ ...ticketForm, notes: e.target.value })}
                   placeholder="e.g. VIP section waiting, serve extra spicy, replenish with warmers on..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-teal-700 focus:outline-none resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsNewTicketOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/20 transition flex items-center gap-2"
+                  className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Send Ticket to KDS</span>
@@ -924,4 +936,3 @@ export const KitchenDisplayScreen: React.FC = () => {
     </div>
   );
 };
-

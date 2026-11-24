@@ -52,7 +52,7 @@ const CATEGORY_BADGE_STYLES: Record<ExpenseCategory, string> = {
   Staff: 'bg-teal-50 text-teal-800 border-teal-200',
   'Outside Waiters': 'bg-indigo-50 text-indigo-800 border-indigo-200 font-semibold',
   Maintenance: 'bg-orange-50 text-orange-800 border-orange-200',
-  Supplies: 'bg-purple-50 text-purple-800 border-purple-200',
+  Supplies: 'bg-amber-50 text-amber-800 border-amber-200',
   Other: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 

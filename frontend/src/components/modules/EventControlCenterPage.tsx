@@ -168,8 +168,35 @@ export const EventControlCenterPage: React.FC = () => {
     };
 
     window.addEventListener('booking_updated', handleBookingUpdate);
-    return () => window.removeEventListener('booking_updated', handleBookingUpdate);
-  }, []);
+
+    // Listen to external booking cancellations to remove them from Event Control Center immediately
+    const handleBookingCancelled = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+      const cancelledId = String(detail.bookingId || '');
+      const freedDate = detail.freedDate;
+      const freedHall = detail.freedHall;
+
+      setActiveEvents((prev) => {
+        const filtered = prev.filter((ev) => {
+          if (cancelledId && (ev.id === cancelledId || ev.bookingRef === cancelledId)) return false;
+          if (freedDate && freedHall && ev.eventDate === freedDate && ev.hallName === freedHall) return false;
+          return true;
+        });
+        if (selectedEventId && (selectedEventId === cancelledId || !filtered.some((e) => e.id === selectedEventId))) {
+          setSelectedEventId(filtered[0]?.id || '');
+        }
+        return filtered;
+      });
+    };
+
+    window.addEventListener('booking_cancelled', handleBookingCancelled);
+
+    return () => {
+      window.removeEventListener('booking_updated', handleBookingUpdate);
+      window.removeEventListener('booking_cancelled', handleBookingCancelled);
+    };
+  }, [selectedEventId]);
 
   const selectedEvent = useMemo(
     () => activeEvents.find((e) => e.id === selectedEventId) ?? null,
@@ -1225,7 +1252,7 @@ export const EventControlCenterPage: React.FC = () => {
                                     ? 'bg-amber-100 text-amber-800'
                                     : task.phase === 'During Event'
                                     ? 'bg-sky-100 text-sky-800'
-                                    : 'bg-purple-100 text-purple-800'
+                                    : 'bg-indigo-50 text-indigo-800'
                                 }`}
                               >
                                 {task.phase}

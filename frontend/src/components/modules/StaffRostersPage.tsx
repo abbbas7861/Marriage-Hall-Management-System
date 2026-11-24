@@ -46,7 +46,7 @@ const ROLE_BADGE_STYLES: Record<StaffRole, string> = {
   Waiter: 'bg-teal-50 text-teal-800 border-teal-200',
   Cleaner: 'bg-blue-50 text-blue-800 border-blue-200',
   Helper: 'bg-amber-50 text-amber-800 border-amber-200',
-  Supervisor: 'bg-purple-50 text-purple-800 border-purple-200',
+  Supervisor: 'bg-indigo-50 text-indigo-800 border-indigo-200',
 };
 
 const STATUS_BADGE_STYLES: Record<AttendanceStatus, string> = {

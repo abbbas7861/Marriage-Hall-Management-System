@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=true
+Name=Mehar Palace
+GenericName=Banquet Management System
+Comment=Start Mehar Palace Marquee
+Exec=/usr/bin/bash -c "cd /home/salman/DjangoProject/MarriageHall && ./mehar_palace.sh"
+Path=/home/salman/DjangoProject/MarriageHall
+Icon=/home/salman/DjangoProject/MarriageHall/mehar_palace_logo.png
+Categories=Office;Development;Finance;
+StartupNotify=true
+Actions=Run;
+
+[Desktop Action Run]
+Name=Launch Mehar Palace
+Exec=/usr/bin/bash -c "cd /home/salman/DjangoProject/MarriageHall && ./mehar_palace.sh"

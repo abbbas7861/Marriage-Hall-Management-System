@@ -62,8 +62,15 @@ export const FinanceProfitLossTax: React.FC<FinanceProfitLossTaxProps> = ({
 
   // Compute Full P&L Statement Breakdowns with complete NaN guards
   const statement = useMemo(() => {
-    // 1. REVENUE
-    const totalBilled = invoices.reduce((acc, i) => acc + (Number(i.totalAmount) || 0), 0);
+    // 1. REVENUE (Actual recognized revenue excluding refunded amounts)
+    const totalBilled = invoices.reduce((acc, i: any) => {
+      const isCancelled = i.status === 'Cancelled' || i.paymentStatus === 'Cancelled';
+      if (isCancelled) {
+        const crec = i.cancellationRecord || i.cancellation_record || {};
+        return acc + Number(crec.deduction_amount ?? crec.amount_used ?? 0);
+      }
+      return acc + (Number(i.totalAmount) || 0);
+    }, 0);
     const hallRentals = Math.round(totalBilled * 0.46);
     const cateringRevenue = Math.round(totalBilled * 0.36);
     const decorRevenue = Math.round(totalBilled * 0.12);

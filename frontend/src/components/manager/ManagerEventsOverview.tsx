@@ -543,8 +543,8 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                   <div className="py-2.5 px-3 my-2 bg-slate-900/80 rounded-xl border border-slate-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 flex-wrap">
                       {booking.extraServices && booking.extraServices.length > 0 && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300">
-                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-300">
+                          <Sparkles className="w-3.5 h-3.5 text-teal-400" />
                           <span className="font-semibold">Live Extras ({booking.extraServices.length}):</span>
                           <span className="font-mono font-bold text-white">
                             +PKR {booking.extraServices.reduce((sum, s) => sum + (s.price || 0), 0).toLocaleString('en-PK')}
@@ -671,7 +671,7 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                       onClick={() => onNavigateToTab?.('manager-decor', booking)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold cursor-pointer transition-colors"
                     >
-                      <Layers className="w-3.5 h-3.5 text-purple-400" />
+                      <Layers className="w-3.5 h-3.5 text-teal-400" />
                       <span>Asset Requisitions</span>
                     </button>
 
@@ -687,9 +687,9 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                     <button
                       type="button"
                       onClick={() => setActiveLiveServiceBooking(booking)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-500/40 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 hover:text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
                       <span>+ Live Service</span>
                     </button>
 
@@ -738,7 +738,7 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
           <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-700 animate-in fade-in-50">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>

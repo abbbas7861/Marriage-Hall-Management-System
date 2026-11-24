@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Customer } from '../../types';
+import { formatPhoneNumber, formatCNIC } from '../../utils/formatters';
 
 export const CustomersModule: React.FC = () => {
   // STRICT DATA RULE: DO NOT hardcode any dummy data.
@@ -511,16 +512,17 @@ export const CustomersModule: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="font-semibold text-slate-700">
-                    Phone Number <span className="text-rose-500">*</span>
+                    Phone Number (03XXXXXXXXX) <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
-                      type="text"
+                      type="tel"
+                      maxLength={11}
                       value={formPhone}
-                      onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder="[Enter Phone Number]"
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
+                      onChange={(e) => setFormPhone(formatPhoneNumber(e.target.value))}
+                      placeholder="03XXXXXXXXX"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                       required
                     />
                   </div>
@@ -546,14 +548,15 @@ export const CustomersModule: React.FC = () => {
               {/* CNIC / ID */}
               <div className="flex flex-col gap-1.5">
                 <label className="font-semibold text-slate-700">
-                  CNIC / ID Number
+                  CNIC / ID Number (XXXXX-XXXXXXX-X)
                 </label>
                 <input
                   type="text"
+                  maxLength={15}
                   value={formCnic}
-                  onChange={(e) => setFormCnic(e.target.value)}
-                  placeholder="[Enter CNIC / ID]"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
+                  onChange={(e) => setFormCnic(formatCNIC(e.target.value))}
+                  placeholder="XXXXX-XXXXXXX-X"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f]"
                 />
               </div>
 

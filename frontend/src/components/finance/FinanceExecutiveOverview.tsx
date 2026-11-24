@@ -257,10 +257,10 @@ export const FinanceExecutiveOverview: React.FC<FinanceExecutiveOverviewProps> =
         <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pending A/P</span>
-            <DollarSign className="w-4 h-4 text-purple-400" />
+            <DollarSign className="w-4 h-4 text-rose-400" />
           </div>
           <div>
-            <span className="text-xl font-black text-purple-400 font-mono block">
+            <span className="text-xl font-black text-rose-400 font-mono block">
               Rs. {Math.round(Number(metrics.totalVendorPayables || 0)).toLocaleString()}
             </span>
             <span className="text-[10px] text-slate-400 mt-0.5 block">Vendor Commitments</span>
@@ -365,7 +365,7 @@ export const FinanceExecutiveOverview: React.FC<FinanceExecutiveOverviewProps> =
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-700/50 mb-5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center font-bold">
                   <PieChartIcon className="w-5 h-5" />
                 </div>
                 <div>

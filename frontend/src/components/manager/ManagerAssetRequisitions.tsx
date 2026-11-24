@@ -229,7 +229,7 @@ export const ManagerAssetRequisitions: React.FC<ManagerAssetRequisitionsProps> =
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[11px] font-bold uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/20 text-[11px] font-bold uppercase tracking-wider">
               Warehouse Ops
             </span>
             <span className="text-xs text-slate-400 font-medium">Warehouse Asset Requisition</span>
@@ -277,18 +277,18 @@ export const ManagerAssetRequisitions: React.FC<ManagerAssetRequisitionsProps> =
 
       {/* Selected Event Context Pill */}
       {activeBooking && (
-        <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-800/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-purple-400" />
+              <Building2 className="w-4 h-4 text-teal-400" />
               <strong className="text-white">{activeBooking.hallName}</strong>
             </div>
             <div className="flex items-center gap-1.5">
-              <CalendarDays className="w-4 h-4 text-purple-400" />
+              <CalendarDays className="w-4 h-4 text-teal-400" />
               <span className="font-mono text-slate-200 font-semibold">{activeBooking.date}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-purple-400" />
+              <Clock className="w-4 h-4 text-teal-400" />
               <span className="font-mono text-slate-200 font-semibold">
                 {formatTo12Hour(activeBooking.time || activeBooking.slot)}
               </span>
@@ -296,7 +296,7 @@ export const ManagerAssetRequisitions: React.FC<ManagerAssetRequisitionsProps> =
           </div>
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Event Function:</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-900/60 border border-purple-700/60 text-purple-200 font-bold text-[11px]">
+            <span className="px-2.5 py-0.5 rounded-full bg-teal-900/60 border border-teal-700/60 text-teal-200 font-bold text-[11px]">
               {activeBooking.eventType}
             </span>
           </div>

@@ -6,6 +6,8 @@ import { HallsRegistryPage } from '../modules/HallsRegistryPage';
 import { BookingsManagementPage } from '../modules/BookingsManagementPage';
 import { ManagerEventSettlementPage } from '../modules/ManagerEventSettlementPage';
 import { KitchenPortalPage } from '../modules/KitchenPortalPage';
+import { KitchenDisplayScreen } from '../kitchen/KitchenDisplayScreen';
+import { KitchenPantryInventory } from '../kitchen/KitchenPantryInventory';
 import { FloorCommandPage } from '../modules/FloorCommandPage';
 import { MenuPackagesPage } from '../modules/MenuPackagesPage';
 import { MasterCalendarPage } from '../modules/MasterCalendarPage';
@@ -185,13 +187,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           ) : activeRole === 'Kitchen' && activeNavId === 'dashboard' ? (
             <KitchenDashboard onNavigate={setActiveNavId} />
           ) : activeRole === 'Kitchen' && activeNavId === 'kitchen-display' ? (
-            <KitchenPortalPage view="kds" />
+            <KitchenDisplayScreen />
           ) : activeRole === 'Kitchen' && activeNavId === 'event-requisitions' ? (
             <KitchenRequisitionsPage />
           ) : activeRole === 'Kitchen' && activeNavId === 'pantry-inventory' ? (
-            <KitchenPortalPage view="pantry" />
+            <KitchenPantryInventory />
           ) : activeRole === 'Accounts' && activeNavId === 'dashboard' ? (
             <AccountsDashboard onNavigate={setActiveNavId} />
+          ) : activeRole === 'Accounts' && activeNavId === 'bookings' ? (
+            <BookingsManagementPage
+              onNavigateToCalendar={handleNavigateToCalendar}
+              prefillData={bookingPrefill}
+              onClearPrefill={() => setBookingPrefill(null)}
+            />
           ) : activeRole === 'Accounts' && activeNavId === 'event-tracker' ? (
             <EventProfitabilityTrackerPage />
           ) : activeRole === 'Accounts' && activeNavId === 'invoices' ? (

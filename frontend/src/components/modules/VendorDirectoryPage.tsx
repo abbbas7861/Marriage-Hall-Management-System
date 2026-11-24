@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { vendorsApi } from '../../api/client';
 import { CreatableCategoryInput } from '../common/CreatableCategoryInput';
+import { formatPhoneNumber } from '../../utils/formatters';
 
 export type VendorCategory = string;
 export type VendorStatus = 'Active' | 'Inactive';
@@ -44,7 +45,7 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
   'Sound & Lighting': 'bg-amber-50 text-amber-800 border-amber-200',
   Sound: 'bg-amber-50 text-amber-800 border-amber-200',
   Florist: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  'Catering & Supplies': 'bg-purple-50 text-purple-800 border-purple-200',
+  'Catering & Supplies': 'bg-amber-50 text-amber-800 border-amber-200',
   'Valet & Security': 'bg-indigo-50 text-indigo-800 border-indigo-200',
   'DJ & Entertainment': 'bg-pink-50 text-pink-800 border-pink-200',
   Other: 'bg-slate-100 text-slate-700 border-slate-200',
@@ -559,15 +560,16 @@ export const VendorDirectoryPage: React.FC = () => {
                     htmlFor="vendor-phone"
                     className="block text-xs font-semibold text-slate-700 mb-1.5"
                   >
-                    Phone Number
+                    Phone Number (03XXXXXXXXX)
                   </label>
                   <input
                     id="vendor-phone"
                     type="tel"
                     required
+                    maxLength={11}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="[--]"
+                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="03XXXXXXXXX"
                     className="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                   />
                 </div>

@@ -50,7 +50,7 @@ const ROLE_LABELS: Record<UserRole, { label: string; badge: string; desc: string
   },
   waiter: {
     label: 'Waiter / Floor Staff',
-    badge: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
+    badge: 'bg-teal-500/10 text-teal-300 border-teal-500/30',
     desc: 'Floor tablet kiosk, urgent dish refills, and table turnover',
   },
   accountant: {

@@ -136,14 +136,32 @@ export const FinancialReportsPage: React.FC = () => {
     // Aggregate totals
     let recognizedRevenue = 0;
     let cashCollected = 0;
+
     curInvoices.forEach((inv) => {
-      recognizedRevenue += Number(inv.totalAmount || 0);
-      cashCollected += Number(inv.paidAmount || 0);
+      const isCancelled = inv.status === 'Cancelled' || inv.paymentStatus === 'Cancelled';
+      if (isCancelled) {
+        const crec = inv.cancellationRecord || inv.cancellation_record || {};
+        const retained = Number(crec.deduction_amount ?? crec.amount_used ?? 0);
+        recognizedRevenue += retained;
+        cashCollected += retained;
+      } else {
+        recognizedRevenue += Number(inv.totalAmount || 0);
+        cashCollected += Number(inv.paidAmount || 0);
+      }
     });
+
     if (recognizedRevenue === 0 && curBookings.length > 0) {
       curBookings.forEach((b) => {
-        recognizedRevenue += Number(b.amount || 0);
-        cashCollected += Number(b.advancePayment || 0);
+        const isCancelled = b.status === 'Cancelled' || b.paymentStatus === 'Refunded';
+        if (isCancelled) {
+          const crec = b.cancellationRecord || {};
+          const retained = Number(crec.deduction_amount ?? crec.amount_used ?? 0);
+          recognizedRevenue += retained;
+          cashCollected += retained;
+        } else {
+          recognizedRevenue += Number(b.amount || 0);
+          cashCollected += Number(b.advancePayment || 0);
+        }
       });
     }
 
@@ -151,7 +169,9 @@ export const FinancialReportsPage: React.FC = () => {
     const totalExpenses = curExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
     const netProfit = recognizedRevenue - totalExpenses;
     const profitMargin =
-      recognizedRevenue > 0 ? ((netProfit / recognizedRevenue) * 100).toFixed(1) : '0';
+      recognizedRevenue > 0
+        ? ((netProfit / recognizedRevenue) * 100).toFixed(1)
+        : (netProfit < 0 ? '-100.0' : '0.0');
 
     return {
       bookings: curBookings,

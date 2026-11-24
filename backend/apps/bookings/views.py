@@ -418,8 +418,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         # Keep original booked amount and paid advance intact for complete audit trail
         # Set status to Cancelled and balance to settled
         booking.status = 'Cancelled'
-        booking.operational_status = 'Event Concluded'
-        booking.status = 'Completed'
+        booking.operational_status = 'Cancelled'
         booking.payment_status = 'Refunded' if c_type == 'refund' else 'Credit Held'
         booking.cancellation_record = cancellation_entry
         booking.save()
@@ -492,11 +491,43 @@ class BookingViewSet(viewsets.ModelViewSet):
         inv.cancellation_record = cancellation_entry
         inv.save()
 
+        # Notifications across portals
+        try:
+            from apps.core.models import PortalNotification
+            action_desc = f"{user_name} cancelled booking {booking.booking_ref} ({booking.customer_name}). "
+            if c_type == 'refund':
+                action_desc += f"Refund of Rs. {net_amount:,.0f} processed. Incurred deduction: Rs. {deduction:,.0f}."
+            else:
+                action_desc += f"Credit of Rs. {net_amount:,.0f} held for future event. Incurred deduction: Rs. {deduction:,.0f}."
+
+            # Notify Accounts and Admin and Manager
+            target_roles = ['Accounts', 'Admin']
+            req_role = (request.user.profile.role.capitalize() if getattr(request.user, 'profile', None) else ('Admin' if request.user.is_superuser else 'Staff')) if (request.user and request.user.is_authenticated) else 'Staff'
+            if req_role.lower() != 'manager':
+                target_roles.append('Manager')
+
+            for r in target_roles:
+                PortalNotification.objects.create(
+                    target_role=r,
+                    sender_role=req_role,
+                    sender_name=user_name,
+                    notification_type='system',
+                    title=f"Booking Cancelled ({booking.booking_ref})",
+                    description=action_desc,
+                    target_nav_id='bookings' if r in ['Admin', 'Manager', 'Accounts'] else 'overview',
+                    action_label='View Bookings',
+                    related_id=booking.booking_ref,
+                    status='Accepted',
+                    is_read=False
+                )
+        except Exception:
+            pass
+
         # Audit Log
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name=user_name,
-            user_role="Manager",
+            user_role=req_role if 'req_role' in locals() else "Staff",
             action="Cancelled Booking",
             module="Bookings",
             details=(
@@ -520,9 +551,9 @@ class BookingViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'accounts']):
             return Response(
-                {'error': 'Only Admins and Managers are authorized to cancel or remove bookings.'},
+                {'error': 'Only Admins, Managers, and Accounts Officers are authorized to cancel or remove bookings.'},
                 status=status.HTTP_403_FORBIDDEN
             )
         booking = self.get_object()

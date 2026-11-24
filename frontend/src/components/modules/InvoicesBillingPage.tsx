@@ -629,7 +629,7 @@ export const InvoicesBillingPage: React.FC = () => {
                           </div>
                         )}
                         {inv.status === 'Cancelled' && (
-                          <div className="text-[10px] text-purple-700 font-mono font-medium">
+                          <div className="text-[10px] text-slate-700 font-mono font-medium">
                             {inv.cancellationRecord?.cancellation_type === 'pause_and_adjust'
                               ? `Credit: Rs. ${(inv.cancellationRecord?.net_amount || 0).toLocaleString()}`
                               : `Refund: Rs. ${(inv.cancellationRecord?.net_amount || 0).toLocaleString()}`}
@@ -1094,7 +1094,7 @@ export const InvoicesBillingPage: React.FC = () => {
                         ? 'Retained Credit Voucher'
                         : 'Refund Disbursed'}
                     </span>
-                    <span className="font-mono tabular-nums font-semibold text-purple-700">
+                    <span className="font-mono tabular-nums font-semibold text-teal-800">
                       Rs. {(viewingInvoice.cancellationRecord?.net_amount || 0).toLocaleString()}
                     </span>
                   </div>
@@ -1500,9 +1500,9 @@ export const InvoicesBillingPage: React.FC = () => {
                             </td>
                           </tr>
                           <tr>
-                            <td className="py-1.5 px-3 text-purple-700 font-semibold">Special Discount ({discountPct}%)</td>
-                            <td className="py-1.5 px-3 text-purple-600">Concession applied on total contract</td>
-                            <td className="py-1.5 px-3 text-right font-mono font-bold text-purple-700">
+                            <td className="py-1.5 px-3 text-teal-700 font-semibold">Special Discount ({discountPct}%)</td>
+                            <td className="py-1.5 px-3 text-teal-600">Concession applied on total contract</td>
+                            <td className="py-1.5 px-3 text-right font-mono font-bold text-teal-700">
                               - Rs. {discountAmount.toLocaleString('en-PK')}
                             </td>
                           </tr>
@@ -1533,7 +1533,7 @@ export const InvoicesBillingPage: React.FC = () => {
                               Rs. {(printingInvoice.cancellationRecord?.amount_used || printingInvoice.cancellationRecord?.deduction_amount || 0).toLocaleString('en-PK')}
                             </td>
                           </tr>
-                          <tr className="text-purple-700 font-bold bg-purple-50/50">
+                          <tr className="text-teal-900 font-bold bg-teal-50/60">
                             <td className="py-1.5 px-3">
                               {printingInvoice.cancellationRecord?.cancellation_type === 'pause_and_adjust'
                                 ? 'Retained Credit Voucher (Future Event)'

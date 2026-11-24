@@ -598,6 +598,14 @@ export const requisitionsApi = {
     return normalizeId(data);
   },
 
+  async confirmStockIn(id: string | number, staffName?: string): Promise<{ status: string; message: string; requisition: AssetRequisitionItem }> {
+    const data = await request<{ status: string; message: string; requisition: AssetRequisitionItem }>(`requisitions/${id}/confirm-stock-in`, {
+      method: 'POST',
+      body: JSON.stringify({ staffName }),
+    });
+    return data;
+  },
+
   async markReturned(id: string | number, returnedQuantity: number, notes?: string): Promise<AssetRequisitionItem> {
     const data = await request<AssetRequisitionItem>(`requisitions/${id}/mark-returned`, {
       method: 'POST',
@@ -1029,6 +1037,158 @@ export const portalNotificationsApi = {
       method: 'POST',
       body: JSON.stringify({ action, reviewerName }),
     });
+  },
+};
+
+// -------------------------------------------------------------
+// Pantry & KDS APIs
+// -------------------------------------------------------------
+export interface PantryStockItem {
+  id: string;
+  itemCode: string;
+  name: string;
+  category: string;
+  unit: string;
+  currentStock: number;
+  minThreshold: number;
+  reorderQuantity: number;
+  unitPrice: number;
+  preferredSupplier: string;
+  supplierContact: string;
+  storageLocation: string;
+  notes?: string;
+  isLowStock?: boolean;
+}
+
+export interface PantryPurchaseOrder {
+  id: string;
+  orderRef: string;
+  itemId: number | string;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalCost: number;
+  supplierName: string;
+  supplierContact: string;
+  urgency: 'Normal' | 'Urgent' | 'Critical Emergency';
+  status: 'Draft' | 'Ordered' | 'Received & Stocked' | 'Cancelled';
+  orderedBy: string;
+  orderedAt: string;
+  receivedAt?: string;
+  notes?: string;
+}
+
+export interface KitchenOrderTicketItem {
+  id: string;
+  ticketNumber: string;
+  eventRef: string;
+  hallName: string;
+  dishName: string;
+  quantity: number;
+  portionSize: string;
+  priority: 'Normal' | 'Urgent' | 'Critical';
+  status: 'Refill Requested' | 'In Preparation' | 'Ready for Pickup' | 'Dispatched to Hall' | 'Completed' | 'Cancelled';
+  station: string;
+  requestedBy: string;
+  chefAssigned?: string;
+  notes?: string;
+  createdAt: string;
+  inPrepAt?: string;
+  readyAt?: string;
+  dispatchedAt?: string;
+}
+
+export const pantryApi = {
+  async listItems(params?: { category?: string; search?: string }): Promise<PantryStockItem[]> {
+    const query = new URLSearchParams();
+    if (params?.category && params.category !== 'All') query.set('category', params.category);
+    if (params?.search) query.set('search', params.search);
+    const qs = query.toString();
+    const data = await request<any>(`pantry-items${qs ? `?${qs}` : ''}`);
+    return normalizeList<PantryStockItem>(data);
+  },
+
+  async createItem(payload: Partial<PantryStockItem> | any): Promise<PantryStockItem> {
+    const data = await request<PantryStockItem>('pantry-items', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async adjustStock(id: string | number, payload: { adjustment: number; reason?: string; staffName?: string; eventRef?: string; cost?: number }): Promise<PantryStockItem> {
+    const data = await request<PantryStockItem>(`pantry-items/${id}/adjust_stock`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async quickOrder(id: string | number, payload: any): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-items/${id}/quick_order`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async listOrders(status?: string): Promise<PantryPurchaseOrder[]> {
+    const query = new URLSearchParams();
+    if (status && status !== 'All') query.set('status', status);
+    const qs = query.toString();
+    const data = await request<any>(`pantry-orders${qs ? `?${qs}` : ''}`);
+    return normalizeList<PantryPurchaseOrder>(data);
+  },
+
+  async markReceived(orderId: string | number, payload?: { receivedBy?: string; eventRef?: string }): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-orders/${orderId}/mark_received`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return normalizeId(data);
+  },
+
+  async cancelOrder(orderId: string | number, reason?: string): Promise<PantryPurchaseOrder> {
+    const data = await request<PantryPurchaseOrder>(`pantry-orders/${orderId}/cancel_order`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+    return normalizeId(data);
+  },
+
+  async bulkRequisition(payload: { items: any[]; orderedBy?: string; eventRef?: string; urgency?: string }): Promise<PantryPurchaseOrder[]> {
+    const data = await request<any>('pantry-orders/bulk-requisition', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeList<PantryPurchaseOrder>(data);
+  },
+};
+
+export const kdsApi = {
+  async list(eventRef?: string): Promise<KitchenOrderTicketItem[]> {
+    const query = new URLSearchParams();
+    if (eventRef && eventRef !== 'All') query.set('eventRef', eventRef);
+    const qs = query.toString();
+    const data = await request<any>(`kds-tickets${qs ? `?${qs}` : ''}`);
+    return normalizeList<KitchenOrderTicketItem>(data);
+  },
+
+  async create(payload: Partial<KitchenOrderTicketItem> | any): Promise<KitchenOrderTicketItem> {
+    const data = await request<KitchenOrderTicketItem>('kds-tickets', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async advanceStatus(id: string | number, payload?: { status?: string; chefAssigned?: string }): Promise<KitchenOrderTicketItem> {
+    const data = await request<KitchenOrderTicketItem>(`kds-tickets/${id}/advance`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    });
+    return normalizeId(data);
   },
 };
 

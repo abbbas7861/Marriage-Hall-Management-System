@@ -419,7 +419,7 @@ export const KitchenRecipeManager: React.FC = () => {
             {filteredPackages.map((pkg) => {
               const tierColor =
                 pkg.tier === 'Royal'
-                  ? 'border-purple-500/40 bg-purple-500/10 text-purple-300'
+                  ? 'border-teal-500/40 bg-teal-500/10 text-teal-300'
                   : pkg.tier === 'Executive'
                   ? 'border-sky-500/40 bg-sky-500/10 text-sky-300'
                   : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300';

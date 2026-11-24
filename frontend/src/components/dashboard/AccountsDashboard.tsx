@@ -84,10 +84,21 @@ export const AccountsDashboard: React.FC<AccountsDashboardProps> = ({
           status: inv.status,
         }));
 
-  const totalRev = stats?.totalRevenue ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => sum + (Number(inv.totalAmount || inv.total_amount) || 0), 0) : 5931000);
+  const totalRev = stats?.totalRevenue ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => {
+    const isCancelled = inv.status === 'Cancelled' || inv.paymentStatus === 'Cancelled';
+    if (isCancelled) {
+      const crec = inv.cancellationRecord || inv.cancellation_record || {};
+      return sum + Number(crec.deduction_amount ?? crec.amount_used ?? 0);
+    }
+    return sum + (Number(inv.totalAmount || inv.total_amount) || 0);
+  }, 0) : 5931000);
   const totalExp = expenses.length > 0 ? expenses.reduce((sum, exp: any) => sum + (Number(exp.amount) || 0), 0) : 1940000;
   const netProf = totalRev - totalExp;
-  const pendingAmt = stats?.pendingPayments ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => sum + (Number(inv.remainingBalance || inv.remaining_balance) || 0), 0) : 850000);
+  const pendingAmt = stats?.pendingPayments ?? (invoices.length > 0 ? invoices.reduce((sum, inv: any) => {
+    const isCancelled = inv.status === 'Cancelled' || inv.paymentStatus === 'Cancelled';
+    if (isCancelled) return sum;
+    return sum + (Number(inv.remainingBalance || inv.remaining_balance) || 0);
+  }, 0) : 850000);
 
   const kpiCards = [
     {
