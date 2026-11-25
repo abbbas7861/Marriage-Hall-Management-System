@@ -25,6 +25,7 @@ import {
   Pencil,
   X,
   DollarSign,
+  Coffee,
 } from 'lucide-react';
 import { Booking, OperationalStatus } from '../../types';
 import { bookingsApi } from '../../api/client';
@@ -539,7 +540,8 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                 {/* Live Add-ons & Damages Row if present */}
                 {((booking.extraServices && booking.extraServices.length > 0) ||
                   (booking.damagesRecord && booking.damagesRecord.length > 0) ||
-                  (booking.customMenuItems && booking.customMenuItems.length > 0)) && (
+                  (booking.customMenuItems && booking.customMenuItems.length > 0) ||
+                  (booking.additionalMenuItems && booking.additionalMenuItems.length > 0)) && (
                   <div className="py-2.5 px-3 my-2 bg-slate-900/80 rounded-xl border border-slate-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 flex-wrap">
                       {booking.extraServices && booking.extraServices.length > 0 && (
@@ -573,6 +575,16 @@ export const ManagerEventsOverview: React.FC<ManagerEventsOverviewProps> = ({
                           <Utensils className="w-3.5 h-3.5 text-teal-400" />
                           <span className="font-semibold">Dishes:</span>
                           <span className="text-white truncate max-w-xs">{booking.customMenuItems.join(', ')}</span>
+                        </div>
+                      )}
+
+                      {booking.additionalMenuItems && booking.additionalMenuItems.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">
+                          <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="font-semibold">Add-on Menu:</span>
+                          <span className="text-white truncate max-w-xs">
+                            {booking.additionalMenuItems.map((item) => `${item.name} (${item.personCount}p)`).join(', ')}
+                          </span>
                         </div>
                       )}
                     </div>

@@ -85,7 +85,7 @@ const TABLE_STATUS_STYLES: Record<
   },
 };
 
-const PERSONS_PER_TABLE_PRESETS = [6, 8, 10, 12];
+const PERSONS_PER_TABLE_PRESETS = [6, 8, 9, 10, 12];
 
 export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);

@@ -50,12 +50,16 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
 
   const [menuPackage, setMenuPackage] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [additionalMenuItems, setAdditionalMenuItems] = useState<
+    Array<{ id: string; name: string; pricePerPerson: number; personCount: number; totalPrice: number }>
+  >([]);
 
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [extraHours, setExtraHours] = useState('');
   const [ratePerHour, setRatePerHour] = useState('');
 
+  const [hallRent, setHallRent] = useState('');
   const [totalBookingAmount, setTotalBookingAmount] = useState(
     initialBooking?.amount ? String(initialBooking.amount) : ''
   );
@@ -64,6 +68,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
 
   const [validationError, setValidationError] = useState('');
 
+  // Additional Menu Items Total
+  const additionalItemsTotal = React.useMemo(() => {
+    return additionalMenuItems.reduce((sum, item) => sum + (Number(item.totalPrice) || 0), 0);
+  }, [additionalMenuItems]);
+
   // Calculations
   const calculatedExtraCharges = React.useMemo(() => {
     const hours = parseFloat(extraHours);
@@ -71,18 +80,29 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
     if (!isNaN(hours) && !isNaN(rate) && hours > 0 && rate > 0) {
       return hours * rate;
     }
-    return null;
+    return 0;
   }, [extraHours, ratePerHour]);
 
+  // Auto total calculation helper
+  const calculatedGrossTotal = React.useMemo(() => {
+    const rent = parseFloat(hallRent) || 0;
+    const addOns = additionalItemsTotal || 0;
+    const extra = calculatedExtraCharges || 0;
+    return rent + addOns + extra;
+  }, [hallRent, additionalItemsTotal, calculatedExtraCharges]);
+
+  // Keep total booking amount in sync if user hasn't explicitly entered a different manual amount
+  const effectiveTotalAmount = totalBookingAmount !== '' ? parseFloat(totalBookingAmount) || 0 : calculatedGrossTotal;
+
   const calculatedRemainingBalance = React.useMemo(() => {
-    const total = parseFloat(totalBookingAmount);
+    const total = totalBookingAmount !== '' ? parseFloat(totalBookingAmount) : (calculatedGrossTotal > 0 ? calculatedGrossTotal : NaN);
     const advance = parseFloat(advancePayment);
     if (!isNaN(total)) {
       const adv = isNaN(advance) ? 0 : advance;
-      return total - adv;
+      return Math.max(0, total - adv);
     }
     return null;
-  }, [totalBookingAmount, advancePayment]);
+  }, [totalBookingAmount, calculatedGrossTotal, advancePayment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +152,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
       guestCount: expectedGuests ? parseInt(expectedGuests, 10) : undefined,
       personsPerTable: personsPerTable ? parseInt(personsPerTable, 10) : 10,
       assignedManager,
+      additionalMenuItems: additionalMenuItems.length > 0 ? additionalMenuItems : undefined,
     };
 
     onSave(newBooking);
@@ -380,6 +401,7 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
               >
                 <option value="6">6 Persons per Table</option>
                 <option value="8">8 Persons per Table</option>
+                <option value="9">9 Persons per Table</option>
                 <option value="10">10 Persons per Table</option>
                 <option value="12">12 Persons per Table</option>
               </select>
@@ -475,6 +497,113 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                 placeholder="[Enter Special Instructions (e.g. food allergies, spice levels, sugar-free desserts)]"
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all resize-none"
               />
+            </div>
+
+            {/* Additional Menu Items (Add-ons) */}
+            <div className="pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800">Additional Menu Items / Add-ons</h3>
+                  <p className="text-[11px] text-slate-400">Add per-head items like tea, extra drinks, or desserts</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const guests = parseInt(expectedGuests, 10) || 100;
+                    setAdditionalMenuItems([
+                      ...additionalMenuItems,
+                      {
+                        id: `item-${Date.now()}-${Math.random()}`,
+                        name: '',
+                        pricePerPerson: 100,
+                        personCount: guests,
+                        totalPrice: 100 * guests,
+                      },
+                    ]);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Item
+                </button>
+              </div>
+
+              {additionalMenuItems.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-500 uppercase px-1">
+                    <span className="col-span-4">Item Name</span>
+                    <span className="col-span-3">Price / Person (Rs.)</span>
+                    <span className="col-span-2">No. Persons</span>
+                    <span className="col-span-2 text-right">Total (Rs.)</span>
+                    <span className="col-span-1 text-center">Action</span>
+                  </div>
+                  {additionalMenuItems.map((item, idx) => (
+                    <div key={item.id || idx} className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                      <input
+                        type="text"
+                        placeholder="e.g. Kashmiri Tea"
+                        value={item.name}
+                        onChange={(e) => {
+                          const updated = [...additionalMenuItems];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setAdditionalMenuItems(updated);
+                        }}
+                        className="col-span-4 px-2.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:border-[#00685f]"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Price"
+                        value={item.pricePerPerson || ''}
+                        onChange={(e) => {
+                          const updated = [...additionalMenuItems];
+                          const price = parseFloat(e.target.value) || 0;
+                          const total = price * (updated[idx].personCount || 0);
+                          updated[idx] = { ...updated[idx], pricePerPerson: price, totalPrice: total };
+                          setAdditionalMenuItems(updated);
+                        }}
+                        className="col-span-3 px-2.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:border-[#00685f]"
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Pax"
+                        value={item.personCount || ''}
+                        onChange={(e) => {
+                          const updated = [...additionalMenuItems];
+                          const count = parseInt(e.target.value, 10) || 0;
+                          const total = (updated[idx].pricePerPerson || 0) * count;
+                          updated[idx] = { ...updated[idx], personCount: count, totalPrice: total };
+                          setAdditionalMenuItems(updated);
+                        }}
+                        className="col-span-2 px-2.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:border-[#00685f]"
+                      />
+                      <div className="col-span-2 text-right text-xs font-mono font-bold text-slate-800">
+                        Rs. {(item.totalPrice || 0).toLocaleString()}
+                      </div>
+                      <div className="col-span-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAdditionalMenuItems(additionalMenuItems.filter((_, i) => i !== idx));
+                          }}
+                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors"
+                          title="Remove item"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-between items-center p-2.5 bg-teal-50/70 border border-teal-200 rounded-lg text-xs font-semibold text-teal-900 mt-2">
+                    <span>Additional Menu Items Total:</span>
+                    <span className="font-mono text-sm font-bold text-teal-800">
+                      Rs. {additionalMenuItems.reduce((sum, it) => sum + (it.totalPrice || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -612,11 +741,11 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Total Booking Amount */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            {/* Hall Rent */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Total Booking Amount
+                Hall Rent (Base Venue)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
@@ -626,10 +755,87 @@ export const CreateBookingForm: React.FC<CreateBookingFormProps> = ({
                   type="number"
                   min="0"
                   step="any"
-                  value={totalBookingAmount}
-                  onChange={(e) => setTotalBookingAmount(e.target.value)}
-                  placeholder="[Enter Total Amount]"
+                  value={hallRent}
+                  onChange={(e) => setHallRent(e.target.value)}
+                  placeholder="e.g. 250000"
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Total Menu / Add-ons Total */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Total Menu / Add-ons
+              </label>
+              <div className="w-full px-3 py-2 bg-teal-50/70 border border-teal-200 rounded-lg text-xs font-mono font-bold text-teal-900 flex items-center justify-between">
+                <span>Rs. {additionalItemsTotal.toLocaleString('en-PK')}</span>
+                <span className="text-[10px] text-teal-700 font-sans font-normal">
+                  {additionalMenuItems.length} item{additionalMenuItems.length === 1 ? '' : 's'}
+                </span>
+              </div>
+            </div>
+
+            {/* Extra Hours Charges */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Extra Hours Charges
+              </label>
+              <div className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 flex items-center justify-between">
+                <span>Rs. {calculatedExtraCharges.toLocaleString('en-PK')}</span>
+                <span className="text-[10px] text-slate-400 font-sans font-normal">Overtime</span>
+              </div>
+            </div>
+
+            {/* Calculated Gross Total */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Calculated Subtotal
+              </label>
+              <div className="w-full px-3 py-2 bg-slate-100/90 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 flex items-center justify-between">
+                <span>Rs. {calculatedGrossTotal.toLocaleString('en-PK')}</span>
+                {calculatedGrossTotal > 0 && totalBookingAmount === '' && (
+                  <button
+                    type="button"
+                    onClick={() => setTotalBookingAmount(String(calculatedGrossTotal))}
+                    className="text-[10px] text-teal-700 font-bold hover:underline cursor-pointer"
+                  >
+                    Use as Total
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Total Booking Amount */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Total Booking Amount
+                </label>
+                {calculatedGrossTotal > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTotalBookingAmount(String(calculatedGrossTotal))}
+                    className="text-[10px] font-bold text-teal-700 hover:text-teal-800 cursor-pointer"
+                  >
+                    Auto-Fill (Rs. {calculatedGrossTotal.toLocaleString()})
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={totalBookingAmount !== '' ? totalBookingAmount : (calculatedGrossTotal > 0 ? String(calculatedGrossTotal) : '')}
+                  onChange={(e) => setTotalBookingAmount(e.target.value)}
+                  placeholder={calculatedGrossTotal > 0 ? String(calculatedGrossTotal) : '[Enter Total Amount]'}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#00685f] transition-all font-mono font-semibold"
                 />
               </div>
             </div>

@@ -55,6 +55,7 @@ class Booking(models.Model):
     assigned_manager = models.CharField(max_length=150, blank=True, default='Manager')
     security_deposit = models.DecimalField(max_digits=12, decimal_places=2, default=50000)
     custom_menu_items = models.JSONField(default=list, blank=True)
+    additional_menu_items = models.JSONField(default=list, blank=True)
     extra_services = models.JSONField(default=list, blank=True)
     damages_record = models.JSONField(default=list, blank=True)
     cancellation_record = models.JSONField(default=dict, blank=True)

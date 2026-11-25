@@ -57,6 +57,13 @@ interface BookingItem {
   menuRatePerHead?: number;
   dietaryInstructions: string;
   customRequests?: string;
+  additionalMenuItems?: Array<{
+    id?: string;
+    name: string;
+    pricePerPerson: number;
+    personCount: number;
+    totalPrice: number;
+  }>;
   includeDjSound?: boolean;
   includeStageDecor?: boolean;
   startTime: string;
@@ -318,6 +325,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                 menuPackage: b.menuPackage && b.menuPackage !== '[--]' ? b.menuPackage : '',
                 dietaryInstructions: b.specialInstructions || '',
                 customRequests: '',
+                additionalMenuItems: b.additionalMenuItems || [],
                 includeDjSound: Number(b.djAmount) > 0,
                 includeStageDecor: Number(b.decorAmount) > 0,
                 startTime: sTime || '18:00',
@@ -473,6 +481,15 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   const [menuRatePerHead, setMenuRatePerHead] = useState<string>('');
   const [dietaryInstructions, setDietaryInstructions] = useState('');
   const [customRequests, setCustomRequests] = useState('');
+  const [additionalMenuItems, setAdditionalMenuItems] = useState<
+    Array<{
+      id?: string;
+      name: string;
+      pricePerPerson: number;
+      personCount: number;
+      totalPrice: number;
+    }>
+  >([]);
   const [includeDjSound, setIncludeDjSound] = useState(false);
   const [includeStageDecor, setIncludeStageDecor] = useState(false);
   const [startTime, setStartTime] = useState('');
@@ -586,6 +603,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setMenuRatePerHead('');
     setDietaryInstructions('');
     setCustomRequests('');
+    setAdditionalMenuItems([]);
     setIncludeDjSound(false);
     setIncludeStageDecor(false);
     setStartTime('');
@@ -646,6 +664,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     }
     setDietaryInstructions(item.dietaryInstructions);
     setCustomRequests(item.customRequests ?? '');
+    setAdditionalMenuItems(item.additionalMenuItems ? [...item.additionalMenuItems] : []);
     setIncludeDjSound(item.includeDjSound ?? false);
     setIncludeStageDecor(item.includeStageDecor ?? false);
     setStartTime(item.startTime === '[--]' ? '' : item.startTime);
@@ -672,7 +691,16 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     includeMenuPackage && parsedGuests > 0 && parsedRatePerHead > 0
       ? parsedGuests * parsedRatePerHead
       : 0;
-  const autoMenuAmount = calculatedFoodCost;
+  
+  // Total of additional menu items (e.g. Tea @ 100/person * guestCount)
+  const additionalItemsTotal = additionalMenuItems.reduce(
+    (sum, item) => sum + (Number(item.totalPrice) || 0),
+    0
+  );
+
+  const totalMenuBill = calculatedFoodCost + additionalItemsTotal;
+
+  const autoMenuAmount = totalMenuBill;
   const effectiveMenuAmount =
     menuAmount !== '' ? Number(menuAmount) || 0 : autoMenuAmount;
 
@@ -803,6 +831,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
         dietaryInstructions.trim() +
         (customRequests ? ` | ${customRequests.trim()}` : '')
       ).trim(),
+      additionalMenuItems: additionalMenuItems,
       amount: calculatedFinalAmount,
       advancePayment: parsedAdvance,
       hallRent: effectiveHallRent,
@@ -844,6 +873,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
             dietaryInstructions: dietaryInstructions.trim(),
             customRequests: customRequests.trim(),
+            additionalMenuItems: additionalMenuItems,
             includeDjSound,
             includeStageDecor,
             startTime: startTime || '18:00',
@@ -925,6 +955,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
       menuPackage: includeMenuPackage ? menuPackage : 'Customer Own',
       dietaryInstructions: dietaryInstructions.trim(),
       customRequests: customRequests.trim(),
+      additionalMenuItems: additionalMenuItems,
       includeDjSound,
       includeStageDecor,
       startTime: startTime || '18:00',
@@ -1376,6 +1407,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                 >
                   <option value="6">6 Persons per Table</option>
                   <option value="8">8 Persons per Table</option>
+                  <option value="9">9 Persons per Table</option>
                   <option value="10">10 Persons per Table</option>
                   <option value="12">12 Persons per Table</option>
                 </select>
@@ -1585,7 +1617,159 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     />
                   </div>
 
-                  {/* Real-time Calculated Food Cost Card */}
+                  {/* Additional Menu Items Section */}
+                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                            Additional Menu Items / Add-ons
+                          </span>
+                          <span className="text-[10px] bg-teal-100 text-teal-800 font-semibold px-2 py-0.5 rounded-full">
+                            Per Person Calculation
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Add customized items (e.g., Tea, Kashmiri Chai, Extra Sweets, Live Stalls) multiplied by guests.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const guests = Number(guestCount) || 100;
+                          setAdditionalMenuItems((prev) => [
+                            ...prev,
+                            {
+                              id: `extra-item-${Date.now()}`,
+                              name: '',
+                              pricePerPerson: 0,
+                              personCount: guests,
+                              totalPrice: 0,
+                            },
+                          ]);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Item</span>
+                      </button>
+                    </div>
+
+                    {additionalMenuItems.length === 0 ? (
+                      <div className="py-3 px-4 rounded-lg border border-dashed border-slate-200 bg-white/60 text-center text-xs text-slate-500">
+                        No additional menu items added yet. Click &ldquo;Add Item&rdquo; above to add items like Tea, Kashmiri Chai, etc.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <div className="hidden sm:grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-500 uppercase px-2">
+                          <div className="col-span-4">Item Name (e.g. Tea)</div>
+                          <div className="col-span-3 text-right">Price / Person (Rs.)</div>
+                          <div className="col-span-2 text-center">No. of Persons</div>
+                          <div className="col-span-2 text-right">Total (Rs.)</div>
+                          <div className="col-span-1 text-center">Action</div>
+                        </div>
+
+                        {additionalMenuItems.map((item, idx) => (
+                          <div
+                            key={item.id || idx}
+                            className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs"
+                          >
+                            <div className="sm:col-span-4">
+                              <label className="block sm:hidden text-[11px] font-semibold text-slate-500 mb-1">
+                                Item Name
+                              </label>
+                              <input
+                                type="text"
+                                value={item.name}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setAdditionalMenuItems((prev) =>
+                                    prev.map((it, i) => (i === idx ? { ...it, name: val } : it))
+                                  );
+                                }}
+                                placeholder="e.g. Tea / Green Tea"
+                                className="w-full px-2.5 py-1.5 text-xs rounded border border-slate-300 focus:border-teal-700 focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-3">
+                              <label className="block sm:hidden text-[11px] font-semibold text-slate-500 mb-1">
+                                Price Per Person (Rs.)
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="10"
+                                value={item.pricePerPerson || ''}
+                                onChange={(e) => {
+                                  const p = parseFloat(e.target.value) || 0;
+                                  const count = Number(item.personCount) || Number(guestCount) || 100;
+                                  const tot = p * count;
+                                  setAdditionalMenuItems((prev) =>
+                                    prev.map((it, i) =>
+                                      i === idx
+                                        ? { ...it, pricePerPerson: p, personCount: count, totalPrice: tot }
+                                        : it
+                                    )
+                                  );
+                                }}
+                                placeholder="100"
+                                className="w-full px-2.5 py-1.5 text-xs text-right font-mono rounded border border-slate-300 focus:border-teal-700 focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block sm:hidden text-[11px] font-semibold text-slate-500 mb-1">
+                                Person Count
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.personCount || ''}
+                                onChange={(e) => {
+                                  const count = parseInt(e.target.value, 10) || 0;
+                                  const p = Number(item.pricePerPerson) || 0;
+                                  const tot = p * count;
+                                  setAdditionalMenuItems((prev) =>
+                                    prev.map((it, i) =>
+                                      i === idx ? { ...it, personCount: count, totalPrice: tot } : it
+                                    )
+                                  );
+                                }}
+                                placeholder={guestCount || '100'}
+                                className="w-full px-2.5 py-1.5 text-xs text-center font-mono rounded border border-slate-300 focus:border-teal-700 focus:outline-none"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2 text-right">
+                              <label className="block sm:hidden text-[11px] font-semibold text-slate-500 mb-1">
+                                Total Price
+                              </label>
+                              <span className="font-mono font-bold text-teal-800 text-xs sm:text-sm">
+                                Rs. {(item.totalPrice || 0).toLocaleString('en-PK')}
+                              </span>
+                            </div>
+
+                            <div className="sm:col-span-1 text-right sm:text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAdditionalMenuItems((prev) => prev.filter((_, i) => i !== idx));
+                                }}
+                                className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Remove Item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Real-time Calculated Food Cost & Total Menu Bill Card */}
                   <div className="md:col-span-2 rounded-xl border border-teal-200 bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 p-4.5 text-slate-900 shadow-2xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1">
@@ -1594,37 +1778,37 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                             <Calculator className="w-3.5 h-3.5" />
                             Live Food &amp; Catering Calculator
                           </span>
-                          <span className="text-xs font-semibold text-teal-700">Food Cost Only</span>
+                          <span className="text-xs font-semibold text-teal-700">Total Menu Bill</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-baseline gap-2.5">
                           <span className="text-2xl sm:text-3xl font-extrabold font-mono text-teal-900 tabular-nums">
-                            Rs. {calculatedFoodCost.toLocaleString('en-PK')}
+                            Rs. {totalMenuBill.toLocaleString('en-PK')}
                           </span>
-                          {parsedGuests > 0 && parsedRatePerHead > 0 ? (
-                            <span className="text-xs font-medium text-teal-800 bg-teal-100/60 px-2 py-0.5 rounded">
-                              ({parsedGuests.toLocaleString('en-PK')} guests &times; Rs. {parsedRatePerHead.toLocaleString('en-PK')} / head)
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-500">
-                              {parsedGuests === 0 && parsedRatePerHead === 0
-                                ? '(Enter guest count and menu rate above to see live food cost)'
-                                : parsedGuests === 0
-                                ? `(Enter guest count in Event Details above &bull; Rs. ${parsedRatePerHead.toLocaleString('en-PK')}/head)`
-                                : `(${parsedGuests} guests &bull; Enter price per head above)`}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-teal-800">
+                            <span>Base: Rs. {calculatedFoodCost.toLocaleString('en-PK')}</span>
+                            {additionalItemsTotal > 0 && (
+                              <span className="bg-teal-100/80 px-2 py-0.5 rounded font-bold text-teal-900">
+                                + Add-ons: Rs. {additionalItemsTotal.toLocaleString('en-PK')}
+                              </span>
+                            )}
+                            {parsedGuests > 0 && parsedRatePerHead > 0 && (
+                              <span className="text-[11px] text-slate-500 font-normal">
+                                ({parsedGuests.toLocaleString('en-PK')} guests &times; Rs. {parsedRatePerHead.toLocaleString('en-PK')} / head)
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      {calculatedFoodCost > 0 && (
+                      {totalMenuBill > 0 && (
                         <button
                           type="button"
                           onClick={() => {
-                            setTotalAmount(String(calculatedFoodCost));
+                            setTotalAmount(String(totalMenuBill));
                             if (formError) setFormError(null);
                           }}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto shrink-0"
-                          title="Click to copy this food cost into Total Booking Amount"
+                          title="Click to copy this total menu bill into Total Booking Amount"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Use as Booking Total</span>
@@ -1799,11 +1983,18 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                   />
                 </div>
-                <p className="text-[10px] text-gray-500 font-mono">
-                  {parsedGuests > 0 && parsedRatePerHead > 0
-                    ? `${parsedGuests} guests × Rs. ${parsedRatePerHead.toLocaleString()}`
-                    : 'Auto-calculates from guests & package'}
-                </p>
+                <div className="text-[10px] text-gray-500 font-mono space-y-0.5">
+                  <p>
+                    {parsedGuests > 0 && parsedRatePerHead > 0
+                      ? `Base: ${parsedGuests} guests × Rs. ${parsedRatePerHead.toLocaleString()} = Rs. ${calculatedFoodCost.toLocaleString()}`
+                      : 'Base Catering: Rs. ' + calculatedFoodCost.toLocaleString()}
+                  </p>
+                  {additionalItemsTotal > 0 && (
+                    <p className="text-teal-700 font-bold">
+                      + Add-ons Total: Rs. {additionalItemsTotal.toLocaleString('en-PK')}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* 2. Hall Rent */}

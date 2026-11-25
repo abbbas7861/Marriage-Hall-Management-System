@@ -57,6 +57,7 @@ interface ActiveEventOption {
   seatingArrangement?: string;
   menuPackage?: string;
   customMenuItems?: string[];
+  additionalMenuItems?: any[];
   assignedManager?: string;
   specialInstructions?: string;
   operationalStatus?: string;
@@ -126,6 +127,7 @@ export const EventControlCenterPage: React.FC = () => {
             seatingArrangement: b.seatingArrangement || 'Round Tables',
             menuPackage: b.menuPackage || 'Standard Menu',
             customMenuItems: b.customMenuItems || [],
+            additionalMenuItems: b.additionalMenuItems || [],
             assignedManager: b.assignedManager || 'Manager',
             specialInstructions: b.specialInstructions || '',
             operationalStatus: b.operationalStatus || b.operational_status || 'Setup in Progress',
@@ -770,7 +772,7 @@ export const EventControlCenterPage: React.FC = () => {
                       <Users className="w-4 h-4 text-teal-700" />
                     </div>
                     <div className="mt-1.5 flex items-center gap-1">
-                      {[6, 8, 10, 12].map((preset) => (
+                      {[6, 8, 9, 10, 12].map((preset) => (
                         <button
                           key={preset}
                           type="button"
@@ -1133,6 +1135,34 @@ export const EventControlCenterPage: React.FC = () => {
                       <span key={idx} className="bg-teal-50 border border-teal-200 text-teal-800 px-2.5 py-1 rounded-md text-xs font-medium">
                         {item}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedEvent?.additionalMenuItems && selectedEvent.additionalMenuItems.length > 0 && (
+                <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Additional Menu Items / Add-ons:
+                    </h4>
+                    <span className="text-xs font-bold font-mono text-teal-800">
+                      Total: Rs. {selectedEvent.additionalMenuItems.reduce((sum: number, it: any) => sum + (Number(it.totalPrice) || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {selectedEvent.additionalMenuItems.map((item: any, idx: number) => (
+                      <div key={idx} className="bg-amber-50/80 border border-amber-200 rounded-lg p-2.5 flex items-center justify-between">
+                        <div>
+                          <span className="font-semibold text-xs text-amber-950 block">{item.name}</span>
+                          <span className="text-[11px] text-amber-700 font-mono">
+                            Rs. {item.pricePerPerson}/head &times; {item.personCount} guests
+                          </span>
+                        </div>
+                        <span className="font-bold font-mono text-xs text-amber-900">
+                          Rs. {Number(item.totalPrice).toLocaleString()}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>

@@ -28,6 +28,14 @@ export interface FeedbackLogEntry {
   generatedReview?: string;
 }
 
+export interface AdditionalMenuItem {
+  id?: string;
+  name: string;
+  pricePerPerson: number;
+  personCount: number;
+  totalPrice: number;
+}
+
 export interface Booking {
   id: string;
   bookingRef: string;
@@ -46,6 +54,18 @@ export interface Booking {
   personsPerTable?: number;
   vipTables?: number[];
   seatingArrangement?: string;
+  menuPackage?: string;
+  customMenuItems?: string[];
+  additionalMenuItems?: AdditionalMenuItem[];
+  extraServices?: Array<{ id: string; title: string; price: number; category?: string }>;
+  damagesRecord?: Array<{ id: string; item: string; amount: number; description?: string }>;
+  hallRent?: number;
+  menuAmount?: number;
+  djAmount?: number;
+  decorAmount?: number;
+  subtotal?: number;
+  discountPercentage?: number;
+  discountAmount?: number;
   assignedManager?: string;
   cancellationRecord?: {
     cancellation_type: 'refund' | 'pause_and_adjust';

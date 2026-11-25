@@ -397,6 +397,38 @@ export const KitchenDisplayScreen: React.FC = () => {
         </div>
       </div>
 
+      {/* Selected Event Add-on Menu Items Banner */}
+      {(() => {
+        const currentEvent = bookings.find((b) => b.bookingRef === selectedEventFilter);
+        const addOns = currentEvent?.additionalMenuItems || [];
+        if (!currentEvent || addOns.length === 0) return null;
+
+        return (
+          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-amber-600 text-white font-bold uppercase tracking-wider text-[10px]">
+                Active Event Add-ons
+              </span>
+              <span className="font-semibold text-amber-950">
+                {currentEvent.customerName} ({currentEvent.bookingRef}):
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {addOns.map((item, idx) => (
+                <span
+                  key={item.id || idx}
+                  className="px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-amber-900 font-medium shadow-2xs flex items-center gap-1.5"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                  <strong>{item.name}</strong>
+                  <span className="text-amber-700 font-mono">({item.personCount} pax)</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Mobile Lane Switcher */}
       <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
         {[

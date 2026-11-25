@@ -57,6 +57,7 @@ class BookingSerializer(serializers.ModelSerializer):
     discountAmount = serializers.FloatField(source='discount_amount', required=False, default=0)
     securityDeposit = serializers.FloatField(source='security_deposit', required=False, default=50000)
     customMenuItems = serializers.ListField(source='custom_menu_items', child=serializers.CharField(), required=False, default=list)
+    additionalMenuItems = serializers.ListField(source='additional_menu_items', child=serializers.DictField(), required=False, default=list)
     extraServices = serializers.ListField(source='extra_services', child=serializers.DictField(), required=False, default=list)
     damagesRecord = serializers.ListField(source='damages_record', child=serializers.DictField(), required=False, default=list)
     cancellationRecord = serializers.JSONField(source='cancellation_record', required=False, default=dict)
@@ -71,7 +72,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'amount', 'advancePayment', 'hallRent', 'menuAmount', 'djAmount', 'decorAmount',
             'subtotal', 'discountPercentage', 'discountAmount',
             'guestCount', 'personsPerTable', 'vipTables', 'seatingArrangement',
-            'menuPackage', 'customMenuItems', 'extraServices', 'damagesRecord',
+            'menuPackage', 'customMenuItems', 'additionalMenuItems', 'extraServices', 'damagesRecord',
             'specialInstructions', 'extraHours', 'ratePerHour',
             'operationalStatus', 'assignedManager', 'securityDeposit', 'cancellationRecord'
         ]

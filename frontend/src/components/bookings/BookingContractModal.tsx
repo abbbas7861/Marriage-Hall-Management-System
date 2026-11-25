@@ -155,6 +155,22 @@ export const BookingContractModal: React.FC<BookingContractModalProps> = ({
                     {booking.guestCount || 350} Guests ({Math.ceil((Number(booking.guestCount) || 350) / (Number(booking.personsPerTable) || 10))} Banquet Tables)
                   </span>
                 </div>
+                {booking.menuPackage && (
+                  <div>
+                    <strong className="text-slate-700">Menu Package:</strong>{' '}
+                    <span className="font-semibold text-teal-800">{booking.menuPackage}</span>
+                  </div>
+                )}
+                {booking.additionalMenuItems && booking.additionalMenuItems.length > 0 && (
+                  <div>
+                    <strong className="text-slate-700">Additional Menu Items:</strong>{' '}
+                    <span className="font-medium text-slate-800">
+                      {booking.additionalMenuItems
+                        .map((it) => `${it.name} (Rs. ${it.pricePerPerson}/head × ${it.personCount} = Rs. ${it.totalPrice?.toLocaleString()})`)
+                        .join(', ')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
