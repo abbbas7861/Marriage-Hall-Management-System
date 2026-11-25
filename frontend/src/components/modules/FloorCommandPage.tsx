@@ -15,11 +15,7 @@ import {
   Crown,
   Star,
 } from 'lucide-react';
-import {
-  SEED_ASSIGNED_EVENTS,
-  SEED_REFILL_REQUESTS,
-} from '../../data/seedData';
-import { bookingsApi } from '../../api/client';
+import { bookingsApi, kdsApi, KitchenOrderTicketItem } from '../../api/client';
 import { Booking } from '../../types';
 
 export type TableStatus = 'Occupied' | 'Needs Cleaning' | 'Ready';
@@ -38,7 +34,7 @@ export interface RefillRequest {
   table: string;
   item: string;
   quantity: number;
-  status: 'Preparing' | 'Dispatched' | 'Served';
+  status: string;
   timestamp: string;
 }
 
@@ -266,7 +262,8 @@ export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
   const [selectedTable, setSelectedTable] = useState('');
   const [selectedItem, setSelectedItem] = useState(REFILL_ITEMS[0]);
   const [refillQuantity, setRefillQuantity] = useState<string>('1');
-  const [refillRequests, setRefillRequests] = useState<RefillRequest[]>(SEED_REFILL_REQUESTS);
+  const [refillRequests, setRefillRequests] = useState<RefillRequest[]>([]);
+  const [isDispatchingRefill, setIsDispatchingRefill] = useState(false);
 
   // Overtime Request state
   const [selectedHallEvent, setSelectedHallEvent] = useState('');
@@ -274,25 +271,91 @@ export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
   const [overtimeReason, setOvertimeReason] = useState('');
   const [overtimeRequests, setOvertimeRequests] = useState<OvertimeRequestRecord[]>([]);
 
-  const handleDispatchRefill = (e: React.FormEvent) => {
-    e.preventDefault();
-    const qty = parseInt(refillQuantity, 10);
-    if (!selectedTable || Number.isNaN(qty) || qty <= 0) return;
+  const mapTicketToRefillRequest = (ticket: KitchenOrderTicketItem): RefillRequest => {
+    const notesStr = ticket.notes || '';
+    const tableMatch = notesStr.match(/^Table:\s*(.+)$/i);
+    const tableLabel = tableMatch ? tableMatch[1].trim() : ticket.hallName || 'Floor Table';
+    const timeStr = ticket.createdAt
+      ? new Date(ticket.createdAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      : '';
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-
-    const newReq: RefillRequest = {
-      id: `RF-${Date.now().toString().slice(-4)}`,
-      table: selectedTable,
-      item: selectedItem,
-      quantity: qty,
-      status: 'Preparing',
+    return {
+      id: String(ticket.id),
+      table: tableLabel,
+      item: ticket.dishName,
+      quantity: ticket.quantity || 1,
+      status: ticket.status,
       timestamp: timeStr,
     };
+  };
 
-    setRefillRequests((prev) => [newReq, ...prev]);
-    setRefillQuantity('1');
+  const fetchRefillRequests = async () => {
+    try {
+      const tickets = await kdsApi.list();
+      const active = tickets
+        .filter((t) => t.status !== 'Completed' && t.status !== 'Cancelled')
+        .map(mapTicketToRefillRequest);
+      setRefillRequests(active);
+    } catch (err) {
+      console.error('Failed to load refill requests from KDS:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRefillRequests();
+    if (view !== 'refill') return;
+    const interval = setInterval(() => {
+      fetchRefillRequests();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [view]);
+
+  const getStationForRefillItem = (item: string): string => {
+    switch (item) {
+      case 'Naan':
+        return 'Tandoor & Breads';
+      case 'Karahi':
+        return 'Live BBQ & Karahi';
+      case 'Raita & Salad':
+        return 'Salad & Cold Station';
+      case 'Water':
+      case 'Cold Drinks':
+      case 'Tea / Kahwa':
+        return 'Desserts & Beverages';
+      default:
+        return 'Hot Buffet Line 1';
+    }
+  };
+
+  const handleDispatchRefill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const qty = parseInt(refillQuantity, 10);
+    if (!selectedTable || Number.isNaN(qty) || qty <= 0 || isDispatchingRefill) return;
+
+    setIsDispatchingRefill(true);
+    try {
+      await kdsApi.create({
+        eventRef: selectedBooking?.bookingRef || 'FLOOR-GENERAL',
+        hallName: selectedBooking?.hallName || 'Grand Crystal Ballroom',
+        dishName: selectedItem,
+        quantity: qty,
+        portionSize: `${qty} × ${selectedItem} (${selectedTable})`,
+        priority: 'Urgent',
+        station: getStationForRefillItem(selectedItem),
+        requestedBy: 'Floor Manager',
+        notes: `Table: ${selectedTable}`,
+      });
+      await fetchRefillRequests();
+      setRefillQuantity('1');
+    } catch (err) {
+      console.error('Failed to dispatch refill to Kitchen KDS:', err);
+    } finally {
+      setIsDispatchingRefill(false);
+    }
   };
 
   const handleSubmitOvertime = (e: React.FormEvent) => {
@@ -757,7 +820,7 @@ export const FloorCommandPage: React.FC<FloorCommandPageProps> = ({ view }) => {
 
             <button
               type="submit"
-              disabled={dynamicTables.length === 0}
+              disabled={dynamicTables.length === 0 || isDispatchingRefill}
               className="w-full h-14 rounded-xl bg-teal-700 hover:bg-teal-800 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed text-white text-base sm:text-lg font-semibold inline-flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-5 h-5" />

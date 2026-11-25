@@ -126,6 +126,10 @@ class KitchenOrderTicketSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if not validated_data.get('ticket_number'):
-            validated_data['ticket_number'] = f"KDS-{random.randint(100, 999)}"
+            while True:
+                candidate = f"KDS-{random.randint(1000, 9999)}"
+                if not KitchenOrderTicket.objects.filter(ticket_number=candidate).exists():
+                    validated_data['ticket_number'] = candidate
+                    break
         return super().create(validated_data)
 
