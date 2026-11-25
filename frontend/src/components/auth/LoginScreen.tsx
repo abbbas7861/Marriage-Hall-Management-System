@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, Crown } from 'lucide-react';
 import { authApi } from '../../api/client';
 
-export type UserRole = 'Admin' | 'Manager' | 'Kitchen' | 'Accounts';
+export type UserRole = 'Admin' | 'Senior Manager' | 'Manager' | 'Kitchen' | 'Accounts';
 
 export const USER_ROLES: UserRole[] = [
   'Admin',
+  'Senior Manager',
   'Manager',
   'Kitchen',
   'Accounts',
@@ -23,7 +24,8 @@ interface LoginScreenProps {
 }
 
 function normalizeRole(roleStr?: string): UserRole {
-  const r = (roleStr || '').toLowerCase();
+  const r = (roleStr || '').toLowerCase().trim();
+  if (r.includes('senior')) return 'Senior Manager';
   if (r.includes('admin')) return 'Admin';
   if (r.includes('manager')) return 'Manager';
   if (r.includes('kitchen') || r.includes('chef')) return 'Kitchen';

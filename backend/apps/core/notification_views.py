@@ -16,8 +16,12 @@ class PortalNotificationViewSet(viewsets.ModelViewSet):
         qs = PortalNotification.objects.all()
         target_role = self.request.query_params.get('role')
         if target_role:
-            target_role = target_role.capitalize()
-            qs = qs.filter(target_role__iexact=target_role)
+            target_role = target_role.strip().lower()
+            # Senior Manager has access to all portals: receives notifications for Senior Manager, Manager, Kitchen, and Accounts
+            if target_role in ['senior manager', 'senior_manager', 'seniormanager']:
+                pass  # Senior manager sees notifications across all portals
+            else:
+                qs = qs.filter(target_role__iexact=target_role)
         return qs
 
     @action(detail=False, methods=['post'], url_path='mark-all-read')

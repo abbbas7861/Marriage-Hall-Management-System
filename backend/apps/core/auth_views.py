@@ -7,6 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from .models import UserProfile, SystemSetting, AuditLogEntry
+from apps.finance.models import ExpenseRecord
+from datetime import date
 import random
 
 class HasAdminView(APIView):
@@ -217,7 +219,7 @@ class UserDirectoryViewSet(APIView):
     def check_access(self, request):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        return request.user.is_superuser or role in ['admin', 'manager']
+        return request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']
 
     def is_admin(self, request):
         profile = getattr(request.user, 'profile', None)
@@ -270,7 +272,7 @@ class UserDirectoryViewSet(APIView):
             username=username,
             email=email,
             password=password,
-            is_staff=(role in ['admin', 'manager']),
+            is_staff=(role in ['admin', 'manager', 'senior_manager', 'senior manager']),
             is_superuser=(role == 'admin')
         )
 
@@ -282,7 +284,7 @@ class UserDirectoryViewSet(APIView):
             salary=salary or 0
         )
 
-        user_role = "Admin" if self.is_admin(request) else "Manager"
+        user_role = "Admin" if self.is_admin(request) else "Senior Manager"
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
             user_name=request.user.get_full_name() or request.user.username,
@@ -292,6 +294,21 @@ class UserDirectoryViewSet(APIView):
             details=f"Created staff account '{username}' with role '{role}' and salary PKR {salary}",
             ip_address="127.0.0.1"
         )
+
+        # If staff has salary assigned, automatically create a Payroll / Salary expense record in Accounts
+        num_salary = float(salary or 0)
+        if num_salary > 0:
+            ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{profile.full_name or username} ({profile.role.title()})",
+                description=f"Monthly salary payroll for staff member {profile.full_name or username} ({profile.role.title()})",
+                amount=num_salary,
+                approved_by=request.user.get_full_name() or request.user.username if request.user.is_authenticated else user_role,
+                date=date.today(),
+                payment_method='Bank Transfer',
+                status='Paid'
+            )
 
         return Response({
             'id': user.id,
@@ -333,7 +350,7 @@ class UserDirectoryViewSet(APIView):
             if new_role == 'admin' and not self.is_admin(request):
                 return Response({'error': 'Only Administrators can grant Administrator privileges.'}, status=status.HTTP_403_FORBIDDEN)
             profile.role = new_role
-            user.is_staff = (new_role in ['admin', 'manager'])
+            user.is_staff = (new_role in ['admin', 'manager', 'senior_manager', 'senior manager'])
             user.is_superuser = (new_role == 'admin')
 
         if 'fullName' in request.data:

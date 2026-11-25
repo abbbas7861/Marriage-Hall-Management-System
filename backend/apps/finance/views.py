@@ -130,7 +130,7 @@ class InvoiceRecordViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Administrative or Manager permissions required to void or delete invoice records.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -220,7 +220,7 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Administrative or Manager permissions required to delete payment transactions.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -260,7 +260,7 @@ class ExpenseRecordViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Administrative or Manager permissions required to delete expense vouchers.'},
                 status=status.HTTP_403_FORBIDDEN

@@ -13,7 +13,8 @@ import { MainLayout } from './components/layout/MainLayout';
 import { authApi } from './api/client';
 
 function normalizeRole(roleStr?: string): UserRole {
-  const r = (roleStr || '').toLowerCase();
+  const r = (roleStr || '').toLowerCase().trim();
+  if (r.includes('senior')) return 'Senior Manager';
   if (r.includes('admin')) return 'Admin';
   if (r.includes('manager')) return 'Manager';
   if (r.includes('kitchen') || r.includes('chef')) return 'Kitchen';

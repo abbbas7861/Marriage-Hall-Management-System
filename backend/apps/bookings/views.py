@@ -551,7 +551,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager', 'accounts']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'accounts', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Only Admins, Managers, and Accounts Officers are authorized to cancel or remove bookings.'},
                 status=status.HTTP_403_FORBIDDEN

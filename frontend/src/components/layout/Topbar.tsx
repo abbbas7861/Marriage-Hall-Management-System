@@ -50,6 +50,34 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Right: Notifications + Account identity + Update Button + Sign Out action */}
         <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+          {/* Portal Switcher for Senior Manager */}
+          {user.role === 'Senior Manager' && onNavigate && (
+            <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase px-2">Jump to:</span>
+              <button
+                type="button"
+                onClick={() => onNavigate('event-control-center')}
+                className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-700 hover:text-teal-900 hover:bg-white transition-colors"
+              >
+                Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('kitchen-display')}
+                className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-700 hover:text-teal-900 hover:bg-white transition-colors"
+              >
+                Kitchen
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('event-tracker')}
+                className="px-2.5 py-1 text-xs font-medium rounded-md text-slate-700 hover:text-teal-900 hover:bg-white transition-colors"
+              >
+                Accounts
+              </button>
+            </div>
+          )}
+
           {/* Admin System Update Button */}
           {user.role === 'Admin' && (
             <button

@@ -105,11 +105,20 @@ export const StaffRostersPage: React.FC = () => {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNewStaffModalOpen, setIsNewStaffModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [staffMember, setStaffMember] = useState('');
   const [role, setRole] = useState<Exclude<StaffRole, 'Supervisor'>>('Waiter');
   const [assignedArea, setAssignedArea] = useState('');
   const [shift, setShift] = useState<ShiftOption>('Evening');
+
+  // New staff registration form state
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<StaffRole>('Waiter');
+  const [newStaffPhone, setNewStaffPhone] = useState('');
+  const [newStaffShift, setNewStaffShift] = useState('Evening');
+  const [newStaffSalary, setNewStaffSalary] = useState('');
+  const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
 
   const kpiMetrics = useMemo(() => {
     if (roster.length === 0) {
@@ -193,6 +202,36 @@ export const StaffRostersPage: React.FC = () => {
     setEditingId(null);
   };
 
+  const handleCreateNewStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaffName.trim()) return;
+
+    setIsSubmittingStaff(true);
+    try {
+      const salaryNum = parseFloat(newStaffSalary) || 0;
+      const created = await staffApi.create({
+        fullName: newStaffName.trim(),
+        role: newStaffRole,
+        contactNumber: newStaffPhone.trim(),
+        shiftTiming: newStaffShift,
+        salary: salaryNum,
+        status: 'Active',
+      } as any);
+
+      const addedName = created.fullName || newStaffName.trim();
+      setAvailableStaff((prev) => Array.from(new Set([...prev, addedName])));
+      setStaffMember(addedName);
+      setIsNewStaffModalOpen(false);
+      setNewStaffName('');
+      setNewStaffSalary('');
+      setNewStaffPhone('');
+    } catch (err) {
+      console.warn('Error creating staff:', err);
+    } finally {
+      setIsSubmittingStaff(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Section: Header */}
@@ -239,6 +278,15 @@ export const StaffRostersPage: React.FC = () => {
           >
             <Wand2 className="w-4 h-4 text-slate-500" />
             Auto-Allocate Staff
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsNewStaffModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 px-3.5 py-2 text-sm font-semibold text-teal-800 shadow-2xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-teal-700" />
+            Add Staff Member
           </button>
 
           <button
@@ -543,6 +591,132 @@ export const StaffRostersPage: React.FC = () => {
                   className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
                 >
                   Save Assignment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Enroll New Staff Member with Salary */}
+      {isNewStaffModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-700">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Add New Staff Member
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Staff salary is automatically recorded in Accounts &amp; Expenses.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewStaffModalOpen(false)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewStaff} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newStaffName}
+                  onChange={(e) => setNewStaffName(e.target.value)}
+                  placeholder="e.g. Tariq Mehmood"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Staff Role
+                  </label>
+                  <select
+                    value={newStaffRole}
+                    onChange={(e) => setNewStaffRole(e.target.value as StaffRole)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  >
+                    <option value="Waiter">Waiter</option>
+                    <option value="Cleaner">Cleaner</option>
+                    <option value="Helper">Helper</option>
+                    <option value="Supervisor">Supervisor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Shift Timing
+                  </label>
+                  <select
+                    value={newStaffShift}
+                    onChange={(e) => setNewStaffShift(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  >
+                    <option value="Morning">Morning (08:00 AM - 04:00 PM)</option>
+                    <option value="Evening">Evening (04:00 PM - 12:00 AM)</option>
+                    <option value="Full Day">Full Day (09:00 AM - 11:00 PM)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Monthly Salary (PKR) <span className="text-teal-700 font-normal">(Expenses)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={newStaffSalary}
+                    onChange={(e) => setNewStaffSalary(e.target.value)}
+                    placeholder="e.g. 35000"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Contact Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={newStaffPhone}
+                    onChange={(e) => setNewStaffPhone(e.target.value)}
+                    placeholder="0300 1234567"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsNewStaffModalOpen(false)}
+                  className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingStaff}
+                  className="rounded-lg bg-teal-700 hover:bg-teal-800 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
+                >
+                  {isSubmittingStaff ? 'Enrolling...' : 'Enroll & Post Salary'}
                 </button>
               </div>
             </form>

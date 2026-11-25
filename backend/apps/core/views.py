@@ -78,7 +78,7 @@ class SystemSettingView(APIView):
     def put(self, request):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Admin or Manager permissions required to modify system settings.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -310,6 +310,7 @@ class ReportsSummaryView(APIView):
             'netProfit': net_profit,
             'monthlyBreakdown': breakdown_records,
             'monthlyBreakdownRecords': breakdown_records,
+            'monthly_breakdown': breakdown_records,
             'revenueExpensesData': rev_exp_data,
             'hallBookingsData': hall_bookings_data,
             'topMenuPackagesData': top_menu_packages_data,

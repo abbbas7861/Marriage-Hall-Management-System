@@ -20,15 +20,18 @@ export interface StaffUser {
   fullName: string;
   email: string;
   role: UserRole;
+  salary?: number;
+  phone?: string;
   status: AccountStatus;
   lastLogin: string;
 }
 
-const SYSTEM_ROLES: UserRole[] = ['Admin', 'Manager', 'Kitchen', 'Accounts'];
+const SYSTEM_ROLES: UserRole[] = ['Admin', 'Senior Manager', 'Manager', 'Kitchen', 'Accounts'];
 const ACCOUNT_STATUSES: AccountStatus[] = ['Active', 'Inactive'];
 
 const ROLE_BADGE_STYLES: Record<UserRole, string> = {
   Admin: 'bg-teal-50 text-teal-800 border-teal-200',
+  'Senior Manager': 'bg-indigo-50 text-indigo-800 border-indigo-200',
   Manager: 'bg-blue-50 text-blue-800 border-blue-200',
   Kitchen: 'bg-amber-50 text-amber-800 border-amber-200',
   Accounts: 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -64,11 +67,15 @@ export const UserManagementPage: React.FC = () => {
               role:
                 u.role === 'admin'
                   ? 'Admin'
+                  : (u.role === 'senior_manager' || u.role === 'senior manager')
+                  ? 'Senior Manager'
                   : u.role === 'kitchen'
                   ? 'Kitchen'
                   : u.role === 'accounts'
                   ? 'Accounts'
                   : 'Manager',
+              salary: Number(u.salary) || 0,
+              phone: u.phone || '',
               status: u.isActive !== false ? 'Active' : 'Inactive',
               lastLogin: u.dateJoined || 'Active',
             }))
@@ -82,6 +89,8 @@ export const UserManagementPage: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [salary, setSalary] = useState('');
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<UserRole>('Manager');
   const [status, setStatus] = useState<AccountStatus>('Active');
 
@@ -107,6 +116,8 @@ export const UserManagementPage: React.FC = () => {
     setFullName('');
     setEmail('');
     setPassword('');
+    setSalary('');
+    setPhone('');
     setRole('Manager');
     setStatus('Active');
     setIsModalOpen(true);
@@ -117,6 +128,8 @@ export const UserManagementPage: React.FC = () => {
     setFullName(user.fullName);
     setEmail(user.email);
     setPassword('');
+    setSalary(user.salary ? String(user.salary) : '');
+    setPhone(user.phone || '');
     setRole(user.role);
     setStatus(user.status);
     setIsModalOpen(true);
@@ -141,6 +154,8 @@ export const UserManagementPage: React.FC = () => {
         trimmedName.toLowerCase().replace(/\s+/g, ''),
       role: role.toLowerCase(),
       password: password || 'SecurePass123!',
+      salary: parseFloat(salary) || 0,
+      phone: phone.trim(),
     };
 
     if (editingId) {
@@ -155,6 +170,8 @@ export const UserManagementPage: React.FC = () => {
                 ...u,
                 fullName: trimmedName,
                 email: trimmedEmail,
+                salary: parseFloat(salary) || 0,
+                phone: phone.trim(),
                 role,
                 status,
               }
@@ -168,6 +185,8 @@ export const UserManagementPage: React.FC = () => {
         fullName: trimmedName,
         email: trimmedEmail,
         role,
+        salary: parseFloat(salary) || 0,
+        phone: phone.trim(),
         status,
         lastLogin: '[--]',
       };
@@ -272,6 +291,9 @@ export const UserManagementPage: React.FC = () => {
                   Role
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Monthly Salary
+                </th>
+                <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Status
                 </th>
                 <th className="py-3.5 px-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -331,6 +353,9 @@ export const UserManagementPage: React.FC = () => {
                       >
                         {user.role}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-sm font-semibold text-slate-800">
+                      {user.salary ? `Rs. ${user.salary.toLocaleString()}` : 'Rs. 0'}
                     </td>
                     <td className="py-3.5 px-5">
                       <span
@@ -449,6 +474,44 @@ export const UserManagementPage: React.FC = () => {
                   placeholder="[--]"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="user-salary"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Monthly Salary (PKR) <span className="text-teal-700 font-normal">(Posts to Accounts)</span>
+                  </label>
+                  <input
+                    id="user-salary"
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={salary}
+                    onChange={(e) => setSalary(e.target.value)}
+                    placeholder="e.g. 45000"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="user-phone"
+                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  >
+                    Contact Phone
+                  </label>
+                  <input
+                    id="user-phone"
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0300 1234567"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

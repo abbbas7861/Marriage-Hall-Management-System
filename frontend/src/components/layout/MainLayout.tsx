@@ -35,6 +35,20 @@ interface MainLayoutProps {
 }
 
 const ROLE_SHORTCUT_DESCRIPTIONS: Record<UserRole, Record<string, string>> = {
+  'Senior Manager': {
+    'event-control-center': 'Coordinate active banquet execution and supervisor checkpoints.',
+    bookings: 'Create, review, reschedule, or cancel bookings and process refunds.',
+    'master-calendar': 'View hall availability across all dates and block maintenance slots.',
+    'kitchen-display': 'Direct access to live kitchen display screen and active stations.',
+    'event-requisitions': 'Approve or track ingredient requisitions for events.',
+    'pantry-inventory': 'Manage pantry inventory, stock arrivals, and cost logging.',
+    'event-tracker': 'Inspect per-event profitability, gross margin, and cost breakdowns.',
+    invoices: 'Issue client invoices, tax invoices, and record balance payments.',
+    expenses: 'Log hall operational overhead and kitchen purchases into Accounts.',
+    'financial-reports': 'Analyze business revenue, expenses, and net profit statements.',
+    users: 'Manage staff roles, system credentials, and account statuses.',
+    settings: 'Configure hall profiles, tax numbers, and system policies.',
+  },
   Admin: {
     'halls-registry': 'Configure halls, capacities, and venue amenities.',
     bookings: 'Review and manage event reservations.',
@@ -75,6 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onSignOut,
 }) => {
   const getDefaultNavId = (role: UserRole): string => {
+    if (role === 'Senior Manager') return 'event-control-center';
     if (role === 'Kitchen') return 'kitchen-display';
     if (role === 'Manager') return 'event-control-center';
     return 'dashboard';
@@ -109,6 +124,101 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const activeItem = navItems.find((item) => item.id === activeNavId) || navItems[0];
   const shortcutItems = navItems.filter((item) => item.id !== 'dashboard');
 
+  const renderContent = () => {
+    switch (activeNavId) {
+      case 'event-control-center':
+        return <EventControlCenterPage />;
+      case 'kitchen-display':
+        return <KitchenDisplayScreen />;
+      case 'event-requisitions':
+        return <KitchenRequisitionsPage />;
+      case 'pantry-inventory':
+        return <KitchenPantryInventory />;
+      case 'event-tracker':
+        return <EventProfitabilityTrackerPage />;
+      case 'invoices':
+        return <InvoicesBillingPage />;
+      case 'expenses':
+        return <ExpensesManagementPage />;
+      case 'financial-reports':
+        return <FinancialReportsPage />;
+      case 'bookings':
+        return (
+          <BookingsManagementPage
+            onNavigateToCalendar={handleNavigateToCalendar}
+            prefillData={bookingPrefill}
+            onClearPrefill={() => setBookingPrefill(null)}
+          />
+        );
+      case 'master-calendar':
+        return <MasterCalendarPage onProceedToBooking={handleProceedToBooking} />;
+      case 'assigned-events':
+        return <ManagerEventSettlementPage initialView="list" />;
+      case 'final-settlement':
+        return <ManagerEventSettlementPage initialView="settlement" />;
+      case 'table-monitoring':
+        return <FloorCommandPage view="tables" />;
+      case 'refill-dispatcher':
+        return <FloorCommandPage view="refill" />;
+      case 'overtime-request':
+        return <FloorCommandPage view="overtime" />;
+      case 'halls-registry':
+        return <HallsRegistryPage />;
+      case 'menu-packages':
+        return <MenuPackagesPage />;
+      case 'staff-rosters':
+        return <StaffRostersPage />;
+      case 'vendors':
+        return <VendorDirectoryPage />;
+      case 'users':
+        return <UserManagementPage />;
+      case 'settings':
+        return <SettingsConfigurationPage />;
+      case 'dashboard':
+        if (activeRole === 'Admin') {
+          return <AdminExecutiveDashboard onNavigate={setActiveNavId} />;
+        }
+        if (activeRole === 'Accounts') {
+          return <AccountsDashboard onNavigate={setActiveNavId} />;
+        }
+        if (activeRole === 'Kitchen') {
+          return <KitchenDashboard onNavigate={setActiveNavId} />;
+        }
+        return <ManagerDashboard onNavigate={setActiveNavId} />;
+      default:
+        return (
+          <div className="bg-white rounded-xl border border-slate-200/90 p-8 sm:p-10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                <activeItem.icon className="w-4 h-4" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
+                  {activeItem.label}
+                </h1>
+                <p className="text-xs text-slate-500">
+                  {activeRole} Portal
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-start gap-4">
+              <p className="text-sm text-slate-500">
+                No records available in {activeItem.label} yet.
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveNavId('dashboard')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+              >
+                <span>Back to {activeRole} Portal</span>
+              </button>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-teal-100 selection:text-teal-900">
       <Sidebar
@@ -130,166 +240,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
         <main className="flex-1 w-full max-w-6xl print:max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 print:p-0">
           <ErrorBoundary fallbackTitle={`${activeItem.label} Error`}>
-          {activeRole === 'Admin' && activeNavId === 'dashboard' ? (
-            <AdminExecutiveDashboard onNavigate={setActiveNavId} />
-          ) : activeRole === 'Admin' && activeNavId === 'halls-registry' ? (
-            <HallsRegistryPage />
-          ) : activeRole === 'Admin' && activeNavId === 'bookings' ? (
-            <BookingsManagementPage
-              onNavigateToCalendar={handleNavigateToCalendar}
-              prefillData={bookingPrefill}
-              onClearPrefill={() => setBookingPrefill(null)}
-            />
-          ) : activeRole === 'Admin' && activeNavId === 'master-calendar' ? (
-            <MasterCalendarPage onProceedToBooking={handleProceedToBooking} />
-          ) : activeRole === 'Admin' && activeNavId === 'menu-packages' ? (
-            <MenuPackagesPage />
-          ) : activeRole === 'Admin' && activeNavId === 'financial-reports' ? (
-            <FinancialReportsPage />
-          ) : activeRole === 'Admin' && activeNavId === 'users' ? (
-            <UserManagementPage />
-          ) : activeRole === 'Admin' && activeNavId === 'settings' ? (
-            <SettingsConfigurationPage />
-          ) : activeRole === 'Manager' && activeNavId === 'event-control-center' ? (
-            <EventControlCenterPage />
-          ) : activeRole === 'Manager' && activeNavId === 'dashboard' ? (
-            <ManagerDashboard onNavigate={setActiveNavId} />
-          ) : activeRole === 'Manager' && activeNavId === 'bookings' ? (
-            <BookingsManagementPage
-              onNavigateToCalendar={handleNavigateToCalendar}
-              prefillData={bookingPrefill}
-              onClearPrefill={() => setBookingPrefill(null)}
-            />
-          ) : activeRole === 'Manager' && activeNavId === 'master-calendar' ? (
-            <MasterCalendarPage onProceedToBooking={handleProceedToBooking} />
-          ) : activeRole === 'Manager' && activeNavId === 'assigned-events' ? (
-            <ManagerEventSettlementPage initialView="list" />
-          ) : activeRole === 'Manager' && activeNavId === 'table-monitoring' ? (
-            <FloorCommandPage view="tables" />
-          ) : activeRole === 'Manager' && activeNavId === 'refill-dispatcher' ? (
-            <FloorCommandPage view="refill" />
-          ) : activeRole === 'Manager' && activeNavId === 'overtime-request' ? (
-            <FloorCommandPage view="overtime" />
-          ) : activeRole === 'Manager' && activeNavId === 'halls-registry' ? (
-            <HallsRegistryPage />
-          ) : activeRole === 'Manager' && activeNavId === 'menu-packages' ? (
-            <MenuPackagesPage />
-          ) : activeRole === 'Manager' && activeNavId === 'staff-rosters' ? (
-            <StaffRostersPage />
-          ) : activeRole === 'Manager' && activeNavId === 'vendors' ? (
-            <VendorDirectoryPage />
-          ) : activeRole === 'Manager' && activeNavId === 'final-settlement' ? (
-            <ManagerEventSettlementPage initialView="settlement" />
-          ) : activeRole === 'Manager' && activeNavId === 'users' ? (
-            <UserManagementPage />
-          ) : activeRole === 'Manager' && activeNavId === 'settings' ? (
-            <SettingsConfigurationPage />
-          ) : activeRole === 'Kitchen' && activeNavId === 'dashboard' ? (
-            <KitchenDashboard onNavigate={setActiveNavId} />
-          ) : activeRole === 'Kitchen' && activeNavId === 'kitchen-display' ? (
-            <KitchenDisplayScreen />
-          ) : activeRole === 'Kitchen' && activeNavId === 'event-requisitions' ? (
-            <KitchenRequisitionsPage />
-          ) : activeRole === 'Kitchen' && activeNavId === 'pantry-inventory' ? (
-            <KitchenPantryInventory />
-          ) : activeRole === 'Accounts' && activeNavId === 'dashboard' ? (
-            <AccountsDashboard onNavigate={setActiveNavId} />
-          ) : activeRole === 'Accounts' && activeNavId === 'bookings' ? (
-            <BookingsManagementPage
-              onNavigateToCalendar={handleNavigateToCalendar}
-              prefillData={bookingPrefill}
-              onClearPrefill={() => setBookingPrefill(null)}
-            />
-          ) : activeRole === 'Accounts' && activeNavId === 'event-tracker' ? (
-            <EventProfitabilityTrackerPage />
-          ) : activeRole === 'Accounts' && activeNavId === 'invoices' ? (
-            <InvoicesBillingPage />
-          ) : activeRole === 'Accounts' && activeNavId === 'expenses' ? (
-            <ExpensesManagementPage />
-          ) : activeRole === 'Accounts' && activeNavId === 'financial-reports' ? (
-            <FinancialReportsPage />
-          ) : activeNavId === 'dashboard' ? (
-            <div className="space-y-8">
-              {/* Role Portal Placeholder Card */}
-              <div className="bg-white rounded-xl border border-slate-200/90 p-6 sm:p-8">
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
-                  {activeRole} Portal
-                </h1>
-                <p className="text-sm text-slate-500 mt-2">
-                  Welcome to the {activeRole} workspace.
-                </p>
-              </div>
-
-              {/* Role-Specific Shortcut Cards */}
-              <div>
-                <h2 className="text-xs font-medium text-slate-500 mb-3">
-                  Quick Shortcuts
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {shortcutItems.map((item) => {
-                    const Icon = item.icon;
-                    const description =
-                      ROLE_SHORTCUT_DESCRIPTIONS[activeRole]?.[item.id] ||
-                      `Open ${item.label}.`;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setActiveNavId(item.id)}
-                        className="group bg-white rounded-xl border border-slate-200/90 hover:border-teal-600/40 p-5 text-left transition-colors cursor-pointer flex flex-col justify-between gap-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-slate-50 group-hover:bg-teal-50 text-slate-500 group-hover:text-teal-700 flex items-center justify-center shrink-0 transition-colors">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-700 transition-colors shrink-0 mt-1" />
-                        </div>
-
-                        <div>
-                          <div className="text-sm font-medium text-slate-900 group-hover:text-teal-800 transition-colors">
-                            {item.label}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                            {description}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Clean Empty-State Placeholder for Selected Sidebar Section */
-            <div className="bg-white rounded-xl border border-slate-200/90 p-8 sm:p-10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
-                  <activeItem.icon className="w-4 h-4" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-semibold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
-                    {activeItem.label}
-                  </h1>
-                  <p className="text-xs text-slate-500">
-                    {activeRole} Portal
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-start gap-4">
-                <p className="text-sm text-slate-500">
-                  No records available in {activeItem.label} yet.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setActiveNavId('dashboard')}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
-                >
-                  <span>Back to {activeRole} Portal</span>
-                </button>
-              </div>
-            </div>
-          )}
+            {renderContent()}
           </ErrorBoundary>
         </main>
       </div>

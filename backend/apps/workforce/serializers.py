@@ -7,10 +7,11 @@ class StaffMemberSerializer(serializers.ModelSerializer):
     fullName = serializers.CharField(source='full_name')
     contactNumber = serializers.CharField(source='contact_number', required=False, allow_blank=True, default='')
     shiftTiming = serializers.CharField(source='shift_timing', required=False, allow_blank=True, default='')
+    salary = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
 
     class Meta:
         model = StaffMember
-        fields = ['id', 'employeeId', 'fullName', 'role', 'contactNumber', 'shiftTiming', 'status']
+        fields = ['id', 'employeeId', 'fullName', 'role', 'contactNumber', 'shiftTiming', 'salary', 'status']
 
     def create(self, validated_data):
         if not validated_data.get('employee_id'):

@@ -198,6 +198,14 @@ export const SEED_USERS: Array<{
     lastLogin: '2026-11-19 09:15 AM',
   },
   {
+    id: 'USR-105',
+    fullName: 'Tariq Mehmood',
+    email: 'seniormanager@meharpalace.com',
+    role: 'Senior Manager',
+    status: 'Active',
+    lastLogin: '2026-11-19 09:00 AM',
+  },
+  {
     id: 'USR-102',
     fullName: 'Zainab Farooq',
     email: 'manager@royalpalmmarquee.pk',

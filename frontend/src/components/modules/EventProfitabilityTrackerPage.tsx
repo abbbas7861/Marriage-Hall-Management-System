@@ -292,8 +292,8 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
             Event Expense &amp; Profitability Tracker
           </h1>
@@ -302,32 +302,32 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsStatementModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-teal-700 bg-teal-50 hover:bg-teal-100 text-teal-800 px-4 py-2.5 text-sm font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl border border-teal-700 bg-teal-50 hover:bg-teal-100 text-teal-800 px-3.5 py-2 text-sm font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            <FileText className="w-4 h-4 text-teal-700" />
-            Full Cashflow &amp; P&amp;L Statement
+            <FileText className="w-4 h-4 text-teal-700 shrink-0" />
+            <span>P&amp;L Statement</span>
           </button>
           <button
             type="button"
             onClick={handleOpenAddExpense}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            Add Event Expense / Waiters
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>Add Event Expense / Waiters</span>
           </button>
         </div>
       </div>
 
       {/* Top Filter Bar */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2.5 flex-1 max-w-xl">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0">
           <label
             htmlFor="tracker-event-filter"
-            className="text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap"
+            className="text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0"
           >
             Select Event:
           </label>
@@ -335,7 +335,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
             id="tracker-event-filter"
             value={selectedEventRef}
             onChange={(e) => setSelectedEventRef(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/15 truncate"
           >
             <option value="All Events">All Events (Cumulative Hall Overview)</option>
             {bookings.map((b) => (
@@ -346,7 +346,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <input
             type="date"
             aria-label="Start Date"

@@ -238,6 +238,7 @@ export interface StaffMember {
   role: 'Manager' | 'Floor Staff' | 'Admin' | 'Accountant' | string;
   contactNumber: string;
   shiftTiming: string;
+  salary?: number;
   status: 'Active' | 'On Leave' | 'Inactive';
 }
 

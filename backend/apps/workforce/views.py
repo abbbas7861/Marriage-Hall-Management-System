@@ -23,10 +23,38 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
     ordering_fields = ['full_name', 'role', 'status']
     ordering = ['full_name']
 
+    def perform_create(self, serializer):
+        staff = serializer.save()
+        salary = float(staff.salary or 0)
+        if salary > 0:
+            user_title = 'Senior Manager'
+            if self.request.user and self.request.user.is_authenticated:
+                prof = getattr(self.request.user, 'profile', None)
+                if prof and 'admin' in prof.role.lower():
+                    user_title = 'Admin'
+                elif self.request.user.is_superuser:
+                    user_title = 'Admin'
+                elif prof and 'senior' in prof.role.lower():
+                    user_title = 'Senior Manager'
+                else:
+                    user_title = 'Manager'
+
+            ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{staff.full_name} ({staff.role})",
+                description=f"Monthly salary enrollment for staff member {staff.full_name} ({staff.employee_id})",
+                amount=salary,
+                approved_by=self.request.user.get_full_name() or self.request.user.username if (self.request.user and self.request.user.is_authenticated) else user_title,
+                date=date.today(),
+                payment_method='Bank Transfer',
+                status='Paid'
+            )
+
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Only Admins and Managers are authorized to delete staff records.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -46,7 +74,7 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         profile = getattr(request.user, 'profile', None)
         role = profile.role if profile else ('admin' if request.user.is_superuser else '')
-        if not (request.user.is_superuser or role in ['admin', 'manager']):
+        if not (request.user.is_superuser or role in ['admin', 'manager', 'senior_manager', 'senior manager']):
             return Response(
                 {'error': 'Only Admins and Managers are authorized to delete vendor records.'},
                 status=status.HTTP_403_FORBIDDEN

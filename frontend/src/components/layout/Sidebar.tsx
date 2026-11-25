@@ -43,6 +43,31 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'users', label: 'Users', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ],
+  'Senior Manager': [
+    // Manager Suite
+    { id: 'event-control-center', label: 'Event Control Center', icon: LayoutGrid, section: 'Manager Suite' },
+    { id: 'dashboard', label: 'Manager Overview', icon: LayoutDashboard, section: 'Manager Suite' },
+    { id: 'bookings', label: 'Bookings & Refunds', icon: CalendarDays, section: 'Manager Suite' },
+    { id: 'master-calendar', label: 'Master Calendar', icon: Calendar, section: 'Manager Suite' },
+    { id: 'assigned-events', label: 'Assigned Events', icon: ClipboardCheck, section: 'Manager Suite' },
+    { id: 'halls-registry', label: 'Halls Registry', icon: Building2, section: 'Manager Suite' },
+    { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed, section: 'Manager Suite' },
+    { id: 'staff-rosters', label: 'Staff Rosters', icon: UserCheck, section: 'Manager Suite' },
+    { id: 'vendors', label: 'Vendors', icon: Store, section: 'Manager Suite' },
+    { id: 'final-settlement', label: 'Final Settlement', icon: Receipt, section: 'Manager Suite' },
+    // Kitchen Operations
+    { id: 'kitchen-display', label: 'Kitchen Display (KDS)', icon: ChefHat, section: 'Kitchen Operations' },
+    { id: 'event-requisitions', label: 'Event Requisitions', icon: ClipboardCheck, section: 'Kitchen Operations' },
+    { id: 'pantry-inventory', label: 'Pantry Inventory', icon: Package, section: 'Kitchen Operations' },
+    // Accounts & Finance
+    { id: 'event-tracker', label: 'Event Profitability', icon: Receipt, section: 'Accounts & Finance' },
+    { id: 'invoices', label: 'Invoices & Billing', icon: FileText, section: 'Accounts & Finance' },
+    { id: 'expenses', label: 'Expenses & Stock Costs', icon: Wallet, section: 'Accounts & Finance' },
+    { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3, section: 'Accounts & Finance' },
+    // System & Control
+    { id: 'users', label: 'Users & Roles', icon: Users, section: 'System & Control' },
+    { id: 'settings', label: 'Settings', icon: Settings, section: 'System & Control' },
+  ],
   Manager: [
     // Core Operations
     { id: 'event-control-center', label: 'Event Control Center', icon: LayoutGrid, section: 'Core Operations' },
