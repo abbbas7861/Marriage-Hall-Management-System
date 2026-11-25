@@ -242,6 +242,29 @@ export interface StaffMember {
   status: 'Active' | 'On Leave' | 'Inactive';
 }
 
+export interface StaffSalaryDisbursement {
+  id: string;
+  salaryRef: string;
+  staffId?: number | null;
+  staffName: string;
+  employeeId?: string;
+  role: string;
+  month: string;
+  baseSalary: number;
+  leavesTaken?: number;
+  leaveDeduction?: number;
+  bonus: number;
+  deductions: number;
+  netPaid: number;
+  status: 'Released' | 'Held' | 'Cancelled';
+  paymentMethod: string;
+  paymentDate: string;
+  approvedBy: string;
+  expenseRef?: string;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface VendorPartner {
   id: string;
   vendorId: string;

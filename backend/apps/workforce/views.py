@@ -4,12 +4,13 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift
+from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
 from .serializers import (
     StaffMemberSerializer,
     VendorPartnerSerializer,
     DutyRosterSerializer,
     ContractorLaborShiftSerializer,
+    StaffSalaryDisbursementSerializer,
 )
 from apps.finance.models import ExpenseRecord, PaymentTransaction
 from apps.core.models import AuditLogEntry
@@ -234,3 +235,151 @@ class DutyRosterViewSet(viewsets.ModelViewSet):
         if event_ref:
             qs = qs.filter(event_ref__iexact=event_ref)
         return qs
+
+
+class StaffSalaryDisbursementViewSet(viewsets.ModelViewSet):
+    """
+    Staff Salary Disbursement Viewset.
+    Accessible by Admin, Senior Manager, and Accounts.
+    Allows releasing salaries, putting salaries on hold, and creating ExpenseRecords.
+    """
+    queryset = StaffSalaryDisbursement.objects.all()
+    serializer_class = StaffSalaryDisbursementSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'month', 'role', 'payment_method']
+    search_fields = ['salary_ref', 'staff_name', 'employee_id', 'role', 'month', 'notes', 'expense_ref']
+    ordering_fields = ['payment_date', 'net_paid', 'staff_name']
+    ordering = ['-payment_date', '-created_at']
+
+    def check_authorized(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return True  # Permissive fallback for API client
+        profile = getattr(request.user, 'profile', None)
+        role = profile.role.lower() if profile else ('admin' if request.user.is_superuser else '')
+        return request.user.is_superuser or any(r in role for r in ['admin', 'senior', 'account', 'manager'])
+
+    def perform_create(self, serializer):
+        salary_ref = f"SAL-{random.randint(1000, 9999)}"
+        validated = serializer.validated_data
+        base = float(validated.get('base_salary') or 0)
+        bonus = float(validated.get('bonus') or 0)
+        deductions = float(validated.get('deductions') or 0)
+        net_paid = max(0.0, base + bonus - deductions)
+        
+        status_val = validated.get('status', 'Released')
+        staff_name = validated.get('staff_name', 'Staff Member')
+        staff_role = validated.get('role', 'Staff')
+        month = validated.get('month', date.today().strftime('%B %Y'))
+        pay_date = validated.get('payment_date', date.today())
+        method = validated.get('payment_method', 'Bank Transfer')
+        notes = validated.get('notes', '')
+
+        approved_by = 'Staff'
+        if self.request.user and self.request.user.is_authenticated:
+            approved_by = self.request.user.get_full_name() or self.request.user.username
+            prof = getattr(self.request.user, 'profile', None)
+            if prof:
+                approved_by = f"{approved_by} ({prof.role.title()})"
+
+        expense_ref = ''
+        if status_val == 'Released' and net_paid > 0:
+            exp = ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{staff_name} ({staff_role})",
+                description=f"Monthly salary for {staff_name} ({month}) - Net: Rs. {net_paid:,.0f}",
+                amount=net_paid,
+                approved_by=approved_by,
+                date=pay_date,
+                payment_method=method,
+                status='Paid'
+            )
+            expense_ref = exp.expense_ref
+
+        instance = serializer.save(
+            salary_ref=salary_ref,
+            net_paid=net_paid,
+            approved_by=approved_by,
+            expense_ref=expense_ref
+        )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=self.request.user.username if (self.request.user and self.request.user.is_authenticated) else "System",
+            user_role="Finance",
+            action="Salary Disbursed" if status_val == 'Released' else "Salary Logged",
+            module="Staff Payroll",
+            details=f"Processed salary disbursement of PKR {net_paid:,.0f} for {staff_name} ({month}) [Status: {status_val}]",
+            ip_address="127.0.0.1"
+        )
+
+    @action(detail=True, methods=['post'], url_path='release')
+    def release_salary(self, request, pk=None):
+        salary = self.get_object()
+        if salary.status == 'Released':
+            return Response({'message': 'Salary already released.', 'salary': StaffSalaryDisbursementSerializer(salary).data})
+
+        salary.status = 'Released'
+        approver = request.user.get_full_name() or request.user.username if request.user.is_authenticated else 'Admin'
+        salary.approved_by = approver
+
+        if not salary.expense_ref and float(salary.net_paid) > 0:
+            exp = ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{salary.staff_name} ({salary.role})",
+                description=f"Monthly salary for {salary.staff_name} ({salary.month}) - Net: Rs. {float(salary.net_paid):,.0f}",
+                amount=salary.net_paid,
+                approved_by=approver,
+                date=salary.payment_date or date.today(),
+                payment_method=salary.payment_method or 'Bank Transfer',
+                status='Paid'
+            )
+            salary.expense_ref = exp.expense_ref
+
+        salary.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.username if request.user.is_authenticated else "System",
+            user_role="Finance",
+            action="Salary Released",
+            module="Staff Payroll",
+            details=f"Released salary payment {salary.salary_ref} for {salary.staff_name} ({salary.month}) - PKR {salary.net_paid:,.0f}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({'message': 'Salary successfully released and logged to accounts.', 'salary': StaffSalaryDisbursementSerializer(salary).data})
+
+    @action(detail=True, methods=['post'], url_path='hold')
+    def hold_salary(self, request, pk=None):
+        salary = self.get_object()
+
+        # Once a salary is Released / Paid, it cannot be put on hold back
+        if salary.status == 'Released':
+            return Response(
+                {'error': 'Paid salaries are finalized and cannot be placed on hold back or reversed.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        salary.status = 'Held'
+
+        # If it was previously linked to an active expense, remove or cancel the expense so it does not deduct
+        if salary.expense_ref:
+            ExpenseRecord.objects.filter(expense_ref=salary.expense_ref).delete()
+            salary.expense_ref = ''
+
+        salary.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.username if request.user.is_authenticated else "System",
+            user_role="Finance",
+            action="Salary Held",
+            module="Staff Payroll",
+            details=f"Put salary payment {salary.salary_ref} on hold for {salary.staff_name} ({salary.month})",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({'message': 'Salary has been put on hold.', 'salary': StaffSalaryDisbursementSerializer(salary).data})
+

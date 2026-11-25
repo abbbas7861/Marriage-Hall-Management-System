@@ -122,3 +122,39 @@ class DutyRoster(models.Model):
     def __str__(self):
         return f"[{self.event_ref}] {self.staff_name} - {self.team_role} ({self.shift_status})"
 
+
+class StaffSalaryDisbursement(models.Model):
+    STATUS_CHOICES = [
+        ('Released', 'Released'),
+        ('Held', 'Held'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    salary_ref = models.CharField(max_length=50, unique=True, db_index=True)
+    staff_member = models.ForeignKey(StaffMember, on_delete=models.SET_NULL, null=True, blank=True, related_name='salary_payments')
+    staff_name = models.CharField(max_length=150)
+    employee_id = models.CharField(max_length=50, blank=True, default='')
+    role = models.CharField(max_length=100, default='Floor Staff')
+    month = models.CharField(max_length=50, db_index=True)  # e.g. "November 2026"
+    base_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    leaves_taken = models.IntegerField(default=0)
+    leave_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    bonus = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Released')
+    payment_method = models.CharField(max_length=50, default='Bank Transfer')
+    payment_date = models.DateField(db_index=True)
+    approved_by = models.CharField(max_length=150, default='Admin')
+    notes = models.TextField(blank=True, default='')
+    expense_ref = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+
+    def __str__(self):
+        return f"[{self.salary_ref}] {self.staff_name} ({self.month}) - Rs. {self.net_paid} ({self.status})"
+
+

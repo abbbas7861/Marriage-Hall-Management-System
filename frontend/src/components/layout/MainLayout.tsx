@@ -24,6 +24,7 @@ import { AdminExecutiveDashboard } from '../dashboard/AdminExecutiveDashboard';
 import { AccountsDashboard } from '../dashboard/AccountsDashboard';
 import { ManagerDashboard } from '../dashboard/ManagerDashboard';
 import { KitchenDashboard } from '../dashboard/KitchenDashboard';
+import { StaffPayrollPage } from '../modules/StaffPayrollPage';
 import { VendorDirectoryPage } from '../modules/VendorDirectoryPage';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import type { UserRole } from '../auth/LoginScreen';
@@ -45,6 +46,7 @@ const ROLE_SHORTCUT_DESCRIPTIONS: Record<UserRole, Record<string, string>> = {
     'event-tracker': 'Inspect per-event profitability, gross margin, and cost breakdowns.',
     invoices: 'Issue client invoices, tax invoices, and record balance payments.',
     expenses: 'Log hall operational overhead and kitchen purchases into Accounts.',
+    'staff-payroll': 'Disburse, hold, or release staff monthly salaries directly to accounts.',
     'financial-reports': 'Analyze business revenue, expenses, and net profit statements.',
     users: 'Manage staff roles, system credentials, and account statuses.',
     settings: 'Configure hall profiles, tax numbers, and system policies.',
@@ -54,6 +56,7 @@ const ROLE_SHORTCUT_DESCRIPTIONS: Record<UserRole, Record<string, string>> = {
     bookings: 'Review and manage event reservations.',
     'master-calendar': 'View hall availability across all dates.',
     'menu-packages': 'Maintain catering menus and package tiers.',
+    'staff-payroll': 'Disburse, hold, or release staff monthly salaries directly to accounts.',
     'financial-reports': 'Review revenue, expense, and profitability summaries.',
     users: 'Manage staff accounts and role permissions.',
     settings: 'Configure organization profile, tax compliance, and system preferences.',
@@ -79,6 +82,7 @@ const ROLE_SHORTCUT_DESCRIPTIONS: Record<UserRole, Record<string, string>> = {
   Accounts: {
     invoices: 'Issue client invoices and monitor billing status.',
     expenses: 'Record operational and vendor expenses.',
+    'staff-payroll': 'Disburse, hold, or release staff monthly salaries directly to accounts.',
     'financial-reports': 'Access revenue and financial summaries.',
   },
 };
@@ -140,6 +144,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         return <InvoicesBillingPage />;
       case 'expenses':
         return <ExpensesManagementPage />;
+      case 'staff-payroll':
+        return <StaffPayrollPage onNavigateToExpenses={() => setActiveNavId('expenses')} />;
       case 'financial-reports':
         return <FinancialReportsPage />;
       case 'bookings':

@@ -259,8 +259,14 @@ export const FinancialReportsPage: React.FC = () => {
       let debitAcc = '5040 General Hall & Operations Expense';
       if (exp.category === 'Food') debitAcc = '5010 Direct Kitchen & Food Procurement';
       else if (exp.category === 'Outside Waiters') debitAcc = '5020 Outside Waiters & Event Labor';
+      else if (exp.category === 'Staff Payroll / Salaries' || exp.category === 'Staff' || exp.category?.includes('Salary')) {
+        debitAcc = '5025 Staff Salaries & Payroll Expense';
+      }
       else if (exp.category === 'Operational Funds') debitAcc = '5030 Operational Floor Disbursements';
       else if (exp.category === 'Decor') debitAcc = '5050 Stage & Floral Setup Cost';
+      else if (exp.category === 'Utilities') debitAcc = '5060 Utilities (Electricity, Gas, Water)';
+      else if (exp.category === 'Maintenance') debitAcc = '5070 Facility Maintenance & Repairs';
+      else if (exp.category === 'Supplies') debitAcc = '5080 Event Supplies & Consumables';
 
       journalEntries.push({
         date: exp.date || new Date().toISOString().slice(0, 10),
@@ -282,9 +288,13 @@ export const FinancialReportsPage: React.FC = () => {
       '4010 Event Revenue (Venue & Catering)': { code: '4010', name: 'Event Revenue (Venue & Catering)', debits: 0, credits: 0, transactions: [] },
       '5010 Direct Kitchen & Food Procurement': { code: '5010', name: 'Direct Kitchen & Food Procurement', debits: 0, credits: 0, transactions: [] },
       '5020 Outside Waiters & Event Labor': { code: '5020', name: 'Outside Waiters & Event Labor', debits: 0, credits: 0, transactions: [] },
+      '5025 Staff Salaries & Payroll Expense': { code: '5025', name: 'Staff Salaries & Payroll Expense', debits: 0, credits: 0, transactions: [] },
       '5030 Operational Floor Disbursements': { code: '5030', name: 'Operational Floor Disbursements', debits: 0, credits: 0, transactions: [] },
       '5040 General Hall & Operations Expense': { code: '5040', name: 'General Hall & Operations Expense', debits: 0, credits: 0, transactions: [] },
       '5050 Stage & Floral Setup Cost': { code: '5050', name: 'Stage & Floral Setup Cost', debits: 0, credits: 0, transactions: [] },
+      '5060 Utilities (Electricity, Gas, Water)': { code: '5060', name: 'Utilities (Electricity, Gas, Water)', debits: 0, credits: 0, transactions: [] },
+      '5070 Facility Maintenance & Repairs': { code: '5070', name: 'Facility Maintenance & Repairs', debits: 0, credits: 0, transactions: [] },
+      '5080 Event Supplies & Consumables': { code: '5080', name: 'Event Supplies & Consumables', debits: 0, credits: 0, transactions: [] },
     };
 
     journalEntries.forEach((entry) => {
@@ -341,12 +351,23 @@ export const FinancialReportsPage: React.FC = () => {
     const totalTBDebits = trialBalanceItems.reduce((s, i) => s + i.debit, 0);
     const totalTBCredits = trialBalanceItems.reduce((s, i) => s + i.credit, 0);
 
-    // Balance Sheet items
-    const cashBalance = Math.max(0, filteredData.cashCollected - filteredData.totalExpenses);
+    // Balance Sheet items (Standard Double-Entry Equation: Assets = Liabilities + Equity)
+    const netCashFlow = filteredData.cashCollected - filteredData.totalExpenses;
+    const cashBalance = netCashFlow;
     const arBalance = filteredData.receivables;
-    const totalAssets = cashBalance + arBalance;
+
+    // Assets: Cash in Hand & Bank (if >= 0) + Accounts Receivable
+    const assetCash = Math.max(0, cashBalance);
+    const totalAssets = assetCash + arBalance;
+
+    // Liabilities: If cash is negative (overdrawn/unfunded expenses), record under 2030 Bank Overdraft / Short-term Credit
+    const liabilityOverdraft = cashBalance < 0 ? Math.abs(cashBalance) : 0;
+    const totalLiabilities = liabilityOverdraft;
+
+    // Equity: Retained Operating Earnings (Period Net Profit)
     const retainedEarnings = filteredData.netProfit;
     const totalEquity = retainedEarnings;
+    const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
 
     return {
       journalEntries,
@@ -355,9 +376,13 @@ export const FinancialReportsPage: React.FC = () => {
       totalTBDebits,
       totalTBCredits,
       cashBalance,
+      assetCash,
+      liabilityOverdraft,
       arBalance,
       totalAssets,
+      totalLiabilities,
       totalEquity,
+      totalLiabilitiesAndEquity,
     };
   }, [filteredData]);
 
@@ -723,7 +748,7 @@ export const FinancialReportsPage: React.FC = () => {
                   <tr>
                     <td className="py-2.5 font-medium">1010 Cash in Hand &amp; Bank Accounts</td>
                     <td className="py-2.5 text-right font-mono font-bold text-slate-900">
-                      Rs. {doubleEntryData.cashBalance.toLocaleString()}
+                      Rs. {doubleEntryData.assetCash.toLocaleString()}
                     </td>
                   </tr>
                   <tr>
@@ -761,6 +786,12 @@ export const FinancialReportsPage: React.FC = () => {
                     <td className="py-2.5 text-right font-mono text-slate-600">Rs. 0</td>
                   </tr>
                   <tr>
+                    <td className="py-2.5 font-medium">2030 Bank Overdraft / Operational Credit Due</td>
+                    <td className="py-2.5 text-right font-mono font-semibold text-slate-900">
+                      Rs. {doubleEntryData.liabilityOverdraft.toLocaleString()}
+                    </td>
+                  </tr>
+                  <tr>
                     <td className="py-2.5 font-medium">2020 Customer Security Deposits Held</td>
                     <td className="py-2.5 text-right font-mono text-slate-600">Rs. 0</td>
                   </tr>
@@ -773,7 +804,7 @@ export const FinancialReportsPage: React.FC = () => {
                   <tr className="bg-indigo-50/80 font-bold text-indigo-950 border-t-2 border-indigo-800">
                     <td className="py-3 text-sm">TOTAL LIABILITIES &amp; EQUITY:</td>
                     <td className="py-3 text-right font-mono text-base">
-                      Rs. {doubleEntryData.totalEquity.toLocaleString()}
+                      Rs. {doubleEntryData.totalLiabilitiesAndEquity.toLocaleString()}
                     </td>
                   </tr>
                 </tbody>
@@ -1061,15 +1092,16 @@ export const FinancialReportsPage: React.FC = () => {
                     (Rs. {filteredData.totalExpenses.toLocaleString()})
                   </td>
                 </tr>
-                {['Food', 'Outside Waiters', 'Decor', 'Operational Funds', 'Staff', 'Damage', 'Other'].map((cat) => {
+                {/* Dynamically extract all distinct expense categories present in the filtered records */}
+                {Array.from(new Set(filteredData.expenses.map((e) => e.category || 'Other'))).map((cat) => {
                   const sum = filteredData.expenses
-                    .filter((e) => e.category === cat)
+                    .filter((e) => (e.category || 'Other') === cat)
                     .reduce((s, e) => s + Number(e.amount || 0), 0);
                   if (sum <= 0) return null;
                   return (
                     <tr key={cat}>
                       <td className="py-2 px-8 font-sans text-xs text-slate-600">
-                        &bull; {cat} Direct Allocation
+                        &bull; {cat} Allocation
                       </td>
                       <td className="py-2 px-4 text-right font-mono text-xs text-slate-500">
                         Rs. {sum.toLocaleString()}

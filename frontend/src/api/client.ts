@@ -15,6 +15,7 @@ import {
   InvoiceRecord,
   BlockedDate,
   StaffMember,
+  StaffSalaryDisbursement,
   VendorPartner,
   AuditLogEntry,
   ExtraTimeRequest,
@@ -680,6 +681,45 @@ export const staffApi = {
 
   async delete(id: string): Promise<void> {
     await request(`staff/${id}`, { method: 'DELETE' });
+  },
+};
+
+// -------------------------------------------------------------
+// Staff Salary Disbursements API (Payroll)
+// -------------------------------------------------------------
+export const salaryApi = {
+  async list(params?: { month?: string; status?: string; role?: string }): Promise<StaffSalaryDisbursement[]> {
+    const query = new URLSearchParams();
+    if (params?.month) query.set('month', params.month);
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    if (params?.role && params.role !== 'All') query.set('role', params.role);
+    const qs = query.toString();
+    const data = await request<any>(`salaries${qs ? `?${qs}` : ''}`);
+    return normalizeList<StaffSalaryDisbursement>(data);
+  },
+
+  async create(payload: Partial<StaffSalaryDisbursement>): Promise<StaffSalaryDisbursement> {
+    const data = await request<StaffSalaryDisbursement>('salaries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return normalizeId(data);
+  },
+
+  async release(id: string | number): Promise<{ message: string; salary: StaffSalaryDisbursement }> {
+    return request<{ message: string; salary: StaffSalaryDisbursement }>(`salaries/${id}/release`, {
+      method: 'POST',
+    });
+  },
+
+  async hold(id: string | number): Promise<{ message: string; salary: StaffSalaryDisbursement }> {
+    return request<{ message: string; salary: StaffSalaryDisbursement }>(`salaries/${id}/hold`, {
+      method: 'POST',
+    });
+  },
+
+  async delete(id: string | number): Promise<void> {
+    await request(`salaries/${id}`, { method: 'DELETE' });
   },
 };
 

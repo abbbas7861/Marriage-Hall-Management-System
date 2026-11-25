@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift
+from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
 import random
 
 class StaffMemberSerializer(serializers.ModelSerializer):
@@ -86,3 +86,32 @@ class DutyRosterSerializer(serializers.ModelSerializer):
     class Meta:
         model = DutyRoster
         fields = ['id', 'eventRef', 'staffId', 'staffName', 'teamRole', 'shiftStatus', 'replacementName', 'notes']
+
+
+class StaffSalaryDisbursementSerializer(serializers.ModelSerializer):
+    salaryRef = serializers.CharField(source='salary_ref', required=False)
+    staffId = serializers.IntegerField(source='staff_member_id', required=False, allow_null=True)
+    staffName = serializers.CharField(source='staff_name')
+    employeeId = serializers.CharField(source='employee_id', required=False, allow_blank=True, default='')
+    baseSalary = serializers.FloatField(source='base_salary', required=False, default=0)
+    leavesTaken = serializers.IntegerField(source='leaves_taken', required=False, default=0)
+    leaveDeduction = serializers.FloatField(source='leave_deduction', required=False, default=0)
+    bonus = serializers.FloatField(required=False, default=0)
+    deductions = serializers.FloatField(required=False, default=0)
+    netPaid = serializers.FloatField(source='net_paid', required=False, default=0)
+    paymentMethod = serializers.CharField(source='payment_method', required=False, default='Bank Transfer')
+    paymentDate = serializers.DateField(source='payment_date')
+    approvedBy = serializers.CharField(source='approved_by', required=False, allow_blank=True, default='Admin')
+    expenseRef = serializers.CharField(source='expense_ref', required=False, allow_blank=True, default='')
+
+    class Meta:
+        model = StaffSalaryDisbursement
+        fields = [
+            'id', 'salaryRef', 'staffId', 'staffName', 'employeeId', 'role',
+            'month', 'baseSalary', 'leavesTaken', 'leaveDeduction', 'bonus', 'deductions', 'netPaid',
+            'status', 'paymentMethod', 'paymentDate', 'approvedBy',
+            'expenseRef', 'notes', 'createdAt'
+        ]
+        read_only_fields = ['id', 'createdAt']
+
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)

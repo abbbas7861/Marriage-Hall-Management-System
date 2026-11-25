@@ -39,6 +39,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'bookings', label: 'Bookings', icon: CalendarDays },
     { id: 'master-calendar', label: 'Master Calendar', icon: Calendar },
     { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed },
+    { id: 'staff-payroll', label: 'Staff Payroll', icon: Wallet },
     { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -53,6 +54,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'halls-registry', label: 'Halls Registry', icon: Building2, section: 'Manager Suite' },
     { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed, section: 'Manager Suite' },
     { id: 'staff-rosters', label: 'Staff Rosters', icon: UserCheck, section: 'Manager Suite' },
+    { id: 'staff-payroll', label: 'Staff Payroll & Salaries', icon: Wallet, section: 'Manager Suite' },
     { id: 'vendors', label: 'Vendors', icon: Store, section: 'Manager Suite' },
     { id: 'final-settlement', label: 'Final Settlement', icon: Receipt, section: 'Manager Suite' },
     // Kitchen Operations
@@ -102,6 +104,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'event-tracker', label: 'Event Tracker', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
+    { id: 'staff-payroll', label: 'Staff Payroll', icon: Wallet },
     { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3 },
   ],
 };

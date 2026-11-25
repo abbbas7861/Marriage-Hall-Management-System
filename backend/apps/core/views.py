@@ -266,6 +266,13 @@ class ReportsSummaryView(APIView):
         total_expenses = float(expenses_qs.aggregate(s=Sum('amount'))['s'] or 0)
         net_profit = gross_revenue - total_expenses
 
+        # Generate categorical expense breakdown from actual records
+        expense_cats = expenses_qs.values('category').annotate(value=Sum('amount')).order_by('-value')
+        expense_breakdown_list = [
+            {'name': ec['category'], 'value': float(ec['value'] or 0)}
+            for ec in expense_cats if float(ec['value'] or 0) > 0
+        ]
+
         # Generate monthly financial breakdown records
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         breakdown_records = []
@@ -311,6 +318,8 @@ class ReportsSummaryView(APIView):
             'monthlyBreakdown': breakdown_records,
             'monthlyBreakdownRecords': breakdown_records,
             'monthly_breakdown': breakdown_records,
+            'expense_breakdown': expense_breakdown_list,
+            'expenseBreakdown': expense_breakdown_list,
             'revenueExpensesData': rev_exp_data,
             'hallBookingsData': hall_bookings_data,
             'topMenuPackagesData': top_menu_packages_data,

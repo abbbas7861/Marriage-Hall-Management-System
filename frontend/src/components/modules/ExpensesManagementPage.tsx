@@ -19,6 +19,7 @@ import { CreatableVendorInput, VendorOption } from '../common/CreatableVendorInp
 export type ExpenseCategory =
   | 'Utilities'
   | 'Staff'
+  | 'Staff Payroll / Salaries'
   | 'Outside Waiters'
   | 'Maintenance'
   | 'Supplies'
@@ -41,6 +42,7 @@ export interface ExpenseRecord {
 const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'Utilities',
   'Staff',
+  'Staff Payroll / Salaries',
   'Outside Waiters',
   'Maintenance',
   'Supplies',
@@ -50,6 +52,7 @@ const EXPENSE_CATEGORIES: ExpenseCategory[] = [
 const CATEGORY_BADGE_STYLES: Record<ExpenseCategory, string> = {
   Utilities: 'bg-blue-50 text-blue-800 border-blue-200',
   Staff: 'bg-teal-50 text-teal-800 border-teal-200',
+  'Staff Payroll / Salaries': 'bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold',
   'Outside Waiters': 'bg-indigo-50 text-indigo-800 border-indigo-200 font-semibold',
   Maintenance: 'bg-orange-50 text-orange-800 border-orange-200',
   Supplies: 'bg-amber-50 text-amber-800 border-amber-200',

@@ -5,6 +5,7 @@ from .views import (
     VendorPartnerViewSet,
     DutyRosterViewSet,
     ContractorLaborShiftViewSet,
+    StaffSalaryDisbursementViewSet,
 )
 
 router = DefaultRouter()
@@ -12,6 +13,7 @@ router.register(r'staff', StaffMemberViewSet, basename='staff')
 router.register(r'vendors', VendorPartnerViewSet, basename='vendor')
 router.register(r'duty-rosters', DutyRosterViewSet, basename='duty-roster')
 router.register(r'contractor-labor-shifts', ContractorLaborShiftViewSet, basename='contractor-labor-shift')
+router.register(r'salaries', StaffSalaryDisbursementViewSet, basename='staff-salary')
 
 urlpatterns = [
     path('', include(router.urls)),
