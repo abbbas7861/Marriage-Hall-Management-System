@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
+from .models import StaffMember, VendorPartner, VendorLedgerEntry, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
 import random
 
 class StaffMemberSerializer(serializers.ModelSerializer):
@@ -8,10 +8,11 @@ class StaffMemberSerializer(serializers.ModelSerializer):
     contactNumber = serializers.CharField(source='contact_number', required=False, allow_blank=True, default='')
     shiftTiming = serializers.CharField(source='shift_timing', required=False, allow_blank=True, default='')
     salary = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=0)
+    currentAdvance = serializers.FloatField(source='current_advance', required=False, default=0)
 
     class Meta:
         model = StaffMember
-        fields = ['id', 'employeeId', 'fullName', 'role', 'contactNumber', 'shiftTiming', 'salary', 'status']
+        fields = ['id', 'employeeId', 'fullName', 'role', 'contactNumber', 'shiftTiming', 'salary', 'currentAdvance', 'status']
 
     def create(self, validated_data):
         if not validated_data.get('employee_id'):
@@ -45,6 +46,22 @@ class VendorPartnerSerializer(serializers.ModelSerializer):
         if not validated_data.get('vendor_id'):
             validated_data['vendor_id'] = f"VEN-{random.randint(1000, 9999)}"
         return super().create(validated_data)
+
+
+class VendorLedgerEntrySerializer(serializers.ModelSerializer):
+    vendorId = serializers.IntegerField(source='vendor_id', read_only=True)
+    eventRef = serializers.CharField(source='event_ref', required=False, allow_blank=True, default='')
+    credit = serializers.FloatField(default=0)
+    debit = serializers.FloatField(default=0)
+    paymentMode = serializers.CharField(source='payment_mode', required=False, allow_blank=True, default='')
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+
+    class Meta:
+        model = VendorLedgerEntry
+        fields = [
+            'id', 'vendorId', 'date', 'eventRef', 'description',
+            'credit', 'debit', 'paymentMode', 'reference', 'createdAt'
+        ]
 
 
 class ContractorLaborShiftSerializer(serializers.ModelSerializer):

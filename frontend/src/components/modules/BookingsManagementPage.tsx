@@ -500,7 +500,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
   const [menuAmount, setMenuAmount] = useState('');
   const [djAmount, setDjAmount] = useState('');
   const [decorAmount, setDecorAmount] = useState('');
-  const [discountPercentage, setDiscountPercentage] = useState('0');
+  const [discountAmountInput, setDiscountAmountInput] = useState('0');
   const [totalAmount, setTotalAmount] = useState('');
   const [advancePayment, setAdvancePayment] = useState('');
   const [assignedManager, setAssignedManager] = useState('Manager');
@@ -614,7 +614,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setMenuAmount('');
     setDjAmount('');
     setDecorAmount('');
-    setDiscountPercentage('0');
+    setDiscountAmountInput('0');
     setTotalAmount('');
     setAdvancePayment('');
     setAssignedManager('Manager');
@@ -675,7 +675,7 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     setMenuAmount(item.menuAmount ? String(item.menuAmount) : '');
     setDjAmount(item.djAmount ? String(item.djAmount) : (item.includeDjSound ? '25000' : ''));
     setDecorAmount(item.decorAmount ? String(item.decorAmount) : (item.includeStageDecor ? '50000' : ''));
-    setDiscountPercentage(item.discountPercentage ? String(item.discountPercentage) : '0');
+    setDiscountAmountInput(item.discountAmount ? String(item.discountAmount) : '0');
     setTotalAmount(item.totalAmount ? String(item.totalAmount) : '');
     setAdvancePayment(item.advancePayment ? String(item.advancePayment) : '');
     setAssignedManager(item.assignedManager || 'Manager');
@@ -708,8 +708,13 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
     const matched = availableHalls.find((h) => h.name === hallName);
     return matched?.baseRent || 0;
   })();
-  const effectiveHallRent =
-    hallRent !== '' ? Number(hallRent) || 0 : autoHallRent;
+
+  // Scenario A (With Menu): Hall Rent is NOT added when a Menu Package is selected
+  const hasMenuPackageSelected =
+    includeMenuPackage && (Boolean(menuPackage) || effectiveMenuAmount > 0);
+  const effectiveHallRent = hasMenuPackageSelected
+    ? 0
+    : (hallRent !== '' ? Number(hallRent) || 0 : autoHallRent);
 
   const effectiveDjAmount = includeDjSound
     ? (djAmount !== '' ? Number(djAmount) || 0 : 25000)
@@ -725,17 +730,20 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
 
   // 1. Total Amount (Gross Subtotal)
   const itemizedSubtotal =
-    effectiveMenuAmount +
-    effectiveHallRent +
+    (hasMenuPackageSelected ? effectiveMenuAmount : effectiveHallRent) +
     effectiveDjAmount +
     effectiveDecorAmount +
     extraCharges;
 
   const subtotal = itemizedSubtotal > 0 ? itemizedSubtotal : (Number(totalAmount) || 0);
 
-  // 2. Discount Area
-  const parsedDiscountPct = Math.min(100, Math.max(0, Number(discountPercentage) || 0));
-  const calculatedDiscountAmount = Math.round((subtotal * parsedDiscountPct) / 100);
+  // 2. Discount Area (Flat Rs.)
+  const calculatedDiscountAmount = Math.min(
+    subtotal,
+    Math.max(0, Number(discountAmountInput) || 0)
+  );
+  const parsedDiscountPct =
+    subtotal > 0 ? Math.round((calculatedDiscountAmount / subtotal) * 100) : 0;
 
   // 3. Final Amount Area
   const calculatedFinalAmount = Math.max(0, subtotal - calculatedDiscountAmount);
@@ -1998,12 +2006,16 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
               </div>
 
               {/* 2. Hall Rent */}
-              <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 space-y-1.5">
+              <div className={`p-4 rounded-xl border transition-colors space-y-1.5 ${
+                hasMenuPackageSelected ? 'border-gray-200 bg-gray-100/70 opacity-75' : 'border-gray-200 bg-gray-50/60'
+              }`}>
                 <div className="flex items-center justify-between">
                   <label htmlFor="booking-hall-rent" className="block text-xs font-semibold text-gray-700">
                     Hall Rent
                   </label>
-                  <span className="text-[10px] text-teal-700 font-medium">Venue Base</span>
+                  <span className="text-[10px] text-teal-700 font-medium">
+                    {hasMenuPackageSelected ? 'Waived (With Menu)' : 'Venue Base'}
+                  </span>
                 </div>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-mono">Rs.</span>
@@ -2011,14 +2023,19 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     id="booking-hall-rent"
                     type="number"
                     min="0"
-                    value={hallRent}
+                    disabled={hasMenuPackageSelected}
+                    value={hasMenuPackageSelected ? '0' : hallRent}
                     onChange={(e) => setHallRent(e.target.value)}
                     placeholder={autoHallRent ? String(autoHallRent) : '0'}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 disabled:bg-gray-100 disabled:text-gray-400"
                   />
                 </div>
                 <p className="text-[10px] text-gray-500">
-                  {hallName ? `Base rental for ${hallName}` : 'Select hall to auto-fill'}
+                  {hasMenuPackageSelected
+                    ? 'Included with Menu Package (not added to total)'
+                    : hallName
+                    ? `Base rental for ${hallName}`
+                    : 'Select hall to auto-fill'}
                 </p>
               </div>
 
@@ -2102,15 +2119,15 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                   Rs. {subtotal.toLocaleString('en-PK')}
                 </div>
                 <p className="text-[11px] text-gray-500">
-                  Sum of Menu + Hall Rent + DJ + Decor {extraCharges > 0 ? '+ Overtime' : ''}
+                  {hasMenuPackageSelected ? 'Sum of Menu + DJ + Decor' : 'Sum of Hall Rent + DJ + Decor'} {extraCharges > 0 ? '+ Overtime' : ''}
                 </p>
               </div>
 
-              {/* Beside it: Discount Area with Percentage Input */}
+              {/* Beside it: Discount Area with Flat Rs. Input */}
               <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/60 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="booking-discount-pct" className="block text-xs font-semibold text-teal-900 uppercase tracking-wider">
-                    Discount Area (%)
+                  <label htmlFor="booking-discount-rs" className="block text-xs font-semibold text-teal-900 uppercase tracking-wider">
+                    Discount Amount (Rs.)
                   </label>
                   {calculatedDiscountAmount > 0 && (
                     <span className="text-xs font-bold font-mono text-teal-800">
@@ -2118,41 +2135,40 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative flex-1 min-w-[120px]">
+                    <span className="absolute left-3 top-2.5 text-xs text-teal-600 font-mono font-bold">Rs.</span>
                     <input
-                      id="booking-discount-pct"
+                      id="booking-discount-rs"
                       type="number"
                       min="0"
-                      max="100"
-                      step="1"
-                      value={discountPercentage}
-                      onChange={(e) => setDiscountPercentage(e.target.value)}
+                      step="any"
+                      value={discountAmountInput}
+                      onChange={(e) => setDiscountAmountInput(e.target.value)}
                       placeholder="0"
-                      className="w-full pl-3 pr-8 py-2 rounded-lg border border-teal-200 bg-white text-sm font-mono font-bold text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-teal-200 bg-white text-sm font-mono font-bold text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
                     />
-                    <span className="absolute right-3 top-2 text-sm text-teal-600 font-bold">%</span>
                   </div>
-                  {/* Quick percentage pills */}
-                  {[0, 5, 10, 15].map((pct) => (
+                  {/* Quick flat Rs. pills */}
+                  {[0, 5000, 10000, 20000].map((amt) => (
                     <button
-                      key={pct}
+                      key={amt}
                       type="button"
-                      onClick={() => setDiscountPercentage(String(pct))}
+                      onClick={() => setDiscountAmountInput(String(amt))}
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        Number(discountPercentage) === pct
+                        (Number(discountAmountInput) || 0) === amt
                           ? 'bg-teal-700 text-white shadow-2xs'
                           : 'bg-white border border-teal-200 text-teal-700 hover:bg-teal-100'
                       }`}
                     >
-                      {pct}%
+                      {amt === 0 ? '0' : amt.toLocaleString('en-PK')}
                     </button>
                   ))}
                 </div>
                 <p className="text-[11px] text-teal-700">
                   {calculatedDiscountAmount > 0
-                    ? `Discount of ${parsedDiscountPct}% cuts Rs. ${calculatedDiscountAmount.toLocaleString('en-PK')} from subtotal`
-                    : 'Staff can add discount percentage here'}
+                    ? `Discount of Rs. ${calculatedDiscountAmount.toLocaleString('en-PK')} deducted from subtotal`
+                    : 'Staff can enter flat discount amount in Rs. here'}
                 </p>
               </div>
             </div>

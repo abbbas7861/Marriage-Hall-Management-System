@@ -1,13 +1,15 @@
 import random
-from datetime import date
+from datetime import date, datetime
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import StaffMember, VendorPartner, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
+from .models import StaffMember, VendorPartner, VendorLedgerEntry, DutyRoster, ContractorLaborShift, StaffSalaryDisbursement
 from .serializers import (
     StaffMemberSerializer,
     VendorPartnerSerializer,
+    VendorLedgerEntrySerializer,
     DutyRosterSerializer,
     ContractorLaborShiftSerializer,
     StaffSalaryDisbursementSerializer,
@@ -62,6 +64,132 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=True, methods=['post'], url_path='give-advance')
+    def give_advance(self, request, pk=None):
+        staff = self.get_object()
+        amount = float(request.data.get('amount', 0))
+        reason = request.data.get('reason', '')
+        raw_date = request.data.get('date')
+        adv_date = date.today()
+        if raw_date:
+            try:
+                adv_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                adv_date = date.today()
+
+        if amount <= 0:
+            return Response({'error': 'Advance amount must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        staff.current_advance = float(staff.current_advance or 0) + amount
+        staff.save()
+
+        approved_by = 'Admin'
+        if request.user and request.user.is_authenticated:
+            approved_by = request.user.get_full_name() or request.user.username
+
+        ExpenseRecord.objects.create(
+            expense_ref=f"EXP-ADV-{random.randint(1000, 9999)}",
+            category="Staff Advance",
+            vendor=f"{staff.full_name} ({staff.role})",
+            description=reason or f"Salary advance issued to {staff.full_name}",
+            amount=amount,
+            approved_by=approved_by,
+            date=adv_date,
+            payment_method='Cash',
+            status='Paid'
+        )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approved_by,
+            user_role="Accounts",
+            action="Advance Issued",
+            module="Payroll",
+            details=f"Issued advance of Rs. {amount:,.0f} to {staff.full_name}. Reason: {reason or 'N/A'}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({
+            'message': f"Advance of Rs. {amount:,.0f} recorded for {staff.full_name}.",
+            'staff': StaffMemberSerializer(staff).data,
+        })
+
+    @action(detail=True, methods=['post'], url_path='process-salary')
+    def process_salary(self, request, pk=None):
+        staff = self.get_object()
+        base_salary = float(request.data.get('baseSalary', staff.salary or 0))
+        advance_deduction = float(request.data.get('advanceDeduction', staff.current_advance or 0))
+        payment_mode = request.data.get('paymentMode') or request.data.get('paymentMethod', 'Cash')
+        month = request.data.get('month') or date.today().strftime('%B %Y')
+        raw_date = request.data.get('paymentDate')
+        pay_date = date.today()
+        if raw_date:
+            try:
+                pay_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                pay_date = date.today()
+
+        if base_salary <= 0:
+            return Response({'error': 'Base salary must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        net_paid = max(0.0, base_salary - advance_deduction)
+        approved_by = 'Accounts'
+        if request.user and request.user.is_authenticated:
+            approved_by = request.user.get_full_name() or request.user.username
+
+        expense_ref = ''
+        if net_paid > 0:
+            exp = ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{staff.full_name} ({staff.role})",
+                description=f"Monthly salary for {staff.full_name} ({month}) - Net: Rs. {net_paid:,.0f}",
+                amount=net_paid,
+                approved_by=approved_by,
+                date=pay_date,
+                payment_method=payment_mode,
+                status='Paid'
+            )
+            expense_ref = exp.expense_ref
+
+        sal = StaffSalaryDisbursement.objects.create(
+            salary_ref=f"SAL-{random.randint(1000, 9999)}",
+            staff_member=staff,
+            staff_name=staff.full_name,
+            employee_id=staff.employee_id,
+            role=staff.role,
+            month=month,
+            base_salary=base_salary,
+            deductions=advance_deduction,
+            net_paid=net_paid,
+            status='Released',
+            payment_method=payment_mode,
+            payment_date=pay_date,
+            approved_by=approved_by,
+            expense_ref=expense_ref,
+            notes=f"Advance deducted: Rs. {advance_deduction:,.0f}" if advance_deduction > 0 else '',
+        )
+
+        # Reset advance balance to 0 after salary processing
+        staff.current_advance = 0
+        staff.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approved_by,
+            user_role="Accounts",
+            action="Salary Processed",
+            module="Payroll",
+            details=f"Processed salary for {staff.full_name} ({month}): Base Rs. {base_salary:,.0f}, Advance Deducted Rs. {advance_deduction:,.0f}, Net Rs. {net_paid:,.0f}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({
+            'message': f"Salary processed for {staff.full_name}. Advance balance reset to 0.",
+            'staff': StaffMemberSerializer(staff).data,
+            'salary': StaffSalaryDisbursementSerializer(sal).data,
+        })
+
 
 class VendorPartnerViewSet(viewsets.ModelViewSet):
     queryset = VendorPartner.objects.all()
@@ -82,13 +210,147 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
             )
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=True, methods=['post'], url_path='give-advance')
+    def give_advance(self, request, pk=None):
+        staff = self.get_object()
+        amount = float(request.data.get('amount', 0))
+        reason = request.data.get('reason', '')
+        raw_date = request.data.get('date')
+        adv_date = date.today()
+        if raw_date:
+            try:
+                adv_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                adv_date = date.today()
+
+        if amount <= 0:
+            return Response({'error': 'Advance amount must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        staff.current_advance = float(staff.current_advance or 0) + amount
+        staff.save()
+
+        approved_by = 'Admin'
+        if request.user and request.user.is_authenticated:
+            approved_by = request.user.get_full_name() or request.user.username
+
+        ExpenseRecord.objects.create(
+            expense_ref=f"EXP-ADV-{random.randint(1000, 9999)}",
+            category="Staff Advance",
+            vendor=f"{staff.full_name} ({staff.role})",
+            description=reason or f"Salary advance issued to {staff.full_name}",
+            amount=amount,
+            approved_by=approved_by,
+            date=adv_date,
+            payment_method='Cash',
+            status='Paid'
+        )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approved_by,
+            user_role="Accounts",
+            action="Advance Issued",
+            module="Payroll",
+            details=f"Issued advance of Rs. {amount:,.0f} to {staff.full_name}. Reason: {reason or 'N/A'}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({
+            'message': f"Advance of Rs. {amount:,.0f} recorded for {staff.full_name}.",
+            'staff': StaffMemberSerializer(staff).data,
+        })
+
+    @action(detail=True, methods=['post'], url_path='process-salary')
+    def process_salary(self, request, pk=None):
+        staff = self.get_object()
+        base_salary = float(request.data.get('baseSalary', staff.salary or 0))
+        advance_deduction = float(request.data.get('advanceDeduction', staff.current_advance or 0))
+        payment_mode = request.data.get('paymentMode') or request.data.get('paymentMethod', 'Cash')
+        month = request.data.get('month') or date.today().strftime('%B %Y')
+        raw_date = request.data.get('paymentDate')
+        pay_date = date.today()
+        if raw_date:
+            try:
+                pay_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                pay_date = date.today()
+
+        if base_salary <= 0:
+            return Response({'error': 'Base salary must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        net_paid = max(0.0, base_salary - advance_deduction)
+        approved_by = 'Accounts'
+        if request.user and request.user.is_authenticated:
+            approved_by = request.user.get_full_name() or request.user.username
+
+        expense_ref = ''
+        if net_paid > 0:
+            exp = ExpenseRecord.objects.create(
+                expense_ref=f"EXP-SAL-{random.randint(1000, 9999)}",
+                category="Staff Payroll / Salaries",
+                vendor=f"{staff.full_name} ({staff.role})",
+                description=f"Monthly salary for {staff.full_name} ({month}) - Net: Rs. {net_paid:,.0f}",
+                amount=net_paid,
+                approved_by=approved_by,
+                date=pay_date,
+                payment_method=payment_mode,
+                status='Paid'
+            )
+            expense_ref = exp.expense_ref
+
+        sal = StaffSalaryDisbursement.objects.create(
+            salary_ref=f"SAL-{random.randint(1000, 9999)}",
+            staff_member=staff,
+            staff_name=staff.full_name,
+            employee_id=staff.employee_id,
+            role=staff.role,
+            month=month,
+            base_salary=base_salary,
+            deductions=advance_deduction,
+            net_paid=net_paid,
+            status='Released',
+            payment_method=payment_mode,
+            payment_date=pay_date,
+            approved_by=approved_by,
+            expense_ref=expense_ref,
+            notes=f"Advance deducted: Rs. {advance_deduction:,.0f}" if advance_deduction > 0 else '',
+        )
+
+        # Reset advance balance to 0 after salary processing
+        staff.current_advance = 0
+        staff.save()
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=approved_by,
+            user_role="Accounts",
+            action="Salary Processed",
+            module="Payroll",
+            details=f"Processed salary for {staff.full_name} ({month}): Base Rs. {base_salary:,.0f}, Advance Deducted Rs. {advance_deduction:,.0f}, Net Rs. {net_paid:,.0f}",
+            ip_address="127.0.0.1"
+        )
+
+        return Response({
+            'message': f"Salary processed for {staff.full_name}. Advance balance reset to 0.",
+            'staff': StaffMemberSerializer(staff).data,
+            'salary': StaffSalaryDisbursementSerializer(sal).data,
+        })
+
     @action(detail=True, methods=['post'], url_path='record-payment')
     def record_payment(self, request, pk=None):
         vendor = self.get_object()
         amount = float(request.data.get('amount', 0))
-        channel = request.data.get('channel') or request.data.get('paymentMethod', 'Bank Transfer')
+        channel = request.data.get('paymentMode') or request.data.get('channel') or request.data.get('paymentMethod', 'Bank Transfer')
         notes = request.data.get('notes', '')
-        ref = request.data.get('transactionRef') or f"PAY-V{random.randint(1000, 9999)}"
+        ref = request.data.get('transactionRef') or request.data.get('reference') or f"PAY-V{random.randint(1000, 9999)}"
+        event_ref = request.data.get('eventRef', '')
+        raw_date = request.data.get('date')
+        payment_date = date.today()
+        if raw_date:
+            try:
+                payment_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                payment_date = date.today()
 
         if amount <= 0:
             return Response({'error': 'Payment amount must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -98,6 +360,18 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
         vendor.balance_due = max(0.0, float(vendor.balance_due) - amount)
         vendor.save()
 
+        # Create Ledger Debit Entry
+        ledger_entry = VendorLedgerEntry.objects.create(
+            vendor=vendor,
+            date=payment_date,
+            event_ref=event_ref,
+            description=notes or f"Payment ({channel}) — Ref: {ref}",
+            credit=0,
+            debit=amount,
+            payment_mode=channel,
+            reference=ref,
+        )
+
         # Create Expense Record
         exp = ExpenseRecord.objects.create(
             expense_ref=f"EXP-VN-{random.randint(1000, 9999)}",
@@ -105,7 +379,7 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
             vendor=vendor.business_name,
             amount=amount,
             approved_by=request.user.username if request.user.is_authenticated else 'Admin',
-            date=date.today(),
+            date=payment_date,
             payment_method=channel
         )
 
@@ -116,14 +390,14 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
             channel=channel,
             billing_status='Settled',
             amount=amount,
-            timestamp=date.today().strftime('%Y-%m-%d %I:%M %p'),
+            timestamp=payment_date.strftime('%Y-%m-%d %I:%M %p'),
             booking_ref=notes
         )
 
         # Audit log
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
-            user_name="Admin",
+            user_name=request.user.username if request.user.is_authenticated else "Admin",
             user_role="Admin",
             action="Payment Disbursed",
             module="Vendors",
@@ -134,6 +408,7 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
         return Response({
             'message': f"Payment of Rs. {amount:,.0f} recorded successfully.",
             'vendor': VendorPartnerSerializer(vendor).data,
+            'ledgerEntry': VendorLedgerEntrySerializer(ledger_entry).data,
             'expenseRef': exp.expense_ref,
             'txnRef': txn.txn_ref,
         })
@@ -144,6 +419,14 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
         amount = float(request.data.get('amount', 0))
         invoice_ref = request.data.get('invoiceRef') or f"INV-SUP-{random.randint(1000, 9999)}"
         notes = request.data.get('notes', '')
+        event_ref = request.data.get('eventRef', '')
+        raw_date = request.data.get('date')
+        bill_date = date.today()
+        if raw_date:
+            try:
+                bill_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                bill_date = date.today()
 
         if amount <= 0:
             return Response({'error': 'Bill amount must be greater than 0.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -152,9 +435,19 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
         vendor.balance_due = float(vendor.balance_due) + amount
         vendor.save()
 
+        ledger_entry = VendorLedgerEntry.objects.create(
+            vendor=vendor,
+            date=bill_date,
+            event_ref=event_ref,
+            description=notes or f"Purchase Bill ({invoice_ref})",
+            credit=amount,
+            debit=0,
+            reference=invoice_ref,
+        )
+
         AuditLogEntry.objects.create(
             log_id=f"LOG-{random.randint(1000, 9999)}",
-            user_name="Admin",
+            user_name=request.user.username if request.user.is_authenticated else "Admin",
             user_role="Admin",
             action="Bill Received",
             module="Vendors",
@@ -165,7 +458,133 @@ class VendorPartnerViewSet(viewsets.ModelViewSet):
         return Response({
             'message': f"Supplier bill Rs. {amount:,.0f} added to trade ledger.",
             'vendor': VendorPartnerSerializer(vendor).data,
+            'ledgerEntry': VendorLedgerEntrySerializer(ledger_entry).data,
         })
+
+    @action(detail=True, methods=['get'], url_path='ledger')
+    def ledger(self, request, pk=None):
+        vendor = self.get_object()
+        entries = list(vendor.ledger_entries.all().order_by('date', 'created_at', 'id'))
+        serialized = []
+        running_balance = 0.0
+
+        # If vendor has historical totals without ledger rows, include an opening entry so running balance reconciles
+        if not entries and (float(vendor.total_billed) > 0 or float(vendor.total_paid) > 0):
+            opening_credit = float(vendor.total_billed)
+            opening_debit = float(vendor.total_paid)
+            running_balance = opening_credit - opening_debit
+            serialized.append({
+                'id': 'opening-balance',
+                'vendorId': vendor.id,
+                'date': vendor.created_at.strftime('%Y-%m-%d') if vendor.created_at else str(date.today()),
+                'eventRef': 'OPENING',
+                'description': 'Opening Account Balance',
+                'credit': opening_credit,
+                'debit': opening_debit,
+                'paymentMode': '',
+                'reference': vendor.vendor_id,
+                'balance': running_balance,
+            })
+        else:
+            for entry in entries:
+                credit = float(entry.credit)
+                debit = float(entry.debit)
+                running_balance += credit - debit
+                item = VendorLedgerEntrySerializer(entry).data
+                item['balance'] = running_balance
+                serialized.append(item)
+
+        return Response({
+            'vendor': VendorPartnerSerializer(vendor).data,
+            'entries': serialized,
+        })
+
+
+class VendorTransactionViewSet(viewsets.ViewSet):
+    """
+    Handles combined Vendor Purchase + Payment transactions for event-specific tracking.
+    """
+    def create(self, request):
+        vendor_id = request.data.get('vendorId') or request.data.get('vendor_id')
+        vendor = get_object_or_404(VendorPartner, pk=vendor_id)
+
+        event_ref = request.data.get('eventRef', '') or ''
+        description = (request.data.get('description') or '').strip()
+        total_bill = float(request.data.get('totalBill') or request.data.get('credit') or 0)
+        amount_paid = float(request.data.get('amountPaid') or request.data.get('debit') or 0)
+        payment_mode = request.data.get('paymentMode') or 'Cash'
+        raw_date = request.data.get('date')
+
+        txn_date = date.today()
+        if raw_date:
+            try:
+                txn_date = datetime.strptime(str(raw_date)[:10], '%Y-%m-%d').date()
+            except ValueError:
+                txn_date = date.today()
+
+        if total_bill < 0 or amount_paid < 0 or (total_bill == 0 and amount_paid == 0):
+            return Response(
+                {'error': 'Enter a valid Total Bill or Amount Paid greater than 0.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not description:
+            description = f"Vendor transaction ({payment_mode})"
+
+        vendor.total_billed = float(vendor.total_billed) + total_bill
+        vendor.total_paid = float(vendor.total_paid) + amount_paid
+        vendor.balance_due = max(0.0, float(vendor.balance_due) + total_bill - amount_paid)
+        vendor.save()
+
+        ref = f"TXN-V{random.randint(1000, 9999)}"
+        ledger_entry = VendorLedgerEntry.objects.create(
+            vendor=vendor,
+            date=txn_date,
+            event_ref=event_ref,
+            description=description,
+            credit=total_bill,
+            debit=amount_paid,
+            payment_mode=payment_mode,
+            reference=ref,
+        )
+
+        if amount_paid > 0:
+            ExpenseRecord.objects.create(
+                expense_ref=f"EXP-VN-{random.randint(1000, 9999)}",
+                category=f"Vendor Trade - {vendor.category}",
+                vendor=vendor.business_name,
+                description=f"{description} ({event_ref})" if event_ref else description,
+                amount=amount_paid,
+                approved_by=request.user.username if request.user.is_authenticated else 'Accounts',
+                date=txn_date,
+                payment_method=payment_mode,
+                status='Paid'
+            )
+            PaymentTransaction.objects.create(
+                txn_ref=ref,
+                category=f"Vendor Payment ({vendor.category})",
+                channel=payment_mode,
+                billing_status='Settled',
+                amount=amount_paid,
+                timestamp=txn_date.strftime('%Y-%m-%d %I:%M %p'),
+                booking_ref=event_ref or description
+            )
+
+        AuditLogEntry.objects.create(
+            log_id=f"LOG-{random.randint(1000, 9999)}",
+            user_name=request.user.username if request.user.is_authenticated else 'Accounts',
+            user_role='Accounts',
+            action='Vendor Transaction Recorded',
+            module='Vendors',
+            details=f"Recorded {description} for {vendor.business_name} (Bill: Rs. {total_bill:,.0f}, Paid: Rs. {amount_paid:,.0f})",
+            ip_address='127.0.0.1'
+        )
+
+        return Response({
+            'message': 'Vendor transaction recorded successfully.',
+            'vendor': VendorPartnerSerializer(vendor).data,
+            'ledgerEntry': VendorLedgerEntrySerializer(ledger_entry).data,
+        }, status=status.HTTP_201_CREATED)
 
 
 class ContractorLaborShiftViewSet(viewsets.ModelViewSet):

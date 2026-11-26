@@ -54,8 +54,6 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'halls-registry', label: 'Halls Registry', icon: Building2, section: 'Manager Suite' },
     { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed, section: 'Manager Suite' },
     { id: 'staff-rosters', label: 'Staff Rosters', icon: UserCheck, section: 'Manager Suite' },
-    { id: 'staff-payroll', label: 'Staff Payroll & Salaries', icon: Wallet, section: 'Manager Suite' },
-    { id: 'vendors', label: 'Vendors', icon: Store, section: 'Manager Suite' },
     { id: 'final-settlement', label: 'Final Settlement', icon: Receipt, section: 'Manager Suite' },
     // Kitchen Operations
     { id: 'kitchen-display', label: 'Kitchen Display (KDS)', icon: ChefHat, section: 'Kitchen Operations' },
@@ -65,6 +63,8 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'event-tracker', label: 'Event Profitability', icon: Receipt, section: 'Accounts & Finance' },
     { id: 'invoices', label: 'Invoices & Billing', icon: FileText, section: 'Accounts & Finance' },
     { id: 'expenses', label: 'Expenses & Stock Costs', icon: Wallet, section: 'Accounts & Finance' },
+    { id: 'staff-payroll', label: 'Staff Payroll', icon: Wallet, section: 'Accounts & Finance' },
+    { id: 'vendor-ledger', label: 'Vendor Ledger', icon: BookOpen, section: 'Accounts & Finance' },
     { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3, section: 'Accounts & Finance' },
     // System & Control
     { id: 'users', label: 'Users & Roles', icon: Users, section: 'System & Control' },
@@ -86,7 +86,6 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'menu-packages', label: 'Menu Packages', icon: UtensilsCrossed, section: 'Venue & Catering' },
     // Management
     { id: 'staff-rosters', label: 'Staff Rosters', icon: UserCheck, section: 'Management' },
-    { id: 'vendors', label: 'Vendors', icon: Store, section: 'Management' },
     { id: 'final-settlement', label: 'Final Settlement', icon: Receipt, section: 'Management' },
     // System
     { id: 'users', label: 'Users', icon: Users, section: 'System' },
@@ -104,6 +103,7 @@ export const ROLE_NAV_ITEMS: Record<UserRole, RoleNavItem[]> = {
     { id: 'event-tracker', label: 'Event Tracker', icon: Receipt },
     { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
+    { id: 'vendor-ledger', label: 'Vendor Ledger', icon: BookOpen },
     { id: 'staff-payroll', label: 'Staff Payroll', icon: Wallet },
     { id: 'financial-reports', label: 'Financial Reports', icon: BarChart3 },
   ],

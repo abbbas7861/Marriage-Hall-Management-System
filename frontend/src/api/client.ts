@@ -623,6 +623,30 @@ export const requisitionsApi = {
 // -------------------------------------------------------------
 // Vendors API
 // -------------------------------------------------------------
+export interface VendorLedgerEntryItem {
+  id: string | number;
+  vendorId: string | number;
+  date: string;
+  eventRef: string;
+  description: string;
+  credit: number;
+  debit: number;
+  paymentMode?: string;
+  reference?: string;
+  balance: number;
+}
+
+export interface VendorLedgerResponse {
+  vendor: VendorPartner & {
+    totalBilled?: number;
+    totalPaid?: number;
+    balanceDue?: number;
+    contactPerson?: string;
+    phoneNumber?: string;
+  };
+  entries: VendorLedgerEntryItem[];
+}
+
 export const vendorsApi = {
   async list(params?: { category?: string; search?: string }): Promise<VendorPartner[]> {
     const query = new URLSearchParams();
@@ -651,6 +675,37 @@ export const vendorsApi = {
 
   async delete(id: string): Promise<void> {
     await request(`vendors/${id}`, { method: 'DELETE' });
+  },
+
+  async getLedger(id: string): Promise<VendorLedgerResponse> {
+    return request<VendorLedgerResponse>(`vendors/${id}/ledger`);
+  },
+
+  async recordPayment(
+    id: string,
+    payload: { amount: number; paymentMode: string; date: string; notes?: string; eventRef?: string }
+  ): Promise<any> {
+    return request<any>(`vendors/${id}/record-payment`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
+export const vendorTransactionsApi = {
+  async create(payload: {
+    vendorId: string | number;
+    eventRef?: string;
+    date: string;
+    description: string;
+    totalBill: number;
+    amountPaid: number;
+    paymentMode: string;
+  }): Promise<any> {
+    return request<any>('vendor-transactions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 };
 
@@ -681,6 +736,32 @@ export const staffApi = {
 
   async delete(id: string): Promise<void> {
     await request(`staff/${id}`, { method: 'DELETE' });
+  },
+
+  async giveAdvance(
+    id: string | number,
+    payload: { amount: number; date: string; reason?: string }
+  ): Promise<any> {
+    return request<any>(`staff/${id}/give-advance`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async processSalary(
+    id: string | number,
+    payload: {
+      baseSalary: number;
+      advanceDeduction: number;
+      paymentDate: string;
+      paymentMode: string;
+      month?: string;
+    }
+  ): Promise<any> {
+    return request<any>(`staff/${id}/process-salary`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 };
 

@@ -26,6 +26,7 @@ import { ManagerDashboard } from '../dashboard/ManagerDashboard';
 import { KitchenDashboard } from '../dashboard/KitchenDashboard';
 import { StaffPayrollPage } from '../modules/StaffPayrollPage';
 import { VendorDirectoryPage } from '../modules/VendorDirectoryPage';
+import { VendorLedgerPage } from '../modules/VendorLedgerPage';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import type { UserRole } from '../auth/LoginScreen';
 
@@ -176,6 +177,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         return <StaffRostersPage />;
       case 'vendors':
         return <VendorDirectoryPage />;
+      case 'vendor-ledger':
+        return <VendorLedgerPage />;
       case 'users':
         return <UserManagementPage />;
       case 'settings':

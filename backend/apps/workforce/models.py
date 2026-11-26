@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 
 class StaffMember(models.Model):
     STATUS_CHOICES = [
@@ -13,6 +14,7 @@ class StaffMember(models.Model):
     contact_number = models.CharField(max_length=50, blank=True, default='')
     shift_timing = models.CharField(max_length=150, blank=True, default='')
     salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    current_advance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -156,5 +158,23 @@ class StaffSalaryDisbursement(models.Model):
 
     def __str__(self):
         return f"[{self.salary_ref}] {self.staff_name} ({self.month}) - Rs. {self.net_paid} ({self.status})"
+
+
+class VendorLedgerEntry(models.Model):
+    vendor = models.ForeignKey(VendorPartner, on_delete=models.CASCADE, related_name='ledger_entries')
+    date = models.DateField(default=date.today, db_index=True)
+    event_ref = models.CharField(max_length=50, blank=True, default='')
+    description = models.CharField(max_length=300)
+    credit = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    debit = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    payment_mode = models.CharField(max_length=50, blank=True, default='')
+    reference = models.CharField(max_length=100, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date', 'created_at', 'id']
+
+    def __str__(self):
+        return f"[{self.vendor.business_name}] {self.date} - Credit: {self.credit} / Debit: {self.debit}"
 
 

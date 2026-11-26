@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import date
-from .models import VendorPartner, ContractorLaborShift, DutyRoster
+from .models import StaffMember, VendorPartner, ContractorLaborShift, DutyRoster
 from apps.finance.models import ExpenseRecord, PaymentTransaction
 
 
@@ -75,6 +75,30 @@ class WorkforceAndVendorsAPITests(TestCase):
         self.assertIsNotNone(exp)
         self.assertEqual(exp.amount, 75000)
 
+        # 3. Verify Ledger Endpoint
+        ledger_res = self.client.get(f'/api/v1/vendors/{self.vendor.id}/ledger/')
+        self.assertEqual(ledger_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(ledger_res.data['entries']), 2)
+        self.assertEqual(ledger_res.data['entries'][0]['credit'], 50000.0)
+        self.assertEqual(ledger_res.data['entries'][1]['debit'], 75000.0)
+        self.assertEqual(ledger_res.data['entries'][1]['balance'], -25000.0)
+
+        # 4. Record Combined Vendor Transaction (Bill + Partial Payment)
+        txn_res = self.client.post('/api/v1/vendor-transactions/', {
+            'vendorId': self.vendor.id,
+            'eventRef': 'BK-20493',
+            'date': str(date.today()),
+            'description': 'Stage Flowers',
+            'totalBill': 30000,
+            'amountPaid': 10000,
+            'paymentMode': 'Cash',
+        }, format='json')
+        self.assertEqual(txn_res.status_code, status.HTTP_201_CREATED)
+        self.vendor.refresh_from_db()
+        self.assertEqual(float(self.vendor.total_billed), 230000.0)
+        self.assertEqual(float(self.vendor.total_paid), 135000.0)
+        self.assertEqual(float(self.vendor.balance_due), 95000.0)
+
     def test_contractor_labor_shift_lifecycle(self):
         # 1. Create labor shift
         shift_res = self.client.post('/api/v1/contractor-labor-shifts/', {
@@ -106,3 +130,32 @@ class WorkforceAndVendorsAPITests(TestCase):
         self.assertIsNotNone(exp)
         self.assertEqual(exp.amount, 43500)
         self.assertEqual(exp.category, 'Outside Staff / Labor')
+
+    def test_staff_advance_and_process_salary(self):
+        staff = StaffMember.objects.create(
+            employee_id='EMP-9001',
+            full_name='Bilal Ahmed',
+            role='Head Waiter',
+            salary=45000,
+            status='Active',
+        )
+
+        adv_res = self.client.post(f'/api/v1/staff/{staff.id}/give-advance/', {
+            'amount': 5000,
+            'date': str(date.today()),
+            'reason': 'Medical emergency',
+        }, format='json')
+        self.assertEqual(adv_res.status_code, status.HTTP_200_OK)
+        staff.refresh_from_db()
+        self.assertEqual(float(staff.current_advance), 5000.0)
+
+        sal_res = self.client.post(f'/api/v1/staff/{staff.id}/process-salary/', {
+            'baseSalary': 45000,
+            'advanceDeduction': 5000,
+            'paymentDate': str(date.today()),
+            'paymentMode': 'Cash',
+        }, format='json')
+        self.assertEqual(sal_res.status_code, status.HTTP_200_OK)
+        staff.refresh_from_db()
+        self.assertEqual(float(staff.current_advance), 0.0)
+        self.assertEqual(sal_res.data['salary']['netPaid'], 40000.0)
