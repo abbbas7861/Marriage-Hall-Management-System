@@ -2060,6 +2060,9 @@ export const EventControlCenterPage: React.FC = () => {
           aria-modal="true"
         >
           <div className="printable-settlement-area w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+            <div className="flex justify-center pt-4 bg-white">
+              <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+            </div>
             {/* Header: Royal Letterhead */}
             <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 p-6 text-white flex items-start justify-between border-b-2 border-amber-400/40">
               <div className="flex items-center gap-3">
@@ -2201,7 +2204,7 @@ export const EventControlCenterPage: React.FC = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+            <div className="no-print bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => window.print()}

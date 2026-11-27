@@ -10,6 +10,8 @@ import {
   Building2,
   Users,
   UserCheck,
+  Printer,
+  X,
 } from 'lucide-react';
 import { SEED_ASSIGNED_EVENTS } from '../../data/seedData';
 import { bookingsApi, invoicesApi, authApi } from '../../api/client';
@@ -50,6 +52,26 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
   const [otherCharge, setOtherCharge] = useState('');
   const [otherNotes, setOtherNotes] = useState('');
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [finalInvoiceModal, setFinalInvoiceModal] = useState<{
+    invoiceId: string;
+    bookingRef: string;
+    customerName: string;
+    hallName: string;
+    eventDate: string;
+    date: string;
+    baseAmount: number;
+    damagesCharge: number;
+    damagesNotes: string;
+    extraTimeCharge: number;
+    extraTimeNotes: string;
+    otherCharge: number;
+    otherNotes: string;
+    totalAdditional: number;
+    totalAmount: number;
+    paidAmount: number;
+    remainingBalance: number;
+  } | null>(null);
 
   useEffect(() => {
     bookingsApi
@@ -157,31 +179,95 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
   };
 
   const handleFinalizeInvoice = async () => {
-    if (!selectedEvent) return;
+    if (!selectedEvent || isFinalizing) return;
+    setIsFinalizing(true);
+    setStatusFeedback(null);
     try {
-      await invoicesApi.create({
-        booking_id: selectedEvent.bookingRef || selectedEvent.id,
-        customer_name: selectedEvent.customerName,
-        date: new Date().toISOString().slice(0, 10),
-        due_date: new Date().toISOString().slice(0, 10),
-        status: 'Unpaid',
-        payment_status: 'Unpaid',
-        total_amount: finalPayable,
-        paid_amount: 0,
-        remaining_balance: finalPayable,
-        notes: `Final event settlement for ${selectedEvent.customerName}. Base: Rs. ${baseAmount}, Damages: Rs. ${parsedDamages}, Extra Time: Rs. ${parsedExtraTime}, Other: Rs. ${parsedOther}`,
-      });
-      await bookingsApi.update(selectedEvent.id, {
-        operationalStatus: 'Concluded',
-      });
+      const extraServices: Array<{ title: string; price: number; category?: string; notes?: string }> = [];
+      if (parsedExtraTime > 0) {
+        extraServices.push({
+          title: extraTimeNotes.trim() || 'Extra Time Charges',
+          price: parsedExtraTime,
+          category: 'Extra Time',
+          notes: extraTimeNotes.trim(),
+        });
+      }
+      if (parsedOther > 0) {
+        extraServices.push({
+          title: otherNotes.trim() || 'Other Charges',
+          price: parsedOther,
+          category: 'Other',
+          notes: otherNotes.trim(),
+        });
+      }
+
+      const damages: Array<{ item: string; amount: number; deductionType?: 'invoice' | 'security_deposit'; notes?: string }> = [];
+      if (parsedDamages > 0) {
+        damages.push({
+          item: damagesNotes.trim() || 'Event Damages',
+          amount: parsedDamages,
+          deductionType: 'invoice',
+          notes: damagesNotes.trim(),
+        });
+      }
+
+      const closingNote = `Final event settlement for ${selectedEvent.customerName}. Base: Rs. ${baseAmount}, Damages: Rs. ${parsedDamages}, Extra Time: Rs. ${parsedExtraTime}, Other: Rs. ${parsedOther}`;
+
+      let resInvoice: any = null;
+      if (!String(selectedEvent.id).startsWith('seed-')) {
+        const res = await bookingsApi.closeEvent(selectedEvent.id, {
+          extraServices,
+          damages,
+          notes: closingNote,
+        });
+        resInvoice = res?.invoice || null;
+      } else {
+        resInvoice = await invoicesApi.create({
+          bookingId: selectedEvent.bookingRef || selectedEvent.id,
+          customerName: selectedEvent.customerName,
+          date: new Date().toISOString().slice(0, 10),
+          totalAmount: finalPayable,
+          paidAmount: 0,
+          remainingBalance: finalPayable,
+          status: 'Active',
+          notes: closingNote,
+        });
+      }
+
       setEvents((prev) =>
         prev.map((e) => (e.id === selectedEvent.id ? { ...e, status: 'Concluded' } : e))
       );
-      setStatusFeedback('Settlement finalized and invoice generated in accounting.');
-      setTimeout(() => setStatusFeedback(null), 3500);
-    } catch (err) {
-      setStatusFeedback('Settlement draft saved.');
-      setTimeout(() => setStatusFeedback(null), 3500);
+      setSelectedEvent((prev) => (prev ? { ...prev, status: 'Concluded' } : null));
+      setStatusFeedback('Settlement finalized, booking marked Completed, and invoice generated.');
+
+      const totalAmt = Number(resInvoice?.totalAmount ?? finalPayable);
+      const paidAmt = Number(resInvoice?.paidAmount ?? 0);
+      const remAmt = Number(resInvoice?.remainingBalance ?? Math.max(0, totalAmt - paidAmt));
+
+      setFinalInvoiceModal({
+        invoiceId: resInvoice?.invoiceId || `INV-${(selectedEvent.bookingRef || selectedEvent.id).replace('BK-', '')}`,
+        bookingRef: selectedEvent.bookingRef || selectedEvent.id,
+        customerName: selectedEvent.customerName,
+        hallName: selectedEvent.hallName,
+        eventDate: selectedEvent.eventDate,
+        date: new Date().toISOString().slice(0, 10),
+        baseAmount,
+        damagesCharge: parsedDamages,
+        damagesNotes: damagesNotes.trim(),
+        extraTimeCharge: parsedExtraTime,
+        extraTimeNotes: extraTimeNotes.trim(),
+        otherCharge: parsedOther,
+        otherNotes: otherNotes.trim(),
+        totalAdditional,
+        totalAmount: totalAmt,
+        paidAmount: paidAmt,
+        remainingBalance: remAmt,
+      });
+    } catch (err: any) {
+      console.error('Failed to finalize settlement & generate invoice:', err);
+      setStatusFeedback(`Failed to finalize invoice: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsFinalizing(false);
     }
   };
 
@@ -479,13 +565,171 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
             <button
               type="button"
               onClick={handleFinalizeInvoice}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-sm font-medium transition-colors cursor-pointer"
+              disabled={isFinalizing}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-sm font-medium transition-colors cursor-pointer"
             >
               <CheckCircle className="w-4 h-4" />
-              <span>Finalize &amp; Generate Invoice</span>
+              <span>{isFinalizing ? 'Finalizing...' : 'Finalize & Generate Invoice'}</span>
             </button>
           </div>
         </section>
+
+        {/* Printable Final Settlement Invoice Modal */}
+        {finalInvoiceModal && (
+          <div
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center p-4 overflow-y-auto print:static print:bg-white print:p-0 print:block"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Final Settlement Invoice"
+          >
+            <div className="w-full max-w-2xl bg-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden my-auto print:border-none print:shadow-none print:max-w-none print:rounded-none">
+              {/* Top Action Bar (Hidden in Print) */}
+              <div className="no-print px-6 py-3.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Final Settlement Invoice
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFinalInvoiceModal(null)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Close</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Sheet */}
+              <div id="printable-receipt" className="bg-white text-black p-6 sm:p-8 text-xs space-y-5">
+                <div className="flex justify-center mb-4">
+                  <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+                </div>
+
+                <div className="text-center pb-4 border-b-2 border-teal-900/40">
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
+                    Mehar Palace Marquee
+                  </h2>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Final Settlement Invoice
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase block">Invoice #</span>
+                    <span className="font-mono font-bold text-slate-900">{finalInvoiceModal.invoiceId}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase block">Booking Ref</span>
+                    <span className="font-mono font-bold text-slate-900">{finalInvoiceModal.bookingRef}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase block">Customer</span>
+                    <span className="font-semibold text-slate-900">{finalInvoiceModal.customerName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase block">Hall &amp; Event Date</span>
+                    <span className="font-semibold text-slate-900">
+                      {finalInvoiceModal.hallName} ({finalInvoiceModal.eventDate || finalInvoiceModal.date})
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-100 border-b border-slate-200 text-[11px] uppercase text-slate-600">
+                      <tr>
+                        <th className="py-2.5 px-4">Description</th>
+                        <th className="py-2.5 px-4">Notes</th>
+                        <th className="py-2.5 px-4 text-right font-mono">Amount (Rs.)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      <tr>
+                        <td className="py-2.5 px-4 font-semibold text-slate-900">Base Contract / Hall &amp; Package</td>
+                        <td className="py-2.5 px-4 text-slate-500">Original Booking Value</td>
+                        <td className="py-2.5 px-4 text-right font-mono font-semibold text-slate-900">
+                          Rs. {finalInvoiceModal.baseAmount.toLocaleString('en-PK')}
+                        </td>
+                      </tr>
+                      {finalInvoiceModal.damagesCharge > 0 && (
+                        <tr>
+                          <td className="py-2.5 px-4 font-medium text-slate-800">Damages &amp; Breakage Charges</td>
+                          <td className="py-2.5 px-4 text-slate-500">{finalInvoiceModal.damagesNotes || '—'}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-900">
+                            Rs. {finalInvoiceModal.damagesCharge.toLocaleString('en-PK')}
+                          </td>
+                        </tr>
+                      )}
+                      {finalInvoiceModal.extraTimeCharge > 0 && (
+                        <tr>
+                          <td className="py-2.5 px-4 font-medium text-slate-800">Extra Time / Overtime Charges</td>
+                          <td className="py-2.5 px-4 text-slate-500">{finalInvoiceModal.extraTimeNotes || '—'}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-900">
+                            Rs. {finalInvoiceModal.extraTimeCharge.toLocaleString('en-PK')}
+                          </td>
+                        </tr>
+                      )}
+                      {finalInvoiceModal.otherCharge > 0 && (
+                        <tr>
+                          <td className="py-2.5 px-4 font-medium text-slate-800">Other Miscellaneous Charges</td>
+                          <td className="py-2.5 px-4 text-slate-500">{finalInvoiceModal.otherNotes || '—'}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-900">
+                            Rs. {finalInvoiceModal.otherCharge.toLocaleString('en-PK')}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 max-w-sm ml-auto">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Total Additional Charges</span>
+                    <span className="font-mono font-medium">Rs. {finalInvoiceModal.totalAdditional.toLocaleString('en-PK')}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-slate-900 text-sm border-t border-slate-200 pt-2">
+                    <span>Gross Final Amount</span>
+                    <span className="font-mono">Rs. {finalInvoiceModal.totalAmount.toLocaleString('en-PK')}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-700 font-medium">
+                    <span>Paid So Far</span>
+                    <span className="font-mono">- Rs. {finalInvoiceModal.paidAmount.toLocaleString('en-PK')}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-slate-900 text-sm border-t border-slate-300 pt-2">
+                    <span>Remaining Payable Balance</span>
+                    <span className="font-mono">Rs. {finalInvoiceModal.remainingBalance.toLocaleString('en-PK')}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8 pt-6 border-t border-slate-200 text-center text-[11px] text-slate-500">
+                  <div>
+                    <div className="border-t border-dashed border-slate-400 pt-2 mt-6 font-semibold text-slate-700">
+                      Manager Signature
+                    </div>
+                  </div>
+                  <div>
+                    <div className="border-t border-dashed border-slate-400 pt-2 mt-6 font-semibold text-slate-700">
+                      Client Signature
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

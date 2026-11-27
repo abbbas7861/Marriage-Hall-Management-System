@@ -4,6 +4,7 @@ import {
   CreditCard,
   Eye,
   Plus,
+  Printer,
   Search,
   Store,
   Wallet,
@@ -89,6 +90,18 @@ export const VendorLedgerPage: React.FC = () => {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [submittingPayment, setSubmittingPayment] = useState(false);
+
+  // Printable Vendor Receipt Modal state
+  const [vendorReceiptData, setVendorReceiptData] = useState<{
+    receiptNumber: string;
+    date: string;
+    vendorName: string;
+    eventRef?: string;
+    amountPaid: number;
+    paymentMode: string;
+    remainingBalance: number;
+    notes?: string;
+  } | null>(null);
 
   const loadVendors = async () => {
     try {
@@ -236,7 +249,21 @@ export const VendorLedgerPage: React.FC = () => {
       if (selectedVendor && selectedVendor.id === txnVendor.id) {
         await loadVendorLedger(txnVendor);
       }
+      const savedVendorName = txnVendor.businessName;
+      const updatedBalance = Math.max(0, txnVendor.balanceDue + bill - paid);
       setTxnVendor(null);
+      if (paid > 0) {
+        setVendorReceiptData({
+          receiptNumber: `VR-${Date.now().toString().slice(-6)}`,
+          date: txnDate,
+          vendorName: savedVendorName,
+          eventRef: txnEventRef || undefined,
+          amountPaid: paid,
+          paymentMode: txnPaymentMode,
+          remainingBalance: updatedBalance,
+          notes: txnDescription.trim(),
+        });
+      }
     } catch (err: any) {
       setTxnError(err?.message || 'Failed to save transaction.');
     } finally {
@@ -282,7 +309,18 @@ export const VendorLedgerPage: React.FC = () => {
       if (selectedVendor && selectedVendor.id === paymentVendor.id) {
         await loadVendorLedger(paymentVendor);
       }
+      const savedVendorName = paymentVendor.businessName;
+      const updatedBalance = Math.max(0, paymentVendor.balanceDue - amount);
       closePaymentModal();
+      setVendorReceiptData({
+        receiptNumber: `VR-${Date.now().toString().slice(-6)}`,
+        date: paymentDate,
+        vendorName: savedVendorName,
+        amountPaid: amount,
+        paymentMode,
+        remainingBalance: updatedBalance,
+        notes: paymentNotes.trim() || undefined,
+      });
     } catch (err: any) {
       setPaymentError(err?.message || 'Failed to record vendor payment.');
     } finally {
@@ -1033,6 +1071,126 @@ export const VendorLedgerPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Printable Vendor Payment Receipt Modal */}
+      {vendorReceiptData && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-[1px] p-4 overflow-y-auto print:static print:bg-white print:p-0 print:block"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vendor Payment Receipt"
+        >
+          <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden my-auto print:border-none print:shadow-none print:max-w-none print:rounded-none">
+            {/* Modal Controls (Hidden in Print) */}
+            <div className="no-print px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                Print Payment Receipt
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVendorReceiptData(null)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Receipt Content */}
+            <div id="printable-receipt" className="bg-white text-black p-6 sm:p-8 text-xs space-y-5">
+              <div className="flex justify-center mb-4">
+                <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+              </div>
+
+              <div className="text-center pb-4 border-b-2 border-teal-900/40">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
+                  Mehar Palace Marquee
+                </h2>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                </p>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Vendor Payment Receipt
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase block">Receipt #</span>
+                  <span className="font-mono font-bold text-slate-900">{vendorReceiptData.receiptNumber}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 uppercase block">Date</span>
+                  <span className="font-mono font-semibold text-slate-900">{vendorReceiptData.date}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase block">Vendor Name</span>
+                  <span className="font-semibold text-slate-900">{vendorReceiptData.vendorName}</span>
+                </div>
+                {vendorReceiptData.eventRef ? (
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-500 uppercase block">Event Ref</span>
+                    <span className="font-mono font-semibold text-slate-900">{vendorReceiptData.eventRef}</span>
+                  </div>
+                ) : (
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-500 uppercase block">Payment Mode</span>
+                    <span className="font-semibold text-slate-900">{vendorReceiptData.paymentMode}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="border border-slate-200 rounded-lg divide-y divide-slate-100">
+                <div className="flex justify-between py-2.5 px-4">
+                  <span className="text-slate-600">Payment Mode</span>
+                  <span className="font-semibold text-slate-900">{vendorReceiptData.paymentMode}</span>
+                </div>
+                {vendorReceiptData.notes && (
+                  <div className="flex justify-between py-2.5 px-4 gap-4">
+                    <span className="text-slate-600 shrink-0">Notes / Reference</span>
+                    <span className="text-slate-800 text-right">{vendorReceiptData.notes}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-3 px-4 bg-emerald-50/50">
+                  <span className="font-bold text-slate-900">Amount Paid</span>
+                  <span className="font-mono font-bold text-emerald-700 text-sm">
+                    {formatCurrency(vendorReceiptData.amountPaid)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3 px-4 bg-slate-50">
+                  <span className="font-bold text-slate-900">Remaining Balance</span>
+                  <span className="font-mono font-bold text-slate-900 text-sm">
+                    {formatCurrency(vendorReceiptData.remainingBalance)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 pt-6 border-t border-slate-200 text-center text-[11px] text-slate-500">
+                <div>
+                  <div className="border-t border-dashed border-slate-400 pt-2 mt-6 font-semibold text-slate-700">
+                    Authorized Signature
+                  </div>
+                </div>
+                <div>
+                  <div className="border-t border-dashed border-slate-400 pt-2 mt-6 font-semibold text-slate-700">
+                    Vendor / Receiver Signature
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

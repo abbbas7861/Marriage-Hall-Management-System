@@ -7,7 +7,6 @@ import {
   Plus,
   Printer,
   Search,
-  Crown,
   X,
 } from 'lucide-react';
 import {
@@ -1231,11 +1230,11 @@ export const InvoicesBillingPage: React.FC = () => {
               >
                 {/* Header: Royal Letterhead with Gold & Emerald Accents */}
                 <div className="pb-4 border-b-2 border-teal-900/40">
+                  <div className="flex justify-center mb-4">
+                    <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+                  </div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-teal-900 text-amber-400 flex items-center justify-center border border-amber-400/40 shadow-xs shrink-0">
-                        <Crown className="w-6 h-6 text-amber-400" />
-                      </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">

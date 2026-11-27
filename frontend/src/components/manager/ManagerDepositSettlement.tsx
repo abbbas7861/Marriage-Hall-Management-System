@@ -908,7 +908,10 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
             </button>
 
             {/* Printable Area */}
-            <div id="printable-voucher" className="bg-white text-slate-900 p-8 rounded-2xl shadow-inner font-sans">
+            <div id="printable-voucher" className="printable-receipt-area bg-white text-slate-900 p-8 rounded-2xl shadow-inner font-sans">
+              <div className="flex justify-center mb-4">
+                <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+              </div>
               {/* Header */}
               <div className="border-b-2 border-slate-900 pb-5 mb-6 flex justify-between items-start">
                 <div>

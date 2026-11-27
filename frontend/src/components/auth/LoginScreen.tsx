@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, Crown } from 'lucide-react';
+import { Building2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { authApi } from '../../api/client';
 
 export type UserRole = 'Admin' | 'Senior Manager' | 'Manager' | 'Kitchen' | 'Accounts';
@@ -97,9 +97,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-[400px]">
         {/* Brand Mark */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-teal-800 text-amber-400 flex items-center justify-center shadow-md mb-4 border border-amber-400/30">
-            <Crown className="w-6 h-6 text-amber-400" />
-          </div>
+          <img src="/logo.png" alt="Logo" className="h-24 w-auto mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-['Plus_Jakarta_Sans']">
             Mehar Palace Marquee
           </h1>
