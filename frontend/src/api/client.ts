@@ -418,6 +418,15 @@ export const invoicesApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  async listDepositSettlements(params?: { status?: string; bookingRef?: string }): Promise<any[]> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    if (params?.bookingRef) query.set('bookingRef', params.bookingRef);
+    const qs = query.toString();
+    const data = await request<any>(`deposit-settlements${qs ? `?${qs}` : ''}`);
+    return normalizeList<any>(data);
+  },
 };
 
 export const financeApi = invoicesApi;

@@ -909,27 +909,26 @@ export const ManagerDepositSettlement: React.FC<ManagerDepositSettlementProps> =
 
             {/* Printable Area */}
             <div id="printable-voucher" className="printable-receipt-area bg-white text-slate-900 p-8 rounded-2xl shadow-inner font-sans">
-              <div className="flex justify-center mb-4">
-                <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
-              </div>
-              {/* Header */}
-              <div className="border-b-2 border-slate-900 pb-5 mb-6 flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-black tracking-tight text-slate-950 uppercase">
-                      Mehar Palace Marquee
-                    </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-300">
-                      OFFICIAL SETTLEMENT
-                    </span>
-                  </div>
+              <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-200">
+                <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+                <div className="text-center flex-1">
+                  <span className="text-xl font-black tracking-tight text-slate-950 uppercase block">
+                    Mehar Palace Marquee
+                  </span>
                   <p className="text-xs text-slate-500 mt-1">
-                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000 • Phone: 0321 1000806
+                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000 &bull; Phone: 0321 1000806
                   </p>
                   <p className="text-xs text-slate-500">
-                    NTN: 8291039-4 • STRN: 3277876123456
+                    NTN: 8291039-4 &bull; STRN: 3277876123456
                   </p>
                 </div>
+                <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+              </div>
+              {/* Header */}
+              <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-center">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-300">
+                  OFFICIAL SECURITY DEPOSIT SETTLEMENT
+                </span>
                 <div className="text-right">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                     VOUCHER REF

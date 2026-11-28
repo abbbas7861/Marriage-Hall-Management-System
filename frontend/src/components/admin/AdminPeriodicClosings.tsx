@@ -235,7 +235,24 @@ export const AdminPeriodicClosings: React.FC = () => {
       </div>
 
       {/* Printable Closing Certificate */}
-      <div className="rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 p-6 sm:p-8 shadow-xl text-slate-300">
+      <div className="printable-receipt-area rounded-2xl bg-slate-800/60 backdrop-blur-md border border-slate-700/50 p-6 sm:p-8 shadow-xl text-slate-300">
+        {/* Standard 3-column Letterhead */}
+        <div className="bg-white rounded-xl px-6 py-4 mb-6 border border-slate-200 flex items-center justify-between gap-4">
+          <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+          <div className="text-center flex-1">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+              Mehar Palace Marquee
+            </h2>
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+            </p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+              Phone: <strong className="text-slate-800">0321 1000806</strong> • Official Period Closing Audit Certificate
+            </p>
+          </div>
+          <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+        </div>
+
         <div className="flex items-center justify-between pb-4 border-b border-slate-700/60 mb-6">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">

@@ -68,9 +68,18 @@ export const BookingContractModal: React.FC<BookingContractModalProps> = ({
 
         {/* Printable Contract Sheet */}
         <div id="printable-contract" className="printable-receipt-area p-8 sm:p-10 font-['Plus_Jakarta_Sans',sans-serif] text-slate-900">
-          {/* Header & Logo */}
-          <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+          {/* Header & Left/Right Logos + Mid Name */}
+          <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-200">
+            <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+            <div className="text-center flex-1">
+              <div className="text-teal-800 font-extrabold text-xl tracking-tight uppercase">
+                {venueName}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Luxury Banquets, Wedding Complex &amp; Event Management Suite
+              </p>
+            </div>
+            <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-start justify-between pb-6 border-b-2 border-slate-900 gap-4">
             <div>

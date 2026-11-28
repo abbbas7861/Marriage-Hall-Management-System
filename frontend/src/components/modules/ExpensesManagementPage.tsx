@@ -2,9 +2,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import {
   Clock,
   Eye,
+  FileText,
   Pencil,
   PieChart,
   Plus,
+  Printer,
   Receipt,
   Search,
   Trash2,
@@ -171,39 +173,6 @@ export const ExpensesManagementPage: React.FC = () => {
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
 
-  const kpiMetrics = useMemo(() => {
-    if (expenses.length === 0) {
-      return {
-        totalExpenses: '[--]',
-        highestCategory: '[--]',
-        pendingApprovals: '[--]',
-      };
-    }
-
-    const totalSum = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const pendingCount = expenses.filter((exp) => exp.status === 'Pending').length;
-
-    const totalsByCat = new Map<ExpenseCategory, number>();
-    for (const exp of expenses) {
-      totalsByCat.set(exp.category, (totalsByCat.get(exp.category) ?? 0) + exp.amount);
-    }
-
-    let topCategory: ExpenseCategory = expenses[0].category;
-    let maxVal = -1;
-    totalsByCat.forEach((val, cat) => {
-      if (val > maxVal) {
-        maxVal = val;
-        topCategory = cat;
-      }
-    });
-
-    return {
-      totalExpenses: `Rs. ${totalSum.toLocaleString()}`,
-      highestCategory: topCategory,
-      pendingApprovals: String(pendingCount),
-    };
-  }, [expenses]);
-
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
       const q = searchQuery.trim().toLowerCase();
@@ -223,6 +192,49 @@ export const ExpensesManagementPage: React.FC = () => {
       return matchesSearch && matchesCategory && matchesStart && matchesEnd;
     });
   }, [expenses, searchQuery, categoryFilter, startDate, endDate]);
+
+  const kpiMetrics = useMemo(() => {
+    if (filteredExpenses.length === 0) {
+      return {
+        totalExpenses: 'Rs. 0',
+        highestCategory: 'None',
+        pendingApprovals: '0',
+      };
+    }
+
+    const totalSum = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const pendingCount = filteredExpenses.filter((exp) => exp.status === 'Pending').length;
+
+    const totalsByCat = new Map<ExpenseCategory, number>();
+    for (const exp of filteredExpenses) {
+      totalsByCat.set(exp.category, (totalsByCat.get(exp.category) ?? 0) + exp.amount);
+    }
+
+    let topCategory: ExpenseCategory = filteredExpenses[0].category;
+    let maxVal = -1;
+    totalsByCat.forEach((val, cat) => {
+      if (val > maxVal) {
+        maxVal = val;
+        topCategory = cat;
+      }
+    });
+
+    return {
+      totalExpenses: `Rs. ${totalSum.toLocaleString()}`,
+      highestCategory: topCategory,
+      pendingApprovals: String(pendingCount),
+    };
+  }, [filteredExpenses]);
+
+  const handleDownloadPDF = () => {
+    const prevTitle = document.title;
+    const periodLabel = startDate || endDate ? `${startDate || 'Start'}_to_${endDate || 'Present'}` : 'All_Time';
+    document.title = `Mehar_Palace_Expenses_${periodLabel}`;
+    window.print();
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 500);
+  };
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -327,7 +339,7 @@ export const ExpensesManagementPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Section: Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
         <div>
           <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-bold text-slate-900 tracking-tight">
             Operational Expenses
@@ -337,22 +349,33 @@ export const ExpensesManagementPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Log New Expense
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap no-print">
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer shrink-0"
+          >
+            <Printer className="w-4 h-4 text-teal-700" />
+            Download PDF
+          </button>
+
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Log New Expense
+          </button>
+        </div>
       </div>
 
       {/* KPI Metrics Bar (3 Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
         <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Total Expenses (This Month)
+              Total Expenses ({startDate || endDate ? 'Selected Period' : 'All Time'})
             </span>
             <div className="w-9 h-9 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center">
               <TrendingDown className="w-4 h-4 text-red-600" />
@@ -393,7 +416,7 @@ export const ExpensesManagementPage: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col lg:flex-row lg:items-center gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs flex flex-col lg:flex-row lg:items-center gap-3 no-print">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -443,7 +466,7 @@ export const ExpensesManagementPage: React.FC = () => {
       </div>
 
       {/* Main Section: Data Table */}
-      <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden no-print">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -846,6 +869,106 @@ export const ExpensesManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Printable Expenses Report (Visible only on print/PDF) */}
+      <div className="printable-receipt-area hidden print:block bg-white text-slate-900 p-4">
+        {/* Standard 3-column Letterhead */}
+        <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-200">
+          <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+          <div className="text-center flex-1">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+              Mehar Palace Marquee
+            </h2>
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+            </p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+              Phone: <strong className="text-slate-800">0321 1000806</strong> • Operational Expenses Report
+            </p>
+          </div>
+          <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+        </div>
+
+        {/* Report Metadata */}
+        <div className="flex items-center justify-between text-xs text-slate-600 mb-4 pb-2 border-b border-slate-100">
+          <div>
+            <span className="font-semibold text-slate-800">Period: </span>
+            <span className="font-mono">
+              {startDate || endDate
+                ? `${startDate || 'Beginning'} to ${endDate || 'Present'}`
+                : 'All Recorded Dates'}
+            </span>
+            {categoryFilter !== 'All' && (
+              <span className="ml-3">
+                <span className="font-semibold text-slate-800">Category: </span>
+                {categoryFilter}
+              </span>
+            )}
+          </div>
+          <div className="font-mono text-[11px] text-slate-500">
+            Generated: {new Date().toLocaleDateString('en-PK')} • Records: {filteredExpenses.length}
+          </div>
+        </div>
+
+        {/* Expenses Table */}
+        <table className="w-full text-left border-collapse text-xs mb-6">
+          <thead>
+            <tr className="border-y border-slate-300 bg-slate-100 text-slate-700">
+              <th className="py-2 px-2.5 font-semibold">Date</th>
+              <th className="py-2 px-2.5 font-semibold">Description</th>
+              <th className="py-2 px-2.5 font-semibold">Category</th>
+              <th className="py-2 px-2.5 font-semibold">Paid To / Vendor</th>
+              <th className="py-2 px-2.5 font-semibold">Event Ref</th>
+              <th className="py-2 px-2.5 font-semibold">Status</th>
+              <th className="py-2 px-2.5 font-semibold text-right">Amount (PKR)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {filteredExpenses.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-slate-500">
+                  No expenses found for the selected filters.
+                </td>
+              </tr>
+            ) : (
+              filteredExpenses.map((exp) => (
+                <tr key={`print-${exp.id}`}>
+                  <td className="py-2 px-2.5 font-mono text-slate-700 whitespace-nowrap">{exp.date}</td>
+                  <td className="py-2 px-2.5 text-slate-900 font-medium">{exp.description}</td>
+                  <td className="py-2 px-2.5 text-slate-700">{exp.category}</td>
+                  <td className="py-2 px-2.5 text-slate-700">{exp.paidTo}</td>
+                  <td className="py-2 px-2.5 font-mono text-slate-600">{exp.bookingRef || 'General'}</td>
+                  <td className="py-2 px-2.5 text-slate-700">{exp.status}</td>
+                  <td className="py-2 px-2.5 text-right font-mono font-semibold text-slate-900 whitespace-nowrap">
+                    Rs. {exp.amount.toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-slate-400 bg-slate-50 font-bold text-sm">
+              <td colSpan={6} className="py-2.5 px-2.5 text-right text-slate-800">
+                Total Filtered Expenses:
+              </td>
+              <td className="py-2.5 px-2.5 text-right font-mono text-slate-950 whitespace-nowrap">
+                {kpiMetrics.totalExpenses}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {/* Signature Footer */}
+        <div className="grid grid-cols-2 gap-12 pt-10 mt-8 border-t border-slate-200 text-center text-xs text-slate-600">
+          <div>
+            <div className="border-b border-slate-400 h-8 mb-1.5" />
+            <span className="font-semibold text-slate-800">Prepared By (Accountant)</span>
+          </div>
+          <div>
+            <div className="border-b border-slate-400 h-8 mb-1.5" />
+            <span className="font-semibold text-slate-800">Approved By (Management)</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

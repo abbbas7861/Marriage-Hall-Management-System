@@ -137,9 +137,26 @@ export const FinanceProfitLossTax: React.FC<FinanceProfitLossTaxProps> = ({
   }, [invoices, expenses, salesTaxRate, incomeTaxRate]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12 select-none animate-in fade-in duration-200">
+    <div className="printable-receipt-area w-full max-w-7xl mx-auto space-y-6 pb-12 select-none animate-in fade-in duration-200">
+      {/* Print-Only Standard 3-column Letterhead */}
+      <div className="hidden print:flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-300 bg-white text-slate-900">
+        <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+        <div className="text-center flex-1">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+            Mehar Palace Marquee
+          </h2>
+          <p className="text-[11px] text-slate-600 mt-0.5">
+            Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+          </p>
+          <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+            Phone: <strong className="text-slate-800">0321 1000806</strong> • Profit &amp; Loss (P&amp;L) &amp; FBR Tax Report
+          </p>
+        </div>
+        <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+      </div>
+
       {/* Top Banner */}
-      <div className="bg-[#131b2e] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-700/50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative overflow-hidden">
+      <div className="bg-[#131b2e] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-700/50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative overflow-hidden no-print">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-teal-500/15 via-indigo-500/10 to-transparent rounded-full blur-3xl -z-10" />
 
         <div className="space-y-1.5">
@@ -170,7 +187,7 @@ export const FinanceProfitLossTax: React.FC<FinanceProfitLossTaxProps> = ({
       </div>
 
       {/* Tax Setting Configuration Strip */}
-      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-slate-800/60 backdrop-blur-md rounded-3xl p-5 border border-slate-700/50 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center justify-center font-bold">
             <Percent className="w-5 h-5" />

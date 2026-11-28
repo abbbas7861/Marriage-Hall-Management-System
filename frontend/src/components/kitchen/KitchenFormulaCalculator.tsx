@@ -306,7 +306,24 @@ export const KitchenFormulaCalculator: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="printable-receipt-area space-y-6">
+      {/* Print-Only Standard 3-column Letterhead */}
+      <div className="hidden print:flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-300 bg-white text-slate-900">
+        <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+        <div className="text-center flex-1">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+            Mehar Palace Marquee
+          </h2>
+          <p className="text-[11px] text-slate-600 mt-0.5">
+            Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+          </p>
+          <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+            Phone: <strong className="text-slate-800">0321 1000806</strong> • Kitchen Raw Ingredient Prep &amp; Requisition Sheet
+          </p>
+        </div>
+        <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+      </div>
+
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400/40 animate-slide-up">
@@ -329,7 +346,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 no-print">
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
@@ -410,7 +427,7 @@ export const KitchenFormulaCalculator: React.FC = () => {
               <span>Contingency / Wastage Buffer:</span>
               <span className="font-bold text-amber-400 font-mono">+{wastageBufferPct}%</span>
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 no-print">
               <input
                 type="range"
                 min="0"

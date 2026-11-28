@@ -610,20 +610,20 @@ export const ManagerEventSettlementPage: React.FC<ManagerEventSettlementPageProp
 
               {/* Printable Sheet */}
               <div id="printable-receipt" className="bg-white text-black p-6 sm:p-8 text-xs space-y-5">
-                <div className="flex justify-center mb-4">
-                  <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
-                </div>
-
-                <div className="text-center pb-4 border-b-2 border-teal-900/40">
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
-                    Mehar Palace Marquee
-                  </h2>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
-                  </p>
-                  <p className="text-[11px] text-slate-500 font-mono">
-                    Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Final Settlement Invoice
-                  </p>
+                <div className="flex items-center justify-between gap-4 pb-4 border-b-2 border-teal-900/40">
+                  <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+                  <div className="text-center flex-1">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                      Mehar Palace Marquee
+                    </h2>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Final Settlement Invoice
+                    </p>
+                  </div>
+                  <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200">

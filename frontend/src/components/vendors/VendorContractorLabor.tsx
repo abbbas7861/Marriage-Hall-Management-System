@@ -617,18 +617,35 @@ export const VendorContractorLabor: React.FC<VendorContractorLaborProps> = ({
       {/* Labor Wage Slip Printable Voucher Modal */}
       {isVoucherModalOpen && voucherShift && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+          <div className="printable-receipt-area w-full max-w-lg bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            {/* Standard 3-column Letterhead */}
+            <div className="bg-white px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+              <img src="/logo.png" alt="Logo Left" className="h-14 w-14 object-contain shrink-0" />
+              <div className="text-center flex-1">
+                <h2 className="text-lg font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                  Mehar Palace Marquee
+                </h2>
+                <p className="text-[10px] text-slate-600 mt-0.5">
+                  Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                </p>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  Phone: <strong className="text-slate-800">0321 1000806</strong> • Outside Labor Wage Slip
+                </p>
+              </div>
+              <img src="/logo.png" alt="Logo Right" className="h-14 w-14 object-contain shrink-0" />
+            </div>
+
             <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-800/80 text-white">
               <div>
                 <span className="text-[11px] font-mono text-teal-400 uppercase tracking-widest block">
-                  MARRIAGE HALL MANAGEMENT SYSTEM
+                  CONTRACTOR DISBURSEMENT VOUCHER
                 </span>
                 <h3 className="text-lg font-bold">Outside Labor Wage Slip</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsVoucherModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white transition cursor-pointer no-print"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -710,7 +727,7 @@ export const VendorContractorLabor: React.FC<VendorContractorLaborProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-2">
+              <div className="pt-4 flex justify-end gap-2 no-print">
                 <button
                   type="button"
                   onClick={() => window.print()}

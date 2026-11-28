@@ -3096,34 +3096,29 @@ export const BookingsManagementPage: React.FC<BookingsManagementPageProps> = ({
             <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-[560px] overflow-hidden my-auto">
               {/* Printable A5 Receipt Sheet */}
               <div className="printable-receipt-area bg-white p-7 text-gray-900">
-                {/* Header: Royal Letterhead */}
+                {/* Header: Royal Letterhead with Left/Right Logos & Center Hall Name */}
                 <div className="pb-4 border-b-2 border-teal-900/40">
-                  <div className="flex justify-center mb-4">
-                    <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+                  <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-200">
+                    <img src="/logo.png" alt="Logo Left" className="h-14 w-14 object-contain shrink-0" />
+                    <div className="text-center flex-1">
+                      <h2 className="text-lg font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                        Mehar Palace Marquee
+                      </h2>
+                      <p className="text-[10px] text-slate-600 mt-0.5">
+                        Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-mono">
+                        Phone: <strong className="text-slate-800">0321 1000806</strong>
+                      </p>
+                    </div>
+                    <img src="/logo.png" alt="Logo Right" className="h-14 w-14 object-contain shrink-0" />
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-lg font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
-                            Mehar Palace Marquee
-                          </h2>
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                            Banquets
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-600 mt-0.5">
-                          Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-mono">
-                          Phone: <strong className="text-slate-800">0321 1000806</strong>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="inline-block px-2.5 py-0.5 rounded border border-teal-800 bg-teal-900 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                        Booking Slip
-                      </div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      Banquets &amp; Event Complex
+                    </span>
+                    <div className="inline-block px-2.5 py-0.5 rounded border border-teal-800 bg-teal-900 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                      Booking Slip
                     </div>
                   </div>
                   {/* Decorative Letterhead Bar */}

@@ -576,8 +576,8 @@ export const PaymentsModule: React.FC = () => {
       {/* Invoice Detail / Print Modal */}
       {selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+          <div className="printable-receipt-area w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 no-print">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-[#00685f]">
                   <Receipt className="w-4 h-4" />
@@ -602,6 +602,23 @@ export const PaymentsModule: React.FC = () => {
             </div>
 
             <div className="p-6 flex flex-col gap-4 text-xs">
+              {/* Standard 3-column Letterhead */}
+              <div className="flex items-center justify-between gap-4 pb-4 mb-2 border-b border-slate-200">
+                <img src="/logo.png" alt="Logo Left" className="h-14 w-14 object-contain shrink-0" />
+                <div className="text-center flex-1">
+                  <h2 className="text-lg font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                    Mehar Palace Marquee
+                  </h2>
+                  <p className="text-[10px] text-slate-600 mt-0.5">
+                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    Phone: <strong className="text-slate-800">0321 1000806</strong> • Payment Invoice Receipt
+                  </p>
+                </div>
+                <img src="/logo.png" alt="Logo Right" className="h-14 w-14 object-contain shrink-0" />
+              </div>
+
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] text-slate-400 uppercase font-semibold">Billed Client</span>
@@ -626,7 +643,7 @@ export const PaymentsModule: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between no-print">
               <button
                 type="button"
                 onClick={() => {

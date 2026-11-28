@@ -795,7 +795,24 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+          <div className="printable-receipt-area w-full max-w-3xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
+            {/* Standard 3-column Letterhead */}
+            <div className="bg-white px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+              <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+              <div className="text-center flex-1">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                  Mehar Palace Marquee
+                </h2>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                </p>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  Phone: <strong className="text-slate-800">0321 1000806</strong> • Event Cashflow &amp; P&amp;L Statement
+                </p>
+              </div>
+              <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
+            </div>
+
             {/* Header */}
             <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-6 text-white flex items-start justify-between">
               <div>
@@ -814,7 +831,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsStatementModalOpen(false)}
-                className="text-white/70 hover:text-white p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+                className="text-white/70 hover:text-white p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer no-print"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1037,7 +1054,7 @@ export const EventProfitabilityTrackerPage: React.FC = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 no-print">
               <button
                 type="button"
                 onClick={() => window.print()}

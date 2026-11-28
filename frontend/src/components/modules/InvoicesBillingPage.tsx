@@ -1228,29 +1228,28 @@ export const InvoicesBillingPage: React.FC = () => {
                 id="printable-receipt"
                 className="print-only flex-1 min-h-0 overflow-y-auto bg-white text-black p-6 sm:p-7 print:p-6 print:overflow-visible print:max-h-none text-xs"
               >
-                {/* Header: Royal Letterhead with Gold & Emerald Accents */}
+                {/* Header: Royal Letterhead with Left/Right Logos & Mid Hall Name */}
                 <div className="pb-4 border-b-2 border-teal-900/40">
-                  <div className="flex justify-center mb-4">
-                    <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+                  <div className="flex items-center justify-between gap-4 pb-3 mb-3 border-b border-slate-200">
+                    <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+                    <div className="text-center flex-1">
+                      <h2 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                        Mehar Palace Marquee
+                      </h2>
+                      <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                        Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                        Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Official Accounts &amp; Billing Desk
+                      </p>
+                    </div>
+                    <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-xl font-bold tracking-tight text-slate-900 font-['Playfair_Display','Cormorant_Garamond',serif]">
-                            Mehar Palace Marquee
-                          </h2>
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                            Luxury Banquets
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
-                          Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
-                        </p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                          Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Official Accounts &amp; Billing Desk
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
+                        Luxury Banquets &amp; Event Complex
+                      </span>
                     </div>
 
                     <div className="sm:text-right shrink-0">

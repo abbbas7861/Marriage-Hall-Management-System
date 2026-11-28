@@ -2060,31 +2060,28 @@ export const EventControlCenterPage: React.FC = () => {
           aria-modal="true"
         >
           <div className="printable-settlement-area w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
-            <div className="flex justify-center pt-4 bg-white">
-              <img src="/logo.png" alt="Logo" className="h-16 w-auto object-contain" />
+            <div className="flex items-center justify-between gap-4 px-6 py-4 bg-white border-b-2 border-teal-900/40">
+              <img src="/logo.png" alt="Logo Left" className="h-16 w-16 object-contain shrink-0" />
+              <div className="text-center flex-1">
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 uppercase font-['Playfair_Display','Cormorant_Garamond',serif]">
+                  Mehar Palace Marquee
+                </h3>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
+                </p>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  Phone: <strong className="text-slate-800">0321 1000806</strong> &bull; Official Settlement Statement
+                </p>
+              </div>
+              <img src="/logo.png" alt="Logo Right" className="h-16 w-16 object-contain shrink-0" />
             </div>
             {/* Header: Royal Letterhead */}
-            <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 p-6 text-white flex items-start justify-between border-b-2 border-amber-400/40">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-teal-900/90 text-amber-400 flex items-center justify-center border border-amber-400/40 shadow-xs shrink-0">
-                  <Crown className="w-6 h-6 text-amber-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold tracking-tight text-white font-['Playfair_Display','Cormorant_Garamond',serif]">
-                      Mehar Palace Marquee
-                    </h3>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30">
-                      Official Statement
-                    </span>
-                  </div>
-                  <p className="text-xs text-teal-100/90 mt-1">
-                    Main Canal Road, near PSO Petrol Pump, Fateh Garh Mughalpura, Lahore, 54000
-                  </p>
-                  <p className="text-[11px] text-amber-300/90 font-mono mt-0.5">
-                    Phone: <strong className="text-white">0321 1000806</strong> &bull; Event Operations &amp; Billing Reconciliation
-                  </p>
-                </div>
+            <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 px-6 py-3 text-white flex items-center justify-between border-b-2 border-amber-400/40">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-300">
+                  Event Operations &amp; Billing Reconciliation
+                </span>
               </div>
               <button
                 type="button"

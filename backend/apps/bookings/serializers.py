@@ -1,10 +1,40 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Booking, ExtraTimeRequest
 from apps.finance.models import InvoiceRecord, PaymentTransaction
 from apps.customers.models import Customer
 from apps.core.models import AuditLogEntry
 import random
 import re
+
+
+def generate_unique_booking_ref():
+    """Generate a monotonic, year-prefixed booking_ref (BK-YYYY-0001) that is never reused."""
+    year = timezone.now().year
+    prefix = f"BK-{year}-"
+    max_seq = 0
+
+    existing_refs = (
+        list(Booking.objects.filter(booking_ref__startswith=prefix).values_list('booking_ref', flat=True))
+        + list(InvoiceRecord.objects.filter(booking_id__startswith=prefix).values_list('booking_id', flat=True))
+        + list(PaymentTransaction.objects.filter(booking_ref__startswith=prefix).values_list('booking_ref', flat=True))
+    )
+    for ref in existing_refs:
+        suffix = ref[len(prefix):]
+        if suffix.isdigit():
+            max_seq = max(max_seq, int(suffix))
+
+    next_seq = max_seq + 1
+    while True:
+        candidate = f"{prefix}{next_seq:04d}"
+        in_use = (
+            Booking.objects.filter(booking_ref=candidate).exists()
+            or InvoiceRecord.objects.filter(booking_id=candidate).exists()
+            or PaymentTransaction.objects.filter(booking_ref=candidate).exists()
+        )
+        if not in_use:
+            return candidate
+        next_seq += 1
 
 def clean_and_validate_pak_phone(phone_str):
     if not phone_str:
@@ -123,9 +153,9 @@ class BookingSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        if not validated_data.get('booking_ref'):
-            ref_num = random.randint(10000, 99999)
-            validated_data['booking_ref'] = f"BK-{ref_num}"
+        provided_ref = validated_data.get('booking_ref')
+        if not provided_ref or Booking.objects.filter(booking_ref=provided_ref).exists():
+            validated_data['booking_ref'] = generate_unique_booking_ref()
 
         amount = float(validated_data.get('amount', 0))
         advance = float(validated_data.get('advance_payment', 0))
